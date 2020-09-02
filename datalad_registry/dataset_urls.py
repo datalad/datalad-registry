@@ -7,10 +7,12 @@ from flask import jsonify
 from flask import request
 from flask import url_for
 
+from datalad_registry.db import get_db
+
 bp = Blueprint("dataset_urls", __name__, url_prefix="/v1/datasets/")
 
-_TOKENS = {}  # token => {dsid, time_registered}
 _TOKEN_TTL = 600
+_TOKEN_STATUSES = ["requested", "staged", "verified"]
 
 
 def _url_decode(url):
@@ -31,9 +33,12 @@ def token(dsid, url_encoded):
 
         token = secrets.token_hex(20)
         dsid = str(dsid)
-        # TODO: Need to periodically prune if this stays in memory.
-        _TOKENS[token] = {"dsid": dsid,
-                          "time_registered": time.time()}
+
+        # TODO: Add separate script to prune old tokens.
+        with get_db() as db:
+            db.execute("INSERT INTO tokens VALUES (?, ?, ?, ?, 0)",
+                       (token, dsid, url, time.time()))
+
         body = {"dsid": dsid,
                 "url": url,
                 "ref": "refs/datalad-registry/" + token,
@@ -44,10 +49,14 @@ def token(dsid, url_encoded):
 
 @bp.route("<uuid:dsid>/urls", methods=["GET", "POST"])
 def urls(dsid):
+    dsid = str(dsid)
     if request.method == "GET":
-        # TODO: Retrieve URLs from database.
-        return {"dsid": str(dsid),
-                "urls": ["a", "b"]}
+        db = get_db()
+        urls = [r["url"]
+                for r in db.execute("SELECT url FROM dataset_urls "
+                                    "WHERE dsid = ?",
+                                    (dsid,))]
+        return {"dsid": dsid, "urls": urls}
     elif request.method == "POST":
         data = request.json or {}
         try:
@@ -57,16 +66,22 @@ def urls(dsid):
             # TODO: Do better validation.
             return jsonify(message="Invalid data"), 400
 
-        token = data["token"]
-        if token not in _TOKENS:
+        db = get_db()
+        row = db.execute(
+            "SELECT ts FROM tokens "
+            "WHERE token = ? AND url = ? AND dsid = ? AND status = 0",
+            (token, url, dsid)).fetchone()
+        if row is None:
             return jsonify(message="Unknown token"), 400
 
-        t_reg = _TOKENS[token]["time_registered"]
-        if time.time() - t_reg < _TOKEN_TTL:
-            # TODO: Register request.
-            del _TOKENS[token]
+        if time.time() - row["ts"] < _TOKEN_TTL:
+            # TODO: Set up background process that verifies the
+            # challenge.
+            with db:
+                db.execute("UPDATE tokens SET status = 1 WHERE token = ?",
+                           (token,))
             url_encoded = _url_encode(url)
-            body = {"dsid": str(dsid),
+            body = {"dsid": dsid,
                     "url": url_encoded}
             location = url_for(".urls", dsid=dsid) + "/" + url_encoded
             return jsonify(body), 202, {"Location": location}
@@ -77,9 +92,26 @@ def urls(dsid):
 @bp.route("<uuid:dsid>/urls/<string:url_encoded>")
 def url(dsid, url_encoded):
     if request.method == "GET":
-        # TODO: Query status.
+        dsid = str(dsid)
         try:
             url = _url_decode(url_encoded)
         except base64.binascii.Error:
             return jsonify(message="Invalid encoded URL"), 400
-        return jsonify(dsid=str(dsid), url=url, status="ok")
+
+        db = get_db()
+        row_known = db.execute(
+            "SELECT url FROM dataset_urls "
+            "WHERE url = ? AND dsid = ? LIMIT 1",
+            url, dsid).fetchone()
+        if row_known is None:
+            status = "unknown"
+            row_tok = db.execute(
+                "SELECT MAX(status) as max_status FROM tokens "
+                "WHERE url = ? AND dsid = ?",
+                url, dsid).fetchone()
+            if row_tok["max_status"] is not None:
+                status = _TOKEN_STATUSES[int(row_tok["max_status"])]
+        else:
+            status = "known"
+
+        return jsonify(dsid=dsid, url=url, status=status)
