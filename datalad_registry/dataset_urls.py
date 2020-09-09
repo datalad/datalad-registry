@@ -1,4 +1,5 @@
 import base64
+import logging
 import secrets
 import time
 
@@ -9,6 +10,7 @@ from flask import url_for
 
 from datalad_registry.db import get_db
 
+lgr = logging.getLogger(__name__)
 bp = Blueprint("dataset_urls", __name__, url_prefix="/v1/datasets/")
 
 _TOKEN_TTL = 600
@@ -33,6 +35,7 @@ def token(dsid, url_encoded):
 
         token = secrets.token_hex(20)
         dsid = str(dsid)
+        lgr.info("Generated token %s for %s => %s", token, url, dsid)
 
         # TODO: Add separate script to prune old tokens.
         with get_db() as db:
@@ -51,6 +54,7 @@ def token(dsid, url_encoded):
 def urls(dsid):
     dsid = str(dsid)
     if request.method == "GET":
+        lgr.info("Reporting which URLs are registered for %s", dsid)
         db = get_db()
         urls = [r["url"]
                 for r in db.execute("SELECT url FROM dataset_urls "
@@ -98,6 +102,8 @@ def url(dsid, url_encoded):
         except base64.binascii.Error:
             return jsonify(message="Invalid encoded URL"), 400
 
+        lgr.info("Checking status of registering %s as URL of %s",
+                 url, dsid)
         db = get_db()
         row_known = db.execute(
             "SELECT url FROM dataset_urls "
@@ -114,4 +120,5 @@ def url(dsid, url_encoded):
         else:
             status = "known"
 
+        lgr.debug("Status for %s: %s", url, status)
         return jsonify(dsid=dsid, url=url, status=status)

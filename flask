@@ -1,5 +1,6 @@
 #!/bin/sh
 
+export DATALAD_REGISTRY_LOG_LEVEL="DEBUG"
 export FLASK_APP=datalad_registry
 export FLASK_ENV=development
 
