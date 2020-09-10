@@ -36,3 +36,18 @@ def init_db_command():
 def init_app(app):
     app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_command)
+
+
+def read(statement, *values):
+    """Execute read-only `statement` parameterized with `values`.
+
+    Return an sqlite3.Cursor.
+    """
+    return get_db().execute(statement, values)
+
+
+def write(statement, *values):
+    """Execute `statement` parameterized with `values` and commit changes.
+    """
+    with get_db() as db:
+        db.execute(statement, values)

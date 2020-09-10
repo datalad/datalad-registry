@@ -8,7 +8,7 @@ from flask import jsonify
 from flask import request
 from flask import url_for
 
-from datalad_registry.db import get_db
+from datalad_registry import db
 
 lgr = logging.getLogger(__name__)
 bp = Blueprint("dataset_urls", __name__, url_prefix="/v1/datasets/")
@@ -38,9 +38,8 @@ def token(dsid, url_encoded):
         lgr.info("Generated token %s for %s => %s", token, url, dsid)
 
         # TODO: Add separate script to prune old tokens.
-        with get_db() as db:
-            db.execute("INSERT INTO tokens VALUES (?, ?, ?, ?, 0)",
-                       (token, dsid, url, time.time()))
+        db.write("INSERT INTO tokens VALUES (?, ?, ?, ?, 0)",
+                 token, dsid, url, time.time())
 
         body = {"dsid": dsid,
                 "url": url,
@@ -55,11 +54,10 @@ def urls(dsid):
     dsid = str(dsid)
     if request.method == "GET":
         lgr.info("Reporting which URLs are registered for %s", dsid)
-        db = get_db()
         urls = [r["url"]
-                for r in db.execute("SELECT url FROM dataset_urls "
-                                    "WHERE dsid = ?",
-                                    (dsid,))]
+                for r in db.read("SELECT url FROM dataset_urls "
+                                 "WHERE dsid = ?",
+                                 dsid)]
         return {"dsid": dsid, "urls": urls}
     elif request.method == "POST":
         data = request.json or {}
@@ -70,20 +68,18 @@ def urls(dsid):
             # TODO: Do better validation.
             return jsonify(message="Invalid data"), 400
 
-        db = get_db()
-        row = db.execute(
+        row = db.read(
             "SELECT ts FROM tokens "
             "WHERE token = ? AND url = ? AND dsid = ? AND status = 0",
-            (token, url, dsid)).fetchone()
+            token, url, dsid).fetchone()
         if row is None:
             return jsonify(message="Unknown token"), 400
 
         if time.time() - row["ts"] < _TOKEN_TTL:
             # TODO: Set up background process that verifies the
             # challenge.
-            with db:
-                db.execute("UPDATE tokens SET status = 1 WHERE token = ?",
-                           (token,))
+            db.write("UPDATE tokens SET status = 1 WHERE token = ?",
+                     token)
             url_encoded = _url_encode(url)
             body = {"dsid": dsid,
                     "url": url_encoded}
@@ -104,14 +100,13 @@ def url(dsid, url_encoded):
 
         lgr.info("Checking status of registering %s as URL of %s",
                  url, dsid)
-        db = get_db()
-        row_known = db.execute(
+        row_known = db.read(
             "SELECT url FROM dataset_urls "
             "WHERE url = ? AND dsid = ? LIMIT 1",
             url, dsid).fetchone()
         if row_known is None:
             status = "unknown"
-            row_tok = db.execute(
+            row_tok = db.read(
                 "SELECT MAX(status) as max_status FROM tokens "
                 "WHERE url = ? AND dsid = ?",
                 url, dsid).fetchone()
