@@ -1,0 +1,36 @@
+version: "3"
+services:
+  web:
+    build: .
+    depends_on:
+      - broker
+    ports:
+      - "5000:5000"
+    environment: &env
+      CELERY_BROKER_URL: "amqp://user:password@broker:5672"
+      DATALAD_REGISTRY_LOG_LEVEL: DEBUG
+      FLASK_APP: datalad_registry.factory:create_app
+      FLASK_ENV: development
+      RABBITMQ_DEFAULT_PASS: password
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_VHOST: /
+    command: [flask, run, --host=0.0.0.0]
+    volumes:
+      - ./instance:/app/instance
+  broker:
+    image: rabbitmq:3-alpine
+    environment:
+      <<: *env
+    ports:
+      - "5672:5672"
+    expose:
+      - "5672"
+  worker:
+    build: .
+    depends_on:
+      - broker
+    command: [celery, worker, -A, datalad_registry.runcelery.celery]
+    volumes:
+      - ./instance:/app/instance
+    environment:
+      <<: *env
