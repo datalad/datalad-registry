@@ -9,6 +9,7 @@ from flask import request
 from flask import url_for
 
 from datalad_registry import db
+from datalad_registry import tasks
 
 lgr = logging.getLogger(__name__)
 bp = Blueprint("dataset_urls", __name__, url_prefix="/v1/datasets/")
@@ -76,10 +77,9 @@ def urls(dsid):
             return jsonify(message="Unknown token"), 400
 
         if time.time() - row["ts"] < _TOKEN_TTL:
-            # TODO: Set up background process that verifies the
-            # challenge.
             db.write("UPDATE tokens SET status = 1 WHERE token = ?",
                      token)
+            tasks.verify_url.delay(url, token)
             url_encoded = _url_encode(url)
             body = {"dsid": dsid,
                     "url": url_encoded}
