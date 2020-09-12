@@ -15,7 +15,9 @@ lgr = logging.getLogger(__name__)
 bp = Blueprint("dataset_urls", __name__, url_prefix="/v1/datasets/")
 
 _TOKEN_TTL = 600
-_TOKEN_STATUSES = ["requested", "staged", "verified"]
+_TOKEN_STATUSES = ["token requested",
+                   "URL pending verification",
+                   "URL verified"]
 
 
 def _url_decode(url):
