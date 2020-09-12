@@ -1,7 +1,7 @@
 FROM python:3.7-alpine
 WORKDIR /app
 
-RUN apk add --no-cache gcc musl-dev linux-headers
+RUN apk add --no-cache gcc musl-dev linux-headers git
 
 COPY datalad_registry datalad_registry/
 COPY pyproject.toml pyproject.toml

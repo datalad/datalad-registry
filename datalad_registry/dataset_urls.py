@@ -83,7 +83,7 @@ def urls(dsid):
         if time.time() - row["ts"] < _TOKEN_TTL:
             db.write("UPDATE tokens SET status = 1 WHERE token = ?",
                      token)
-            tasks.verify_url.delay(url, token)
+            tasks.verify_url.delay(dsid, url, token)
             url_encoded = _url_encode(url)
             body = {"dsid": dsid,
                     "url": url_encoded}
