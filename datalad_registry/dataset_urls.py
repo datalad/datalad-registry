@@ -17,7 +17,9 @@ bp = Blueprint("dataset_urls", __name__, url_prefix="/v1/datasets/")
 _TOKEN_TTL = 600
 _TOKEN_STATUSES = ["token requested",
                    "URL pending verification",
-                   "URL verified"]
+                   "URL verified",
+                   "verification failed",
+                   "verification not needed"]
 
 
 def _url_decode(url):

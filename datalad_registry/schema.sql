@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS tokens (
   dsid TEXT NOT NULL,
   url TEXT NOT NULL,
   ts INTEGER NOT NULL,  /* Unix timestamp of token creation */
-  status INTEGER,  /* [requested, staged, verified] */
+  status INTEGER,  /* [requested, staged, verified, failed, notneeded] */
   UNIQUE (token)
 );
 
