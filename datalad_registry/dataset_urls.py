@@ -30,7 +30,7 @@ def token(dsid, url_encoded):
     if request.method == "GET":
         try:
             url = url_decode(url_encoded)
-        except base64.binascii.Error:
+        except (base64.binascii.Error, UnicodeDecodeError):
             return jsonify(message="Invalid encoded URL"), 400
 
         token = secrets.token_hex(20)
@@ -94,7 +94,7 @@ def url(dsid, url_encoded):
         dsid = str(dsid)
         try:
             url = url_decode(url_encoded)
-        except base64.binascii.Error:
+        except (base64.binascii.Error, UnicodeDecodeError):
             return jsonify(message="Invalid encoded URL"), 400
 
         lgr.info("Checking status of registering %s as URL of %s",
