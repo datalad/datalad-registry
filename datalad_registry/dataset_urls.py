@@ -11,6 +11,8 @@ from flask import url_for
 from datalad_registry import db
 from datalad_registry import tasks
 from datalad_registry.utils import TokenStatus
+from datalad_registry.utils import url_decode
+from datalad_registry.utils import url_encode
 
 lgr = logging.getLogger(__name__)
 bp = Blueprint("dataset_urls", __name__, url_prefix="/v1/datasets/")
@@ -23,19 +25,11 @@ _TOKEN_STATUSES = ["token requested",
                    "verification not needed"]
 
 
-def _url_decode(url):
-    return base64.urlsafe_b64decode(url.encode()).decode()
-
-
-def _url_encode(url):
-    return base64.urlsafe_b64encode(url.encode()).decode()
-
-
 @bp.route("<uuid:dsid>/urls/<string:url_encoded>/token")
 def token(dsid, url_encoded):
     if request.method == "GET":
         try:
-            url = _url_decode(url_encoded)
+            url = url_decode(url_encoded)
         except base64.binascii.Error:
             return jsonify(message="Invalid encoded URL"), 400
 
@@ -85,7 +79,7 @@ def urls(dsid):
             db.write("UPDATE tokens SET status = ? WHERE token = ?",
                      TokenStatus.STAGED, token)
             tasks.verify_url.delay(dsid, url, token)
-            url_encoded = _url_encode(url)
+            url_encoded = url_encode(url)
             body = {"dsid": dsid,
                     "url": url_encoded}
             location = url_for(".urls", dsid=dsid) + "/" + url_encoded
@@ -99,7 +93,7 @@ def url(dsid, url_encoded):
     if request.method == "GET":
         dsid = str(dsid)
         try:
-            url = _url_decode(url_encoded)
+            url = url_decode(url_encoded)
         except base64.binascii.Error:
             return jsonify(message="Invalid encoded URL"), 400
 
