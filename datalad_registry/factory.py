@@ -40,7 +40,7 @@ def setup_celery(app, celery):
     return celery
 
 
-def create_app():
+def create_app(test_config=None):
     _setup_logging()
 
     app = Flask(__name__)
@@ -50,6 +50,9 @@ def create_app():
     app.config.from_mapping(
         CELERY_BROKER_URL=broker_url,
         DATABASE=str(instance_path / "registry.sqlite"))
+    if test_config:
+        app.config.from_mapping(test_config)
+
     instance_path.mkdir(parents=True, exist_ok=True)
     setup_celery(app, celery)
     db.init_app(app)
