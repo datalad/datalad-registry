@@ -10,6 +10,7 @@ from flask import url_for
 
 from datalad_registry import db
 from datalad_registry import tasks
+from datalad_registry.utils import TokenStatus
 
 lgr = logging.getLogger(__name__)
 bp = Blueprint("dataset_urls", __name__, url_prefix="/v1/datasets/")
@@ -75,14 +76,14 @@ def urls(dsid):
 
         row = db.read(
             "SELECT ts FROM tokens "
-            "WHERE token = ? AND url = ? AND dsid = ? AND status = 0",
-            token, url, dsid).fetchone()
+            "WHERE token = ? AND url = ? AND dsid = ? AND status = ?",
+            token, url, dsid, TokenStatus.REQUESTED).fetchone()
         if row is None:
             return jsonify(message="Unknown token"), 400
 
         if time.time() - row["ts"] < _TOKEN_TTL:
-            db.write("UPDATE tokens SET status = 1 WHERE token = ?",
-                     token)
+            db.write("UPDATE tokens SET status = ? WHERE token = ?",
+                     TokenStatus.STAGED, token)
             tasks.verify_url.delay(dsid, url, token)
             url_encoded = _url_encode(url)
             body = {"dsid": dsid,

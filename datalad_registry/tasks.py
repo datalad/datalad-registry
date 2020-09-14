@@ -3,6 +3,7 @@ import subprocess as sp
 
 from datalad_registry import celery
 from datalad_registry import db
+from datalad_registry.utils import TokenStatus
 
 lgr = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ def verify_url(dsid, url, token):
     exists = db.read("SELECT * FROM dataset_urls WHERE url = ? AND dsid = ?",
                      url, dsid).fetchone()
     if exists:
-        status = 4
+        status = TokenStatus.NOTNEEDED
     else:
         try:
             sp.check_call(["git", "ls-remote", "--quiet", "--exit-code",
@@ -22,9 +23,9 @@ def verify_url(dsid, url, token):
         except sp.CalledProcessError as exc:
             lgr.info("Failed to verify status %s at %s: %s",
                      dsid, url, exc)
-            status = 3
+            status = TokenStatus.FAILED
         else:
-            status = 2
+            status = TokenStatus.VERIFIED
             db.write("INSERT INTO dataset_urls VALUES (?, ?)",
                      url, dsid)
     db.write("UPDATE tokens SET status = ? WHERE token = ?",
