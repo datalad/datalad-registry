@@ -36,7 +36,7 @@ $ docker-compose up
 With a virtual environment set up and activated, the first and second
 steps above can be replaced by `./flask init-db`.
 
-### Sample request
+#### Sample request
 
 The request below should work after completing either of the setups
 above.
