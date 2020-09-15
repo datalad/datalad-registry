@@ -81,10 +81,11 @@ Sample Response:
     {
         "dsid": "6eeadb86-84be-11e6-b24c-002590f97d84",
         "url": "https://datasets.datalad.org/labs/haxby/raiders/.git",
-        "status": "ok"
+        "status": "known"
     }
 
-where `status` is "unknown", "pending", "ok", or "failed".
+where `status` is "unknown", "known", "URL pending verification", and
+"verification failed".
 
 
 ### Getting URLs for a dataset
