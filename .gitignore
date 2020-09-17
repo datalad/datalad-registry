@@ -1,6 +1,8 @@
 *.egg-info
 *.pyc
 .coverage
+.dir-locals.el
+.flake8
 build/
 dist/
 htmlcov/
