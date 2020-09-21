@@ -5,8 +5,7 @@ from unittest.mock import patch
 from datalad_registry.utils import url_encode
 
 
-def test_token_get(client):
-    dsid = "8efd0c0a-da19-487c-a9c7-0b0a5f1aa02a"
+def test_token_get(client, dsid):
     url = "doesnt.matter"
     url_encoded = url_encode(url)
     data = client.get(
@@ -18,27 +17,23 @@ def test_token_get(client):
 
 
 @pytest.mark.parametrize("bad_url", ["a", "abcd"])
-def test_token_bad_url_get(client, bad_url):
-    dsid = "8efd0c0a-da19-487c-a9c7-0b0a5f1aa02a"
+def test_token_bad_url_get(client, dsid, bad_url):
     response = client.get(f"/v1/datasets/{dsid}/urls/{bad_url}/token")
     assert response.status_code == 400
 
 
-def test_urls_get_empty(client):
-    dsid = "8efd0c0a-da19-487c-a9c7-0b0a5f1aa02a"
+def test_urls_get_empty(client, dsid):
     data = client.get(f"/v1/datasets/{dsid}/urls").get_json()
     assert data["dsid"] == dsid
     assert data["urls"] == []
 
 
-def test_urls_post_invalid_data(client):
-    dsid = "8efd0c0a-da19-487c-a9c7-0b0a5f1aa02a"
+def test_urls_post_invalid_data(client, dsid):
     response = client.post(f"/v1/datasets/{dsid}/urls", json={})
     assert response.status_code == 400
 
 
-def test_urls_post_unknown_token(client):
-    dsid = "8efd0c0a-da19-487c-a9c7-0b0a5f1aa02a"
+def test_urls_post_unknown_token(client, dsid):
     response = client.post(f"/v1/datasets/{dsid}/urls",
                            json={"token": "unknown",
                                  "url": "doesnt.matter"})
@@ -46,18 +41,16 @@ def test_urls_post_unknown_token(client):
 
 
 @pytest.mark.parametrize("bad_url", ["a", "abcd"])
-def test_url_bad_url_get(client, bad_url):
-    dsid = "8efd0c0a-da19-487c-a9c7-0b0a5f1aa02a"
+def test_url_bad_url_get(client, dsid, bad_url):
     response = client.get(f"/v1/datasets/{dsid}/urls/{bad_url}")
     assert response.status_code == 400
 
 
-def test_register_url(client, tmp_path):
+def test_register_url(client, dsid, tmp_path):
     dset = tmp_path / "ds"
     dset.mkdir()
 
     url_encoded = url_encode("file:///" + str(dset))
-    dsid = "8efd0c0a-da19-487c-a9c7-0b0a5f1aa02a"
 
     d_token = client.get(
         f"/v1/datasets/{dsid}/urls/{url_encoded}/token").get_json()
@@ -86,12 +79,11 @@ def test_register_url(client, tmp_path):
     assert get_status() == "known"
 
 
-def test_register_url_expired_token(client, tmp_path):
+def test_register_url_expired_token(client, dsid, tmp_path):
     dset = tmp_path / "ds"
     dset.mkdir()
 
     url_encoded = url_encode("file:///" + str(dset))
-    dsid = "8efd0c0a-da19-487c-a9c7-0b0a5f1aa02a"
 
     d_token = client.get(
         f"/v1/datasets/{dsid}/urls/{url_encoded}/token").get_json()
@@ -106,9 +98,8 @@ def test_register_url_expired_token(client, tmp_path):
 # itself.  If the order is swapped, this passes and that one fails.
 # If the client fixture is change to session scope, the failure goes
 # away.  Changing the url or dsid doesn't make the failures go away.
-def test_register_url_failed_verification(client, tmp_path):
+def test_register_url_failed_verification(client, dsid, tmp_path):
     url_encoded = url_encode("file:///" + str(tmp_path))
-    dsid = "8efd0c0a-da19-487c-a9c7-0b0a5f1aa02a"
 
     d_token = client.get(
         f"/v1/datasets/{dsid}/urls/{url_encoded}/token").get_json()

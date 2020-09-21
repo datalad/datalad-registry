@@ -1,7 +1,18 @@
+import uuid
+from random import Random
+
 import pytest
 
 from datalad_registry.db import init_db
 from datalad_registry.factory import create_app
+
+random = Random()
+random.seed("datalad-registry")
+
+
+@pytest.fixture
+def dsid():
+    return str(uuid.UUID(int=random.getrandbits(128)))
 
 
 @pytest.fixture
