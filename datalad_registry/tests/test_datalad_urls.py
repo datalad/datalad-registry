@@ -4,6 +4,9 @@ from unittest.mock import patch
 
 from datalad_registry.utils import url_encode
 
+# ATTN: `client` is a session-level fixture, so the database is shared
+# across tests.
+
 
 def test_token_get(client, dsid):
     url = "doesnt.matter"
@@ -93,11 +96,6 @@ def test_register_url_expired_token(client, dsid, tmp_path):
     assert r_post.status_code == 410
 
 
-# FIXME: There's an interaction between this and the previous test
-# that leads to a failure.  This test does not fail if executed by
-# itself.  If the order is swapped, this passes and that one fails.
-# If the client fixture is change to session scope, the failure goes
-# away.  Changing the url or dsid doesn't make the failures go away.
 def test_register_url_failed_verification(client, dsid, tmp_path):
     url_encoded = url_encode("file:///" + str(tmp_path))
 

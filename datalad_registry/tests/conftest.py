@@ -15,8 +15,9 @@ def dsid():
     return str(uuid.UUID(int=random.getrandbits(128)))
 
 
-@pytest.fixture
-def client(tmp_path):
+@pytest.fixture(scope="session")
+def client(tmp_path_factory):
+    tmp_path = tmp_path_factory.mktemp("db")
     config = {"CELERY_ALWAYS_EAGER": True,
               "DATABASE": str(tmp_path / "registry.sqlite3"),
               "TESTING": True}
