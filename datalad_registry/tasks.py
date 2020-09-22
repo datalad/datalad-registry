@@ -5,7 +5,6 @@ from datalad_registry import celery
 from datalad_registry.models import db
 from datalad_registry.models import URL
 from datalad_registry.models import Token
-from datalad_registry.utils import TokenStatus
 
 lgr = logging.getLogger(__name__)
 
@@ -17,7 +16,7 @@ def verify_url(dsid, url, token):
     exists = db.session.query(URL).filter_by(
         url=url, dsid=dsid).one_or_none()
     if exists:
-        status = TokenStatus.NOTNEEDED
+        status = Token.status_enum.NOTNEEDED
     else:
         try:
             sp.check_call(["git", "ls-remote", "--quiet", "--exit-code",
@@ -25,9 +24,9 @@ def verify_url(dsid, url, token):
         except sp.CalledProcessError as exc:
             lgr.info("Failed to verify status %s at %s: %s",
                      dsid, url, exc)
-            status = TokenStatus.FAILED
+            status = Token.status_enum.FAILED
         else:
-            status = TokenStatus.VERIFIED
+            status = Token.status_enum.VERIFIED
             db.session.add(URL(dsid=dsid, url=url))
     db.session.query(Token).filter_by(token=token).update(
         {"status": status})

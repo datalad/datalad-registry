@@ -1,8 +1,25 @@
+from enum import IntEnum
+
 import click
 from flask.cli import with_appcontext
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
+
+
+class _TokenStatus(IntEnum):
+    REQUESTED = 0
+    STAGED = 1
+    VERIFIED = 2
+    FAILED = 3
+    NOTNEEDED = 4
+
+
+_status_labels = ["token requested",
+                  "URL pending verification",
+                  "URL verified",
+                  "verification failed",
+                  "verification not needed"]
 
 
 class Token(db.Model):
@@ -13,7 +30,13 @@ class Token(db.Model):
     dsid = db.Column(db.Text, nullable=False)
     url = db.Column(db.Text, nullable=False)
     ts = db.Column(db.Integer, nullable=False)
+
     status = db.Column(db.Integer)
+    status_enum = _TokenStatus
+
+    @staticmethod
+    def describe_status(status):
+        return _status_labels[status]
 
     def __repr__(self):
         return (f"<Token(token={self.token!r}, "

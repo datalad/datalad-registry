@@ -12,7 +12,7 @@ from datalad_registry import tasks
 from datalad_registry.models import db
 from datalad_registry.models import Token
 from datalad_registry.models import URL
-from datalad_registry.utils import TokenStatus
+
 from datalad_registry.utils import InvalidURL
 from datalad_registry.utils import url_decode
 from datalad_registry.utils import url_encode
@@ -21,11 +21,6 @@ lgr = logging.getLogger(__name__)
 bp = Blueprint("dataset_urls", __name__, url_prefix="/v1/datasets/")
 
 _TOKEN_TTL = 600
-_TOKEN_STATUSES = ["token requested",
-                   "URL pending verification",
-                   "URL verified",
-                   "verification failed",
-                   "verification not needed"]
 
 
 @bp.route("<uuid:dsid>/urls/<string:url_encoded>/token")
@@ -71,13 +66,13 @@ def urls(dsid):
             return jsonify(message="Invalid data"), 400
         row = db.session.query(Token).filter_by(
             token=token, url=url, dsid=dsid,
-            status=TokenStatus.REQUESTED).first()
+            status=Token.status_enum.REQUESTED).first()
         if row is None:
             return jsonify(message="Unknown token"), 400
 
         if time.time() - row.ts < _TOKEN_TTL:
             db.session.query(Token).filter_by(token=token).update(
-                {"status": TokenStatus.STAGED})
+                {"status": Token.status_enum.STAGED})
             db.session.commit()
             tasks.verify_url.delay(dsid, url, token)
             url_encoded = url_encode(url)
@@ -108,7 +103,7 @@ def url(dsid, url_encoded):
                 sa.func.max(Token.status)).filter_by(
                     url=url, dsid=dsid).first()
             if max_status is not None:
-                status = _TOKEN_STATUSES[max_status]
+                status = Token.describe_status(max_status)
         else:
             status = "known"
 
