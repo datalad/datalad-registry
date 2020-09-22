@@ -9,7 +9,8 @@ DataLad registry -- work in progress
 
 Here are steps for setting up a development environment either 1)
 using a virtual environment for everything but the celery broker or 2)
-using containers for both the Flask and Celery components.
+using containers for both the Flask and Celery components.  Note that
+these steps are not required to execute the pytest-based test suite.
 
 #### Virtual environment with container for Celery broker
 
