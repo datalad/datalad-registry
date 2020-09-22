@@ -6,9 +6,12 @@ from flask import Blueprint
 from flask import jsonify
 from flask import request
 from flask import url_for
+import sqlalchemy as sa
 
-from datalad_registry import db
 from datalad_registry import tasks
+from datalad_registry.models import db
+from datalad_registry.models import Token
+from datalad_registry.models import URL
 from datalad_registry.utils import TokenStatus
 from datalad_registry.utils import InvalidURL
 from datalad_registry.utils import url_decode
@@ -38,8 +41,9 @@ def token(dsid, url_encoded):
         lgr.info("Generated token %s for %s => %s", token, url, dsid)
 
         # TODO: Add separate script to prune old tokens.
-        db.write("INSERT INTO tokens VALUES (?, ?, ?, ?, 0)",
-                 token, dsid, url, time.time())
+        db.session.add(
+            Token(token=token, dsid=dsid, url=url, ts=time.time(), status=0))
+        db.session.commit()
 
         body = {"dsid": dsid,
                 "url": url,
@@ -54,10 +58,8 @@ def urls(dsid):
     dsid = str(dsid)
     if request.method == "GET":
         lgr.info("Reporting which URLs are registered for %s", dsid)
-        urls = [r["url"]
-                for r in db.read("SELECT url FROM dataset_urls "
-                                 "WHERE dsid = ?",
-                                 dsid)]
+        urls = [r.url
+                for r in db.session.query(URL).filter_by(dsid=dsid)]
         return {"dsid": dsid, "urls": urls}
     elif request.method == "POST":
         data = request.json or {}
@@ -67,17 +69,16 @@ def urls(dsid):
         except KeyError:
             # TODO: Do better validation.
             return jsonify(message="Invalid data"), 400
-
-        row = db.read(
-            "SELECT ts FROM tokens "
-            "WHERE token = ? AND url = ? AND dsid = ? AND status = ?",
-            token, url, dsid, TokenStatus.REQUESTED).fetchone()
+        row = db.session.query(Token).filter_by(
+            token=token, url=url, dsid=dsid,
+            status=TokenStatus.REQUESTED).first()
         if row is None:
             return jsonify(message="Unknown token"), 400
 
-        if time.time() - row["ts"] < _TOKEN_TTL:
-            db.write("UPDATE tokens SET status = ? WHERE token = ?",
-                     TokenStatus.STAGED, token)
+        if time.time() - row.ts < _TOKEN_TTL:
+            db.session.query(Token).filter_by(token=token).update(
+                {"status": TokenStatus.STAGED})
+            db.session.commit()
             tasks.verify_url.delay(dsid, url, token)
             url_encoded = url_encode(url)
             body = {"dsid": dsid,
@@ -99,18 +100,15 @@ def url(dsid, url_encoded):
 
         lgr.info("Checking status of registering %s as URL of %s",
                  url, dsid)
-        row_known = db.read(
-            "SELECT url FROM dataset_urls "
-            "WHERE url = ? AND dsid = ? LIMIT 1",
-            url, dsid).fetchone()
+        row_known = db.session.query(URL).filter_by(
+            url=url, dsid=dsid).first()
         if row_known is None:
             status = "unknown"
-            row_tok = db.read(
-                "SELECT MAX(status) as max_status FROM tokens "
-                "WHERE url = ? AND dsid = ?",
-                url, dsid).fetchone()
-            if row_tok["max_status"] is not None:
-                status = _TOKEN_STATUSES[int(row_tok["max_status"])]
+            max_status, = db.session.query(
+                sa.func.max(Token.status)).filter_by(
+                    url=url, dsid=dsid).first()
+            if max_status is not None:
+                status = _TOKEN_STATUSES[max_status]
         else:
             status = "known"
 

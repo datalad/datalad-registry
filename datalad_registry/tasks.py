@@ -2,7 +2,9 @@ import logging
 import subprocess as sp
 
 from datalad_registry import celery
-from datalad_registry import db
+from datalad_registry.models import db
+from datalad_registry.models import URL
+from datalad_registry.models import Token
 from datalad_registry.utils import TokenStatus
 
 lgr = logging.getLogger(__name__)
@@ -12,8 +14,8 @@ lgr = logging.getLogger(__name__)
 def verify_url(dsid, url, token):
     """Check that `url` has a challenge reference for `token`.
     """
-    exists = db.read("SELECT * FROM dataset_urls WHERE url = ? AND dsid = ?",
-                     url, dsid).fetchone()
+    exists = db.session.query(URL).filter_by(
+        url=url, dsid=dsid).one_or_none()
     if exists:
         status = TokenStatus.NOTNEEDED
     else:
@@ -26,7 +28,7 @@ def verify_url(dsid, url, token):
             status = TokenStatus.FAILED
         else:
             status = TokenStatus.VERIFIED
-            db.write("INSERT INTO dataset_urls VALUES (?, ?)",
-                     url, dsid)
-    db.write("UPDATE tokens SET status = ? WHERE token = ?",
-             status, token)
+            db.session.add(URL(dsid=dsid, url=url))
+    db.session.query(Token).filter_by(token=token).update(
+        {"status": status})
+    db.session.commit()

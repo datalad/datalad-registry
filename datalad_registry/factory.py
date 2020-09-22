@@ -7,7 +7,8 @@ from flask.logging import default_handler
 
 from datalad_registry import celery
 from datalad_registry import dataset_urls
-from datalad_registry import db
+from datalad_registry.models import db
+from datalad_registry.models import init_db_command
 
 
 def _log_level():
@@ -47,14 +48,17 @@ def create_app(test_config=None):
     instance_path = Path(app.instance_path)
     broker_url = os.environ.get("CELERY_BROKER_URL",
                                 "amqp://localhost:5672")
+    db_uri = "sqlite:///" + str(instance_path / "registry.sqlite")
     app.config.from_mapping(
         CELERY_BROKER_URL=broker_url,
-        DATABASE=str(instance_path / "registry.sqlite"))
+        SQLALCHEMY_DATABASE_URI=db_uri,
+        SQLALCHEMY_TRACK_MODIFICATIONS=False)
     if test_config:
         app.config.from_mapping(test_config)
 
     instance_path.mkdir(parents=True, exist_ok=True)
     setup_celery(app, celery)
     db.init_app(app)
+    app.cli.add_command(init_db_command)
     app.register_blueprint(dataset_urls.bp)
     return app
