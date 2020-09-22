@@ -53,7 +53,8 @@ def test_register_url(client, dsid, tmp_path):
     dset = tmp_path / "ds"
     dset.mkdir()
 
-    url_encoded = url_encode("file:///" + str(dset))
+    url = "file:///" + str(dset)
+    url_encoded = url_encode(url)
 
     d_token = client.get(
         f"/v1/datasets/{dsid}/urls/{url_encoded}/token").get_json()
@@ -72,6 +73,8 @@ def test_register_url(client, dsid, tmp_path):
     r_post = client.post(f"/v1/datasets/{dsid}/urls", json=d_token)
     assert r_post.status_code == 202
 
+    urls = client.get(f"/v1/datasets/{dsid}/urls").get_json()["urls"]
+    assert urls == [url]
     assert get_status() == "known"
 
     # And again.
