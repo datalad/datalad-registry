@@ -1,0 +1,211 @@
+openapi: 3.0.0
+info:
+  title: DataLad Registry API
+  version: 1.0.0
+  description: |
+    Registering new dataset URL
+    ---------------------------
+
+    Registering a new URL for a dataset consists of the following steps:
+      * retrieving a challenge token
+      * adding the challenge token to the specified git reference and
+        making that change available via the URL
+      * issuing a request to add the URL
+
+servers:
+  - url: /v1
+
+components:
+  schemas:
+    dsid:
+      type: string
+      format: uuid
+    url_encoded:
+      type: string
+      format: base64
+  parameters:
+    dsid:
+      name: dsid
+      required: true
+      in: path
+      description: dataset ID
+      schema:
+        $ref: "#/components/schemas/dsid"
+    url_encoded:
+      name: url_encoded
+      required: true
+      in: path
+      description: dataset URL (base64-encoded)
+      schema:
+        $ref: "#/components/schemas/url_encoded"
+  responses:
+    invalid-encoded-url:
+      description: invalid encoded URL
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+
+paths:
+  /datasets/{dsid}/urls/{url_encoded}/token:
+    parameters:
+      - $ref: "#/components/parameters/dsid"
+      - $ref: "#/components/parameters/url_encoded"
+    get:
+      summary: Return challenge token for registering a dataset URL
+      description: |
+        Get a challenge token for dataset and URL (base64-encoded
+        using Python's URL-safe character set).
+      operationId: dataset_urls.token.get
+      responses:
+        "200":
+          description: challenge token
+          headers:
+            Cache-Control:
+              description: Cache-Control header with max-age directive
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dsid:
+                    $ref: "#/components/schemas/dsid"
+                  url:
+                    type: string
+                    description: dataset URL
+                  ref:
+                    type: string
+                    description: challenge reference
+                  token:
+                    type: string
+                    description: challenge token
+              example:
+                {
+                  "dsid": "6eeadb86-84be-11e6-b24c-002590f97d84",
+                  "url": "https://datasets.datalad.org/labs/haxby/raiders/.git",
+                  "ref": "refs/datalad-registry/0612a88655746eb05d73732e9cc5ea289253a53b",
+                  "token": "0612a88655746eb05d73732e9cc5ea289253a53b"
+                }
+        "400":
+          $ref: "#/components/responses/invalid-encoded-url"
+
+  /datasets/{dsid}/urls:
+    parameters:
+      - $ref: "#/components/parameters/dsid"
+    get:
+      summary: Return list of registered URLs for a dataset
+      operationId: dataset_urls.urls.get
+      responses:
+        "200":
+          description: List of registered URLs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dsid:
+                    $ref: "#/components/schemas/dsid"
+                  urls:
+                    type: array
+                    items:
+                      type: string
+              example:
+                {
+                  "dsid": "6eeadb86-84be-11e6-b24c-002590f97d84",
+                  "urls": ["https://datasets.datalad.org/labs/haxby/raiders/.git"]
+                }
+    post:
+      summary: Add a new URL
+      operationId: dataset_urls.urls.post
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                token:
+                  type: string
+                ref:
+                  type: string
+      responses:
+        "202":
+          description: URL submitted
+          headers:
+            Location:
+              description: URL to query for status information
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dsid:
+                    $ref: "#/components/schemas/dsid"
+                  url:
+                    $ref: "#/components/schemas/url_encoded"
+              example:
+                {
+                  "dsid": "6eeadb86-84be-11e6-b24c-002590f97d84",
+                  "url": "aHR0cHM6Ly9kYXRhc2V0cy5kYXRhbGFkLm9yZy9sYWJzL2hheGJ5L3JhaWRlcnMvLmdpdA=="
+                }
+        "400":
+          description: invalid data or unknown token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "410":
+          description: expired token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /datasets/{dsid}/urls/{url_encoded}:
+    parameters:
+      - $ref: "#/components/parameters/dsid"
+      - $ref: "#/components/parameters/url_encoded"
+    get:
+      summary: Query status of added URL
+      operationId: dataset_urls.url.get
+      responses:
+        "200":
+          description: URL status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dsid:
+                    $ref: "#/components/schemas/dsid"
+                  url:
+                    type: string
+                  status:
+                    description: status of URL
+                    type: string
+                    enum:
+                      - unknown
+                      - known
+                      - URL pending verification
+                      - verification failed
+              example:
+                {
+                  "dsid": "6eeadb86-84be-11e6-b24c-002590f97d84",
+                  "url": "https://datasets.datalad.org/labs/haxby/raiders/.git",
+                  "status": "known"
+                }
+        "400":
+          $ref: "#/components/responses/invalid-encoded-url"
