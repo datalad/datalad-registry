@@ -22,7 +22,7 @@ components:
       format: uuid
     url_encoded:
       type: string
-      format: base64
+      format: byte
   parameters:
     dsid:
       name: dsid
