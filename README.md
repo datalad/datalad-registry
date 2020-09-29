@@ -14,7 +14,7 @@ these steps are not required to execute the pytest-based test suite.
 
 #### Virtual environment with container for Celery broker
 
-After setting of the virtual environment for the project, execute the
+After setting up the virtual environment for the project, execute the
 following from the top-level of repository.
 
 ```console
