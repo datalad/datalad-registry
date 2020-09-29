@@ -1,3 +1,9 @@
+"""Blueprint for /datasets/<dsid>/urls views
+
+Each function here has a corresponding path in docs/openapi.yml with
+the operationId dataset_urls.{function_name}.{request_method}.
+"""
+
 import logging
 import secrets
 import time
