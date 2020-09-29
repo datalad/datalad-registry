@@ -72,6 +72,8 @@ def test_register_url(client, dsid, tmp_path):
 
     r_post = client.post(f"/v1/datasets/{dsid}/urls", json=d_token)
     assert r_post.status_code == 202
+    data_post = r_post.get_json()
+    assert data_post["url_encoded"] == url_encoded
 
     urls = client.get(f"/v1/datasets/{dsid}/urls").get_json()["urls"]
     assert urls == [url]

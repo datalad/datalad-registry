@@ -149,12 +149,12 @@ paths:
                 properties:
                   dsid:
                     $ref: "#/components/schemas/dsid"
-                  url:
+                  url_encoded:
                     $ref: "#/components/schemas/url_encoded"
               example:
                 {
                   "dsid": "6eeadb86-84be-11e6-b24c-002590f97d84",
-                  "url": "aHR0cHM6Ly9kYXRhc2V0cy5kYXRhbGFkLm9yZy9sYWJzL2hheGJ5L3JhaWRlcnMvLmdpdA=="
+                  "url_encoded": "aHR0cHM6Ly9kYXRhc2V0cy5kYXRhbGFkLm9yZy9sYWJzL2hheGJ5L3JhaWRlcnMvLmdpdA=="
                 }
         "400":
           description: invalid data or unknown token

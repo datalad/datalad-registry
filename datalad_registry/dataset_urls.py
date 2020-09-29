@@ -83,7 +83,7 @@ def urls(dsid):
             tasks.verify_url.delay(dsid, url, token)
             url_encoded = url_encode(url)
             body = {"dsid": dsid,
-                    "url": url_encoded}
+                    "url_encoded": url_encoded}
             location = url_for(".urls", dsid=dsid) + "/" + url_encoded
             return jsonify(body), 202, {"Location": location}
         else:
