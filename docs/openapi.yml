@@ -20,9 +20,11 @@ components:
     dsid:
       type: string
       format: uuid
+      example: 6eeadb86-84be-11e6-b24c-002590f97d84
     url_encoded:
       type: string
       format: byte
+      example: aHR0cHM6Ly9kYXRhc2V0cy5kYXRhbGFkLm9yZy9sYWJzL2hheGJ5L3JhaWRlcnMvLmdpdA==
   parameters:
     dsid:
       name: dsid
@@ -48,6 +50,10 @@ components:
             properties:
               message:
                 type: string
+          example:
+            {
+              "message": "Invalid encoded URL"
+            }
 
 paths:
   /datasets/{dsid}/urls/{url_encoded}/token:
@@ -134,6 +140,12 @@ paths:
                   type: string
                 ref:
                   type: string
+            example:
+              {
+                "url": "https://datasets.datalad.org/labs/haxby/raiders/.git",
+                "token": "0612a88655746eb05d73732e9cc5ea289253a53b",
+                "ref": "refs/datalad-registry/0612a88655746eb05d73732e9cc5ea289253a53b"
+              }
       responses:
         "202":
           description: URL submitted
@@ -165,6 +177,10 @@ paths:
                 properties:
                   message:
                     type: string
+              example:
+                {
+                  "message": "Unknown token"
+                }
         "410":
           description: expired token
           content:
@@ -174,6 +190,10 @@ paths:
                 properties:
                   message:
                     type: string
+              example:
+                {
+                  "message": "Expired token"
+                }
   /datasets/{dsid}/urls/{url_encoded}:
     parameters:
       - $ref: "#/components/parameters/dsid"
