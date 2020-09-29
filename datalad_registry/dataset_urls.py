@@ -87,7 +87,7 @@ def urls(dsid):
             location = url_for(".urls", dsid=dsid) + "/" + url_encoded
             return jsonify(body), 202, {"Location": location}
         else:
-            return jsonify(error="Expired token"), 410
+            return jsonify(message="Expired token"), 410
 
 
 @bp.route("<uuid:dsid>/urls/<string:url_encoded>")

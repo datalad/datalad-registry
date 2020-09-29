@@ -172,7 +172,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  error:
+                  message:
                     type: string
   /datasets/{dsid}/urls/{url_encoded}:
     parameters:

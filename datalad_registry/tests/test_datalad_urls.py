@@ -97,6 +97,7 @@ def test_register_url_expired_token(client, dsid, tmp_path):
     with patch("datalad_registry.dataset_urls._TOKEN_TTL", 0):
         r_post = client.post(f"/v1/datasets/{dsid}/urls", json=d_token)
     assert r_post.status_code == 410
+    assert "message" in r_post.get_json()
 
 
 def test_register_url_failed_verification(client, dsid, tmp_path):
