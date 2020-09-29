@@ -29,13 +29,14 @@ $ ./flask run
 Alternatively, do the following from the top-level of repository.
 
 ```console
-$ mkdir -p instance
-$ sqlite3 <datalad_registry/schema.sql instance/registry.sqlite
 $ docker-compose up
 ```
 
-With a virtual environment set up and activated, the first and second
-steps above can be replaced by `./flask init-db`.
+With a virtual environment activated, the database at
+instance/registry.sqlite can optionally be initiated before executing
+the above command by running `./flask init-db`.  This makes inspecting
+the database from the local machine easier because the permissions
+will match the local user's.
 
 #### Sample request
 
