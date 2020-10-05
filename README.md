@@ -19,7 +19,7 @@ following from the top-level of repository.
 
 ```console
 $ docker-compose -f docker-compose.broker.yml up -d
-$ python -m celery worker -A datalad_registry.runcelery.celery &
+$ python -m celery -A datalad_registry.runcelery.celery worker &
 $ ./flask init-db
 $ ./flask run
 ```

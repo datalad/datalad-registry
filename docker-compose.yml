@@ -29,7 +29,7 @@ services:
     build: .
     depends_on:
       - broker
-    command: [celery, worker, -A, datalad_registry.runcelery.celery]
+    command: [celery, -A, datalad_registry.runcelery.celery, worker]
     volumes:
       - ./instance:/app/instance
     environment:
