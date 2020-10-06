@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -eu
+
+export DATALAD_REGISTRY_LOG_LEVEL="DEBUG"
+export FLASK_APP=datalad_registry.factory:create_app
+export FLASK_ENV=development
+
+docker-compose -f docker-compose.broker.yml up &
+mkdir -p instance
+python -m flask init-db
+python -m celery -A datalad_registry.runcelery.celery worker &
+python -m flask run

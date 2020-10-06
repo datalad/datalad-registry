@@ -18,10 +18,7 @@ After setting up the virtual environment for the project, execute the
 following from the top-level of repository.
 
 ```console
-$ docker-compose -f docker-compose.broker.yml up -d
-$ python -m celery -A datalad_registry.runcelery.celery worker &
-$ ./flask init-db
-$ ./flask run
+$ ./up
 ```
 
 #### Containers for Flask app, Celery broker, and Celery worker
