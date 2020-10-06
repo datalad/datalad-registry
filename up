@@ -12,4 +12,7 @@ mkdir -p instance
 python -m flask init-db
 python -m celery -A datalad_registry.runcelery.celery worker \
        --loglevel "$DATALAD_REGISTRY_LOG_LEVEL" &
+python -m celery -A datalad_registry.runcelery.celery beat \
+       --loglevel "$DATALAD_REGISTRY_LOG_LEVEL" \
+       --schedule instance/celerybeat-schedule &
 python -m flask run

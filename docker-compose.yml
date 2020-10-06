@@ -34,3 +34,12 @@ services:
       - ./instance:/app/instance
     environment:
       <<: *env
+  scheduler:
+    build: .
+    depends_on:
+      - broker
+    command: [celery, -A, datalad_registry.runcelery.celery, beat]
+    volumes:
+      - ./instance:/app/instance
+    environment:
+      <<: *env
