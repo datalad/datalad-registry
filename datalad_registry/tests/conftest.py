@@ -15,7 +15,7 @@ def dsid():
     return str(uuid.UUID(int=random.getrandbits(128)))
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def client(tmp_path_factory):
     tmp_path = tmp_path_factory.mktemp("db")
     db_uri = "sqlite:///" + str(tmp_path / "registry.sqlite3")
