@@ -9,7 +9,7 @@ from datalad_registry.models import Token
 lgr = logging.getLogger(__name__)
 
 
-@celery.task()
+@celery.task
 def verify_url(dsid, url, token):
     """Check that `url` has a challenge reference for `token`.
     """
