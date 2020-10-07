@@ -2,6 +2,7 @@ import logging
 import os
 from pathlib import Path
 
+from celery.schedules import crontab
 from flask import Flask
 from flask.logging import default_handler
 
@@ -30,6 +31,11 @@ def _setup_logging():
 
 
 def setup_celery(app, celery):
+    celery.conf.beat_schedule = {
+        "prune_old_tokens": {
+            "task": "datalad_registry.tasks.prune_old_tokens",
+            "schedule": crontab(hour=4, minute=0)},
+    }
     celery.config_from_object(app.config, namespace="CELERY")
 
     class ContextTask(celery.Task):

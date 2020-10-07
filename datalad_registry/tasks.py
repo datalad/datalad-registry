@@ -1,5 +1,6 @@
 import logging
 import subprocess as sp
+import time
 
 from datalad_registry import celery
 from datalad_registry.models import db
@@ -30,4 +31,22 @@ def verify_url(dsid, url, token):
             db.session.add(URL(dsid=dsid, url=url))
     db.session.query(Token).filter_by(token=token).update(
         {"status": status})
+    db.session.commit()
+
+
+@celery.task
+def prune_old_tokens(cutoff=None):
+    """Remove old tokens from the database.
+
+    Parameters
+    ----------
+    cutoff : int, optional
+        Remove tokens with a timestamp (seconds since the Epoch)
+        earlier than this value.  By default, a timestamp
+        corresponding to ten days before the current time is used.
+    """
+    if cutoff is None:
+        cutoff = time.time() - 864000  # 10 days ago
+    lgr.info("Pruning tokens before %s from %s", cutoff, db)
+    db.session.query(Token).filter(Token.ts < cutoff).delete()
     db.session.commit()

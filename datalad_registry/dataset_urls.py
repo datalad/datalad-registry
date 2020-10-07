@@ -41,7 +41,6 @@ def token(dsid, url_encoded):
         dsid = str(dsid)
         lgr.info("Generated token %s for %s => %s", token, url, dsid)
 
-        # TODO: Add separate script to prune old tokens.
         db.session.add(
             Token(token=token, dsid=dsid, url=url, ts=time.time(), status=0))
         db.session.commit()
