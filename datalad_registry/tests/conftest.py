@@ -16,12 +16,10 @@ def dsid():
 
 
 @pytest.fixture
-def client(tmp_path_factory):
-    tmp_path = tmp_path_factory.mktemp("db")
-    db_uri = "sqlite:///" + str(tmp_path / "registry.sqlite3")
+def client():
     config = {"CELERY_BEAT_SCHEDULE": {},
               "CELERY_TASK_ALWAYS_EAGER": True,
-              "SQLALCHEMY_DATABASE_URI": db_uri,
+              "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
               "TESTING": True}
     app = create_app(config)
     with app.test_client() as client:
