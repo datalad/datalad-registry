@@ -14,7 +14,7 @@ services:
       RABBITMQ_DEFAULT_PASS: password
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_VHOST: /
-    command: [flask, run, --host=0.0.0.0]
+    command: [sh, -c, "flask init-db && flask run --host=0.0.0.0"]
     volumes:
       - ./instance:/app/instance
   broker:
