@@ -30,7 +30,7 @@ def _setup_logging():
 
 
 def setup_celery(app, celery):
-    celery.conf.update(app.config)
+    celery.config_from_object(app.config, namespace="CELERY")
 
     class ContextTask(celery.Task):
         def __call__(self, *args, **kwargs):

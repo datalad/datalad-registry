@@ -19,7 +19,7 @@ def dsid():
 def client(tmp_path_factory):
     tmp_path = tmp_path_factory.mktemp("db")
     db_uri = "sqlite:///" + str(tmp_path / "registry.sqlite3")
-    config = {"CELERY_ALWAYS_EAGER": True,
+    config = {"CELERY_TASK_ALWAYS_EAGER": True,
               "SQLALCHEMY_DATABASE_URI": db_uri,
               "TESTING": True}
     app = create_app(config)
