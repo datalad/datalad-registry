@@ -1,4 +1,5 @@
 from collections import namedtuple
+import os
 import uuid
 from random import Random
 
@@ -19,7 +20,7 @@ def dsid():
 
 
 @pytest.fixture
-def app_instance():
+def app_instance(tmp_path_factory):
     """Fixture that provides the application, database, and client.
 
     If you just need the client, you can use the `client` fixture
@@ -29,9 +30,15 @@ def app_instance():
     ------
     AppInstance namedtuple with app, db, and client fields.
     """
+    if "DATALAD_REGISTRY_TESTS_DISK_DB" in os.environ:
+        tmp_path = tmp_path_factory.mktemp("db")
+        db_uri = "sqlite:///" + str(tmp_path / "registry.sqlite3")
+    else:
+        db_uri = "sqlite:///:memory:"
+
     config = {"CELERY_BEAT_SCHEDULE": {},
               "CELERY_TASK_ALWAYS_EAGER": True,
-              "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+              "SQLALCHEMY_DATABASE_URI": db_uri,
               "TESTING": True}
     app = create_app(config)
     with app.test_client() as client:
