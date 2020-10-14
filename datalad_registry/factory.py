@@ -63,6 +63,7 @@ def create_app(test_config=None):
         config_obj = "datalad_registry.config.DevelopmentConfig"
     app.config.from_object(config_obj)
 
+    app.config.from_envvar("DATALAD_REGISTRY_CONFIG", silent=True)
     if test_config:
         app.config.from_mapping(test_config)
 
