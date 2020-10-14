@@ -1,5 +1,4 @@
 import logging
-import os
 from pathlib import Path
 
 from celery.schedules import crontab
@@ -12,21 +11,9 @@ from datalad_registry.models import db
 from datalad_registry.models import init_db_command
 
 
-def _log_level():
-    env = os.environ.get("DATALAD_REGISTRY_LOG_LEVEL")
-    if env:
-        try:
-            level = int(env)
-        except ValueError:
-            level = env.upper()
-    else:
-        level = "INFO"
-    return level
-
-
-def _setup_logging():
+def _setup_logging(level):
     lgr = logging.getLogger("datalad_registry")
-    lgr.setLevel(_log_level())
+    lgr.setLevel(level)
     lgr.addHandler(default_handler)
 
 
@@ -48,8 +35,6 @@ def setup_celery(app, celery):
 
 
 def create_app(test_config=None):
-    _setup_logging()
-
     app = Flask(__name__)
     instance_path = Path(app.instance_path)
     db_uri = "sqlite:///" + str(instance_path / "registry.sqlite")
@@ -66,6 +51,8 @@ def create_app(test_config=None):
     app.config.from_envvar("DATALAD_REGISTRY_CONFIG", silent=True)
     if test_config:
         app.config.from_mapping(test_config)
+
+    _setup_logging(app.config["DATALAD_REGISTRY_LOG_LEVEL"])
 
     instance_path.mkdir(parents=True, exist_ok=True)
     setup_celery(app, celery)
