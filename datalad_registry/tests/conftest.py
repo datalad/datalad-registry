@@ -19,8 +19,13 @@ def dsid():
     return str(uuid.UUID(int=random.getrandbits(128)))
 
 
+@pytest.fixture(scope="session")
+def cache_dir(tmp_path_factory):
+    return tmp_path_factory.mktemp("cache_dir")
+
+
 @pytest.fixture
-def app_instance(tmp_path_factory):
+def app_instance(tmp_path_factory, cache_dir):
     """Fixture that provides the application, database, and client.
 
     If you just need the client, you can use the `client` fixture
@@ -38,6 +43,7 @@ def app_instance(tmp_path_factory):
 
     config = {"CELERY_BEAT_SCHEDULE": {},
               "CELERY_TASK_ALWAYS_EAGER": True,
+              "DATALAD_REGISTRY_DATASET_CACHE": str(cache_dir),
               "SQLALCHEMY_DATABASE_URI": db_uri,
               "TESTING": True}
     app = create_app(config)

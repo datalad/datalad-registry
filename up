@@ -2,6 +2,8 @@
 
 set -eu
 
+: "${DATALAD_REGISTRY_DATASET_CACHE:=$PWD/instance/cache}"
+export DATALAD_REGISTRY_DATASET_CACHE
 : "${DATALAD_REGISTRY_LOG_LEVEL:=DEBUG}"
 export DATALAD_REGISTRY_LOG_LEVEL
 export FLASK_APP=datalad_registry.factory:create_app

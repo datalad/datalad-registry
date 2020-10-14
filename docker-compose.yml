@@ -8,6 +8,7 @@ services:
       - "5000:5000"
     environment: &env
       CELERY_BROKER_URL: "amqp://user:password@broker:5672"
+      DATALAD_REGISTRY_DATASET_CACHE: /app/instance/cache
       DATALAD_REGISTRY_LOG_LEVEL: DEBUG
       FLASK_APP: datalad_registry.factory:create_app
       FLASK_ENV: development

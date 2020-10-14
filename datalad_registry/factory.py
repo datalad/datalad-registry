@@ -10,6 +10,8 @@ from datalad_registry import dataset_urls
 from datalad_registry.models import db
 from datalad_registry.models import init_db_command
 
+lgr = logging.getLogger(__name__)
+
 
 def _setup_logging(level):
     lgr = logging.getLogger("datalad_registry")
@@ -23,6 +25,15 @@ def setup_celery(app, celery):
             "task": "datalad_registry.tasks.prune_old_tokens",
             "schedule": crontab(hour=4, minute=0)},
     }
+    cache_dir = app.config.get("DATALAD_REGISTRY_DATASET_CACHE")
+    if cache_dir:
+        celery.conf.beat_schedule["collect_git_info"] = {
+            "task": "datalad_registry.tasks.collect_git_info",
+            "schedule": crontab(hour="*/3", minute=30)}
+    else:
+        lgr.debug("DATALAD_REGISTRY_DATASET_CACHE isn't configured. "
+                  "Not registering periodic tasks that depend on it")
+
     celery.config_from_object(app.config, namespace="CELERY")
 
     class ContextTask(celery.Task):
