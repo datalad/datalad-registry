@@ -52,13 +52,17 @@ def create_app(test_config=None):
 
     app = Flask(__name__)
     instance_path = Path(app.instance_path)
-    broker_url = os.environ.get("CELERY_BROKER_URL",
-                                "amqp://localhost:5672")
     db_uri = "sqlite:///" + str(instance_path / "registry.sqlite")
     app.config.from_mapping(
-        CELERY_BROKER_URL=broker_url,
         SQLALCHEMY_DATABASE_URI=db_uri,
         SQLALCHEMY_TRACK_MODIFICATIONS=False)
+
+    if app.config["ENV"] == "production" and not test_config:
+        raise RuntimeError("Not ready yet")
+    else:
+        config_obj = "datalad_registry.config.DevelopmentConfig"
+    app.config.from_object(config_obj)
+
     if test_config:
         app.config.from_mapping(test_config)
 
