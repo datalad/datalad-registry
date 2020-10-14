@@ -4,9 +4,6 @@ from unittest.mock import patch
 
 from datalad_registry.utils import url_encode
 
-# ATTN: `client` is a session-level fixture, so the database is shared
-# across tests.
-
 
 def test_token_get(client, dsid):
     url = "doesnt.matter"
