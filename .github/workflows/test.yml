@@ -1,0 +1,38 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Configure environment
+      run: |
+        git config --global user.name dl-registry
+        git config --global user.email dl-registry@example.com
+    - name: Install git-annex
+      shell: bash
+      run: |
+        bash <(wget -q -O- http://neuro.debian.net/_files/neurodebian-travis.sh)
+        sudo apt-get update -qq
+        sudo apt-get install eatmydata
+        sudo eatmydata apt-get install git-annex-standalone
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install wheel
+        pip install .
+        pip install .[tests]
+    - name: Run tests
+      run: python -m pytest datalad_registry
