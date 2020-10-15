@@ -15,4 +15,4 @@ COPY pyproject.toml pyproject.toml
 COPY setup.cfg setup.cfg
 COPY setup.py setup.py
 
-RUN pip3 install . && mkdir -p instance
+RUN pip3 install wheel && pip3 install . && mkdir -p instance
