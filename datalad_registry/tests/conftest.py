@@ -26,17 +26,8 @@ def cache_dir(tmp_path_factory):
     return tmp_path_factory.mktemp("cache_dir")
 
 
-@pytest.fixture
-def app_instance(tmp_path_factory, cache_dir):
-    """Fixture that provides the application, database, and client.
-
-    If you just need the client, you can use the `client` fixture
-    instead.
-
-    Yields
-    ------
-    AppInstance namedtuple with app, db, and client fields.
-    """
+@pytest.fixture(scope="session")
+def _app_instance(tmp_path_factory, cache_dir):
     if "DATALAD_REGISTRY_TESTS_DISK_DB" in os.environ:
         tmp_path = tmp_path_factory.mktemp("db")
         db_uri = "sqlite:///" + str(tmp_path / "registry.sqlite3")
@@ -50,9 +41,27 @@ def app_instance(tmp_path_factory, cache_dir):
               "TESTING": True}
     app = create_app(config)
     with app.test_client() as client:
-        with app.app_context():
-            db.create_all()
         yield AppInstance(app, db, client)
+
+
+@pytest.fixture
+def app_instance(_app_instance):
+    """Fixture that provides the application, database, and client.
+
+    If you just need the client, you can use the `client` fixture
+    instead.
+
+    Yields
+    ------
+    AppInstance namedtuple with app, db, and client fields.
+    """
+    with _app_instance.app.app_context():
+        # Drop here, rather than after the yield, to support running a
+        # single test and inspecting the database afterwards when
+        # DATALAD_REGISTRY_TESTS_DISK_DB is set.
+        db.drop_all()
+        db.create_all()
+        yield _app_instance
 
 
 @pytest.fixture
