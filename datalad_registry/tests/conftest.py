@@ -16,11 +16,13 @@ AppInstance = namedtuple("AppInstance", ["app", "db", "client"])
 
 @pytest.fixture
 def dsid():
+    """Return a random dataset ID."""
     return str(uuid.UUID(int=random.getrandbits(128)))
 
 
 @pytest.fixture(scope="session")
 def cache_dir(tmp_path_factory):
+    """Return temporary location of DATALAD_REGISTRY_DATASET_CACHE."""
     return tmp_path_factory.mktemp("cache_dir")
 
 
