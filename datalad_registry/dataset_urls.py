@@ -89,19 +89,20 @@ def urls(dsid):
             return jsonify(message="Expired token"), 410
 
 
-@bp.route("<uuid:dsid>/urls/<string:url_encoded>")
+@bp.route("<uuid:dsid>/urls/<string:url_encoded>", methods=["GET", "PATCH"])
 def url(dsid, url_encoded):
-    if request.method == "GET":
-        dsid = str(dsid)
-        try:
-            url = url_decode(url_encoded)
-        except InvalidURL:
-            return jsonify(message="Invalid encoded URL"), 400
+    dsid = str(dsid)
+    try:
+        url = url_decode(url_encoded)
+    except InvalidURL:
+        return jsonify(message="Invalid encoded URL"), 400
 
+    result = db.session.query(URL).filter_by(url=url, dsid=dsid)
+    row_known = result.first()
+
+    if request.method == "GET":
         lgr.info("Checking status of registering %s as URL of %s",
                  url, dsid)
-        row_known = db.session.query(URL).filter_by(
-            url=url, dsid=dsid).first()
         if row_known is None:
             status = "unknown"
             max_status, = db.session.query(
@@ -114,3 +115,9 @@ def url(dsid, url_encoded):
 
         lgr.debug("Status for %s: %s", url, status)
         return jsonify(dsid=dsid, url=url, status=status)
+    elif request.method == "PATCH":
+        if row_known is None:
+            return jsonify(message="Invalid encoded URL"), 404
+        result.update({"update_announced": 1})
+        db.session.commit()
+        return "", 202

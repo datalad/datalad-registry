@@ -118,3 +118,32 @@ def test_collect_git_info_just_init(app_instance, tmp_path):
         branches = set(ln.split()[1] for ln in res.branches.splitlines())
         assert branches == set(ds.repo.get_branches())
         assert not res.tags.strip()
+
+
+@pytest.mark.slow
+def test_collect_git_info_announced_update(app_instance, tmp_path):
+    import datalad.api as dl
+
+    ds = dl.Dataset(tmp_path / "ds").create()
+    ds.repo.call_git(["commit", "--allow-empty", "-mc1"])
+    ds.repo.tag("v1")
+
+    url = "file:///" + ds.path
+    _register(ds, url, app_instance.client)
+
+    with app_instance.app.app_context():
+        ses = app_instance.db.session
+        tasks.collect_git_info()
+        res = ses.query(URL).filter_by(url=url).one()
+        assert res.head == ds.repo.get_hexsha()
+        assert res.head_describe == "v1"
+
+        ds.repo.call_git(["commit", "--allow-empty", "-mc2"])
+        ds.repo.tag("v2", message="Version 2")
+
+        url_encoded = url_encode(url)
+        app_instance.client.patch(f"/v1/datasets/{ds.id}/urls/{url_encoded}")
+        tasks.collect_git_info()
+        res = ses.query(URL).filter_by(url=url).one()
+        assert res.head == ds.repo.get_hexsha()
+        assert res.head_describe == "v2"

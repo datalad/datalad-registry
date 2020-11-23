@@ -46,6 +46,13 @@ def test_url_bad_url_get(client, dsid, bad_url):
     assert response.status_code == 400
 
 
+def test_url_unnkown_url_announce(client, dsid):
+    url = "doesnt.matter"
+    url_encoded = url_encode(url)
+    response = client.patch(f"/v1/datasets/{dsid}/urls/{url_encoded}")
+    assert response.status_code == 404
+
+
 def test_register_url(client, dsid, tmp_path):
     dset = tmp_path / "ds"
     dset.mkdir()

@@ -229,3 +229,13 @@ paths:
                 }
         "400":
           $ref: "#/components/responses/invalid-encoded-url"
+    patch:
+      summary: Announce that dataset at URL has been updated
+      operationId: dataset_urls.url.patch
+      responses:
+        "202":
+          description: Announcement received
+        "400":
+          $ref: "#/components/responses/invalid-encoded-url"
+        "404":
+          description: Unknown URL

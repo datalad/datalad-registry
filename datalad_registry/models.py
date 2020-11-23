@@ -51,6 +51,7 @@ class URL(db.Model):
     url = db.Column(db.Text, primary_key=True)
     dsid = db.Column(db.Text, nullable=False)
     info_ts = db.Column(db.Integer)
+    update_announced = db.Column(db.Integer)
     head = db.Column(db.Text)
     head_describe = db.Column(db.Text)
     branches = db.Column(db.Text)

@@ -94,11 +94,15 @@ def collect_git_info(urls=None):
                 # Work on a few at a time, letting remaining be
                 # handled by next task.
                 #
-                # TODO: Think about better ways to handle this.
+                # TODO: Think about better ways to handle this (here
+                # and for the update_announced query below).
                 for r in ses.query(URL).filter_by(info_ts=None).limit(3)]
-        # TODO: Look at info_ts timestamp (and other criteria,
-        # including announced update) and refresh previous
+        # TODO: Look at info_ts timestamp and refresh previous
         # information.
+        if not urls:
+            urls = [r.url
+                    for r in ses.query(URL).filter_by(update_announced=1)
+                    .limit(3)]
     if not urls:
         lgr.debug("Did not find URLs that needed information collected")
         return
@@ -118,5 +122,6 @@ def collect_git_info(urls=None):
 
         info = _extract_git_info(str(ds_path))
         info["info_ts"] = time.time()
+        info["update_announced"] = 0
         db.session.query(URL).filter_by(url=url).update(info)
     db.session.commit()
