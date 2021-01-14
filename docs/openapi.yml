@@ -239,3 +239,28 @@ paths:
           $ref: "#/components/responses/invalid-encoded-url"
         "404":
           description: Unknown URL
+  /datasets:
+    get:
+      summary: Return list of known dataset IDs
+      operationId: datasets.datasets.get
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of known dataset IDs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dsids:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/dsid"
+              example:
+                {
+                  "dsids": ["6eeadb86-84be-11e6-b24c-002590f97d84"]
+                }
