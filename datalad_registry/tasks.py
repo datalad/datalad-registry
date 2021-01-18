@@ -54,17 +54,7 @@ def prune_old_tokens(cutoff=None):
     db.session.commit()
 
 
-def _extract_git_info(path):
-    commands = {
-        "head": ["git", "rev-parse", "--verify", "HEAD"],
-        "head_describe": ["git", "describe", "--tags"],
-        "branches": ["git", "for-each-ref", "--sort=-creatordate",
-                     "--format=%(objectname) %(refname:lstrip=2)",
-                     "refs/heads/"],
-        "tags": ["git", "for-each-ref", "--sort=-creatordate",
-                 "--format=%(objectname) %(refname:lstrip=2)",
-                 "refs/tags/"],
-    }
+def _extract_info(path, commands):
     info = {}
     for name, command in commands.items():
         lgr.debug("Running %s in %s", command, path)
@@ -77,6 +67,19 @@ def _extract_git_info(path):
                         "\nstderr: %s",
                         command, path, res.returncode, res.stderr)
     return info
+
+
+def _extract_git_info(path):
+    return _extract_info(
+        path,
+        {"head": ["git", "rev-parse", "--verify", "HEAD"],
+         "head_describe": ["git", "describe", "--tags"],
+         "branches": ["git", "for-each-ref", "--sort=-creatordate",
+                      "--format=%(objectname) %(refname:lstrip=2)",
+                      "refs/heads/"],
+         "tags": ["git", "for-each-ref", "--sort=-creatordate",
+                  "--format=%(objectname) %(refname:lstrip=2)",
+                  "refs/tags/"]})
 
 
 @celery.task
