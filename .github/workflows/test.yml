@@ -32,7 +32,10 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install wheel
+        pip install codecov
         pip install .
         pip install .[tests]
     - name: Run tests
-      run: python -m pytest datalad_registry
+      run: coverage run -m pytest datalad_registry && coverage xml
+    - name: Upload coverage to codecov
+      uses: codecov/codecov-action@v1
