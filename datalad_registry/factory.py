@@ -6,6 +6,7 @@ from flask import Flask
 from flask.logging import default_handler
 
 from datalad_registry import celery
+from datalad_registry import datasets
 from datalad_registry import dataset_urls
 from datalad_registry.models import db
 from datalad_registry.models import init_db_command
@@ -69,5 +70,6 @@ def create_app(test_config=None):
     setup_celery(app, celery)
     db.init_app(app)
     app.cli.add_command(init_db_command)
+    app.register_blueprint(datasets.bp)
     app.register_blueprint(dataset_urls.bp)
     return app

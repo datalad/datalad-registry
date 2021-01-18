@@ -1,8 +1,8 @@
 import pytest
-import subprocess as sp
 from unittest.mock import patch
 
 from datalad_registry.utils import url_encode
+from datalad_registry.tests.utils import init_repo_with_token
 
 
 def test_token_get(client, dsid):
@@ -70,9 +70,7 @@ def test_register_url(client, dsid, tmp_path):
 
     assert get_status() == "token requested"
 
-    sp.run(["git", "init"], cwd=str(dset))
-    sp.run(["git", "commit", "--allow-empty", "-mc0"], cwd=str(dset))
-    sp.run(["git", "update-ref", d_token["ref"], "HEAD"], cwd=str(dset))
+    init_repo_with_token(str(dset), d_token)
 
     r_post = client.post(f"/v1/datasets/{dsid}/urls", json=d_token)
     assert r_post.status_code == 202

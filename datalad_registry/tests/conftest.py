@@ -1,15 +1,12 @@
 from collections import namedtuple
 import os
-import uuid
-from random import Random
 
 import pytest
 
 from datalad_registry.factory import create_app
 from datalad_registry.models import db
+from datalad_registry.tests.utils import make_dsid
 
-random = Random()
-random.seed("datalad-registry")
 
 AppInstance = namedtuple("AppInstance", ["app", "db", "client"])
 
@@ -17,7 +14,7 @@ AppInstance = namedtuple("AppInstance", ["app", "db", "client"])
 @pytest.fixture
 def dsid():
     """Return a random dataset ID."""
-    return str(uuid.UUID(int=random.getrandbits(128)))
+    return make_dsid()
 
 
 @pytest.fixture(scope="session")
