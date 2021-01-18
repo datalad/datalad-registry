@@ -115,15 +115,16 @@ def collect_dataset_info(urls=None):
 
     for url in urls:
         ds_path = cache_dir / url_encode(url)
+        ds_path_str = str(ds_path)
         # TODO: Assuming the same clone is used to collect information
         # with datalad, need to switch away from mirroring.
         if ds_path.exists():
-            sp.run(["git", "fetch"], cwd=str(ds_path))
+            sp.run(["git", "fetch"], cwd=ds_path_str)
         else:
             sp.run(["git", "clone", "--mirror", "--template=",
-                    url, str(ds_path)])
+                    url, ds_path_str])
 
-        info = _extract_git_info(str(ds_path))
+        info = _extract_git_info(ds_path_str)
         info["info_ts"] = time.time()
         info["update_announced"] = 0
         db.session.query(URL).filter_by(url=url).update(info)
