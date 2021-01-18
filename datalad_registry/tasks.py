@@ -82,6 +82,12 @@ def _extract_git_info(path):
                   "refs/tags/"]})
 
 
+def _extract_annex_info(path):
+    return _extract_info(
+        path,
+        {"annex_uuid": ["git", "config", "remote.origin.annex-uuid"]})
+
+
 @celery.task
 def collect_dataset_info(urls=None):
     """Collect information about the dataset at each URL in `urls`.
@@ -123,8 +129,10 @@ def collect_dataset_info(urls=None):
         else:
             sp.run(["git", "clone", "--mirror", "--template=",
                     url, ds_path_str])
+            sp.run(["git", "annex", "init"], cwd=ds_path_str)
 
         info = _extract_git_info(ds_path_str)
+        info.update(_extract_annex_info(ds_path_str))
         info["info_ts"] = time.time()
         info["update_announced"] = 0
         db.session.query(URL).filter_by(url=url).update(info)

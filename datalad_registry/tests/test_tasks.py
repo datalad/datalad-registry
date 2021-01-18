@@ -82,6 +82,7 @@ def test_collect_dataset_info(app_instance, tmp_path):
         res = ses.query(URL).filter_by(url=url).one()
         assert res.head == repo.get_hexsha()
         assert res.head_describe == "v2"
+        assert res.annex_uuid == repo.uuid
         branches = set(ln.split()[1] for ln in res.branches.splitlines())
         assert branches == set(repo.get_branches())
         tags = set(ln.split()[1] for ln in res.tags.splitlines())
@@ -117,6 +118,7 @@ def test_collect_dataset_info_just_init(app_instance, tmp_path):
         res = ses.query(URL).filter_by(url=url).one()
         assert res.head == repo.get_hexsha()
         assert res.head_describe is None
+        assert res.annex_uuid == repo.uuid
         branches = set(ln.split()[1] for ln in res.branches.splitlines())
         assert branches == set(repo.get_branches())
         assert not res.tags.strip()
@@ -140,6 +142,7 @@ def test_collect_dataset_info_announced_update(app_instance, tmp_path):
         res = ses.query(URL).filter_by(url=url).one()
         assert res.head == repo.get_hexsha()
         assert res.head_describe == "v1"
+        assert res.annex_uuid == repo.uuid
 
         repo.call_git(["commit", "--allow-empty", "-mc2"])
         repo.tag("v2", message="Version 2")
