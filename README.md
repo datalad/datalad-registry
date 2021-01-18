@@ -43,7 +43,7 @@ above.
 ```console
 $ curl http://127.0.1:5000/v1/datasets/6eeadb86-84be-11e6-b24c-002590f97d84/urls
 {
-  "dsid": "6eeadb86-84be-11e6-b24c-002590f97d84",
+  "ds_id": "6eeadb86-84be-11e6-b24c-002590f97d84",
   "urls": []
 }
 ```

@@ -6,7 +6,7 @@ random = Random()
 random.seed("datalad-registry")
 
 
-def make_dsid():
+def make_ds_id():
     """Generate a dataset ID like DataLad would.
 
     This is intended for lightweight tests that don't create

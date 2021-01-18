@@ -27,7 +27,7 @@ class Token(db.Model):
     __tablename__ = "tokens"
 
     token = db.Column(db.Text, primary_key=True)
-    dsid = db.Column(db.Text, nullable=False)
+    ds_id = db.Column(db.Text, nullable=False)
     url = db.Column(db.Text, nullable=False)
     ts = db.Column(db.Integer, nullable=False)
 
@@ -40,7 +40,7 @@ class Token(db.Model):
 
     def __repr__(self):
         return (f"<Token(token={self.token!r}, "
-                f"dsid={self.dsid!r}, url={self.url!r}, "
+                f"ds_id={self.ds_id!r}, url={self.url!r}, "
                 f"ts={self.ts}, status={self.status})>")
 
 
@@ -49,7 +49,7 @@ class URL(db.Model):
     __tablename__ = "urls"
 
     url = db.Column(db.Text, primary_key=True)
-    dsid = db.Column(db.Text, nullable=False)
+    ds_id = db.Column(db.Text, nullable=False)
     info_ts = db.Column(db.Integer)
     update_announced = db.Column(db.Integer)
     head = db.Column(db.Text)
@@ -58,7 +58,7 @@ class URL(db.Model):
     tags = db.Column(db.Text)
 
     def __repr__(self):
-        return f"<URL(url={self.url!r}, dsid={self.dsid!r})>"
+        return f"<URL(url={self.url!r}, ds_id={self.ds_id!r})>"
 
 
 @click.command("init-db")
