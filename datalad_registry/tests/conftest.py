@@ -5,16 +5,16 @@ import pytest
 
 from datalad_registry.factory import create_app
 from datalad_registry.models import db
-from datalad_registry.tests.utils import make_dsid
+from datalad_registry.tests.utils import make_ds_id
 
 
 AppInstance = namedtuple("AppInstance", ["app", "db", "client"])
 
 
 @pytest.fixture
-def dsid():
+def ds_id():
     """Return a random dataset ID."""
-    return make_dsid()
+    return make_ds_id()
 
 
 @pytest.fixture(scope="session")

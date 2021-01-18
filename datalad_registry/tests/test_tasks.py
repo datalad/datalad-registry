@@ -8,15 +8,15 @@ from datalad_registry.models import URL
 from datalad_registry.utils import url_encode
 
 
-def test_prune_old_tokens(app_instance, dsid):
+def test_prune_old_tokens(app_instance, ds_id):
     ts_now = int(time.time())
     ts_15days = ts_now - 1296000
     with app_instance.app.app_context():
         ses = app_instance.db.session
         assert ses.query(Token).count() == 0
-        ses.add(Token(ts=ts_now, token="now-ish", dsid=dsid,
+        ses.add(Token(ts=ts_now, token="now-ish", ds_id=ds_id,
                       url="https://now-ish", status=0))
-        ses.add(Token(ts=ts_15days, token="15-days-ago", dsid=dsid,
+        ses.add(Token(ts=ts_15days, token="15-days-ago", ds_id=ds_id,
                       url="https://15-days-ago", status=0))
         ses.commit()
 
@@ -25,14 +25,14 @@ def test_prune_old_tokens(app_instance, dsid):
         assert [r.token for r in ses.query(Token)] == ["now-ish"]
 
 
-def test_prune_old_tokens_explcit_cutoff(app_instance, dsid):
+def test_prune_old_tokens_explcit_cutoff(app_instance, ds_id):
     with app_instance.app.app_context():
         ses = app_instance.db.session
         assert ses.query(Token).count() == 0
 
         ts = 1602083381
         for idx, token in enumerate("abcd"):
-            ses.add(Token(ts=ts + idx, token=token, dsid=dsid,
+            ses.add(Token(ts=ts + idx, token=token, ds_id=ds_id,
                           url="https://" + token, status=0))
         ses.commit()
 
@@ -47,12 +47,12 @@ def test_collect_git_info_empty(app_instance):
 
 
 def _register(ds, url, client):
-    dsid = ds.id
+    ds_id = ds.id
     url_encoded = url_encode(url)
     d_token = client.get(
-        f"/v1/datasets/{dsid}/urls/{url_encoded}/token").get_json()
+        f"/v1/datasets/{ds_id}/urls/{url_encoded}/token").get_json()
     ds.repo.call_git(["update-ref", d_token["ref"], "HEAD"])
-    client.post(f"/v1/datasets/{dsid}/urls", json=d_token)
+    client.post(f"/v1/datasets/{ds_id}/urls", json=d_token)
 
 
 @pytest.mark.slow
@@ -73,7 +73,7 @@ def test_collect_git_info(app_instance, tmp_path):
     with app_instance.app.app_context():
         ses = app_instance.db.session
         res = ses.query(URL).filter_by(url=url).one()
-        assert res.dsid == ds.id
+        assert res.ds_id == ds.id
         assert res.head is None
 
         tasks.collect_git_info()
@@ -107,7 +107,7 @@ def test_collect_git_info_just_init(app_instance, tmp_path):
     with app_instance.app.app_context():
         ses = app_instance.db.session
         res = ses.query(URL).filter_by(url=url).one()
-        assert res.dsid == ds.id
+        assert res.ds_id == ds.id
         assert res.head is None
 
         tasks.collect_git_info()

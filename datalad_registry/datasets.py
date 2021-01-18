@@ -20,8 +20,8 @@ _PAGE_NITEMS = 100  # TODO: Should eventually be configurable by app.
 def datasets():
     if request.method == "GET":
         lgr.info("Getting list of known datasets")
-        r = db.session.query(URL.dsid).group_by(URL.dsid)
-        r = r.order_by(URL.dsid.asc())
+        r = db.session.query(URL.ds_id).group_by(URL.ds_id)
+        r = r.order_by(URL.ds_id.asc())
         r = r.paginate(request.args.get('page', 1, type=int),
                        _PAGE_NITEMS, False)
         # TODO: Eventually switch over to using _external=True so that
@@ -30,4 +30,4 @@ def datasets():
         pg_p = url_for(".datasets", page=r.prev_num) if r.has_prev else None
         return {"next": pg_n,
                 "previous": pg_p,
-                "dsids": [i.dsid for i in r.items]}
+                "ds_ids": [i.ds_id for i in r.items]}

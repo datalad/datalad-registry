@@ -13,11 +13,11 @@ lgr = logging.getLogger(__name__)
 
 
 @celery.task
-def verify_url(dsid, url, token):
+def verify_url(ds_id, url, token):
     """Check that `url` has a challenge reference for `token`.
     """
     exists = db.session.query(URL).filter_by(
-        url=url, dsid=dsid).one_or_none()
+        url=url, ds_id=ds_id).one_or_none()
     if exists:
         status = Token.status_enum.NOTNEEDED
     else:
@@ -26,11 +26,11 @@ def verify_url(dsid, url, token):
                            url, "refs/datalad-registry/" + token])
         except sp.CalledProcessError as exc:
             lgr.info("Failed to verify status %s at %s: %s",
-                     dsid, url, exc)
+                     ds_id, url, exc)
             status = Token.status_enum.FAILED
         else:
             status = Token.status_enum.VERIFIED
-            db.session.add(URL(dsid=dsid, url=url))
+            db.session.add(URL(ds_id=ds_id, url=url))
     db.session.query(Token).filter_by(token=token).update(
         {"status": status})
     db.session.commit()
