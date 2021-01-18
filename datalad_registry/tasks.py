@@ -81,7 +81,7 @@ def _extract_git_info(path):
 
 @celery.task
 def collect_git_info(urls=None):
-    """Collect basic information about the Git repo at each URL in `URLS`.
+    """Collect basic information about the Git repo at each URL in `urls`.
     """
     from flask import current_app
 
