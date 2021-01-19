@@ -50,6 +50,7 @@ class URL(db.Model):
 
     url = db.Column(db.Text, primary_key=True)
     ds_id = db.Column(db.Text, nullable=False)
+    annex_uuid = db.Column(db.Text)
     info_ts = db.Column(db.Integer)
     update_announced = db.Column(db.Integer)
     head = db.Column(db.Text)

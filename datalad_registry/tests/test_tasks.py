@@ -41,9 +41,9 @@ def test_prune_old_tokens_explcit_cutoff(app_instance, ds_id):
         assert [r.token for r in ses.query(Token)] == ["c", "d"]
 
 
-def test_collect_git_info_empty(app_instance):
+def test_collect_dataset_info_empty(app_instance):
     with app_instance.app.app_context():
-        tasks.collect_git_info()
+        tasks.collect_dataset_info()
 
 
 def _register(ds, url, client):
@@ -56,16 +56,17 @@ def _register(ds, url, client):
 
 
 @pytest.mark.slow
-def test_collect_git_info(app_instance, tmp_path):
+def test_collect_dataset_info(app_instance, tmp_path):
     import datalad.api as dl
 
     ds = dl.Dataset(tmp_path / "ds").create()
-    ds.repo.call_git(["branch", "other"])
-    ds.repo.call_git(["commit", "--allow-empty", "-mc1"])
-    ds.repo.tag("v1")  # lightweight tag
-    ds.repo.call_git(["commit", "--allow-empty", "-mc2"])
-    ds.repo.call_git(["commit", "--allow-empty", "-mc3"])
-    ds.repo.tag("v2", message="Version 2")
+    repo = ds.repo
+    repo.call_git(["branch", "other"])
+    repo.call_git(["commit", "--allow-empty", "-mc1"])
+    repo.tag("v1")  # lightweight tag
+    repo.call_git(["commit", "--allow-empty", "-mc2"])
+    repo.call_git(["commit", "--allow-empty", "-mc3"])
+    repo.tag("v2", message="Version 2")
 
     url = "file:///" + ds.path
     _register(ds, url, app_instance.client)
@@ -76,31 +77,33 @@ def test_collect_git_info(app_instance, tmp_path):
         assert res.ds_id == ds.id
         assert res.head is None
 
-        tasks.collect_git_info()
+        tasks.collect_dataset_info()
 
         res = ses.query(URL).filter_by(url=url).one()
-        assert res.head == ds.repo.get_hexsha()
+        assert res.head == repo.get_hexsha()
         assert res.head_describe == "v2"
+        assert res.annex_uuid == repo.uuid
         branches = set(ln.split()[1] for ln in res.branches.splitlines())
-        assert branches == set(ds.repo.get_branches())
+        assert branches == set(repo.get_branches())
         tags = set(ln.split()[1] for ln in res.tags.splitlines())
-        assert tags == set(ds.repo.get_tags(output="name"))
+        assert tags == set(repo.get_tags(output="name"))
 
-        # collect_git_info() doesn't yet look at info_ts.  For now,
-        # test a direct fetch by giving the URL explicitly.
-        ds.repo.call_git(["commit", "--allow-empty", "-mc4"])
-        ds.repo.tag("v3", message="Version 3")
-        tasks.collect_git_info(urls=[url])
+        # collect_dataset_info() doesn't yet look at info_ts.  For
+        # now, test a direct fetch by giving the URL explicitly.
+        repo.call_git(["commit", "--allow-empty", "-mc4"])
+        repo.tag("v3", message="Version 3")
+        tasks.collect_dataset_info(urls=[url])
         res = ses.query(URL).filter_by(url=url).one()
-        assert res.head == ds.repo.get_hexsha()
+        assert res.head == repo.get_hexsha()
         assert res.head_describe == "v3"
 
 
 @pytest.mark.slow
-def test_collect_git_info_just_init(app_instance, tmp_path):
+def test_collect_dataset_info_just_init(app_instance, tmp_path):
     import datalad.api as dl
 
     ds = dl.Dataset(tmp_path / "ds").create()
+    repo = ds.repo
     url = "file:///" + ds.path
     _register(ds, url, app_instance.client)
 
@@ -110,40 +113,43 @@ def test_collect_git_info_just_init(app_instance, tmp_path):
         assert res.ds_id == ds.id
         assert res.head is None
 
-        tasks.collect_git_info()
+        tasks.collect_dataset_info()
 
         res = ses.query(URL).filter_by(url=url).one()
-        assert res.head == ds.repo.get_hexsha()
+        assert res.head == repo.get_hexsha()
         assert res.head_describe is None
+        assert res.annex_uuid == repo.uuid
         branches = set(ln.split()[1] for ln in res.branches.splitlines())
-        assert branches == set(ds.repo.get_branches())
+        assert branches == set(repo.get_branches())
         assert not res.tags.strip()
 
 
 @pytest.mark.slow
-def test_collect_git_info_announced_update(app_instance, tmp_path):
+def test_collect_dataset_info_announced_update(app_instance, tmp_path):
     import datalad.api as dl
 
     ds = dl.Dataset(tmp_path / "ds").create()
-    ds.repo.call_git(["commit", "--allow-empty", "-mc1"])
-    ds.repo.tag("v1")
+    repo = ds.repo
+    repo.call_git(["commit", "--allow-empty", "-mc1"])
+    repo.tag("v1")
 
     url = "file:///" + ds.path
     _register(ds, url, app_instance.client)
 
     with app_instance.app.app_context():
         ses = app_instance.db.session
-        tasks.collect_git_info()
+        tasks.collect_dataset_info()
         res = ses.query(URL).filter_by(url=url).one()
-        assert res.head == ds.repo.get_hexsha()
+        assert res.head == repo.get_hexsha()
         assert res.head_describe == "v1"
+        assert res.annex_uuid == repo.uuid
 
-        ds.repo.call_git(["commit", "--allow-empty", "-mc2"])
-        ds.repo.tag("v2", message="Version 2")
+        repo.call_git(["commit", "--allow-empty", "-mc2"])
+        repo.tag("v2", message="Version 2")
 
         url_encoded = url_encode(url)
         app_instance.client.patch(f"/v1/datasets/{ds.id}/urls/{url_encoded}")
-        tasks.collect_git_info()
+        tasks.collect_dataset_info()
         res = ses.query(URL).filter_by(url=url).one()
-        assert res.head == ds.repo.get_hexsha()
+        assert res.head == repo.get_hexsha()
         assert res.head_describe == "v2"

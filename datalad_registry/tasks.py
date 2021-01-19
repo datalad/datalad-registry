@@ -54,17 +54,7 @@ def prune_old_tokens(cutoff=None):
     db.session.commit()
 
 
-def _extract_git_info(path):
-    commands = {
-        "head": ["git", "rev-parse", "--verify", "HEAD"],
-        "head_describe": ["git", "describe", "--tags"],
-        "branches": ["git", "for-each-ref", "--sort=-creatordate",
-                     "--format=%(objectname) %(refname:lstrip=2)",
-                     "refs/heads/"],
-        "tags": ["git", "for-each-ref", "--sort=-creatordate",
-                 "--format=%(objectname) %(refname:lstrip=2)",
-                 "refs/tags/"],
-    }
+def _extract_info(path, commands):
     info = {}
     for name, command in commands.items():
         lgr.debug("Running %s in %s", command, path)
@@ -79,9 +69,28 @@ def _extract_git_info(path):
     return info
 
 
+def _extract_git_info(path):
+    return _extract_info(
+        path,
+        {"head": ["git", "rev-parse", "--verify", "HEAD"],
+         "head_describe": ["git", "describe", "--tags"],
+         "branches": ["git", "for-each-ref", "--sort=-creatordate",
+                      "--format=%(objectname) %(refname:lstrip=2)",
+                      "refs/heads/"],
+         "tags": ["git", "for-each-ref", "--sort=-creatordate",
+                  "--format=%(objectname) %(refname:lstrip=2)",
+                  "refs/tags/"]})
+
+
+def _extract_annex_info(path):
+    return _extract_info(
+        path,
+        {"annex_uuid": ["git", "config", "remote.origin.annex-uuid"]})
+
+
 @celery.task
-def collect_git_info(urls=None):
-    """Collect basic information about the Git repo at each URL in `URLS`.
+def collect_dataset_info(urls=None):
+    """Collect information about the dataset at each URL in `urls`.
     """
     from flask import current_app
 
@@ -112,15 +121,18 @@ def collect_git_info(urls=None):
 
     for url in urls:
         ds_path = cache_dir / url_encode(url)
+        ds_path_str = str(ds_path)
         # TODO: Assuming the same clone is used to collect information
         # with datalad, need to switch away from mirroring.
         if ds_path.exists():
-            sp.run(["git", "fetch"], cwd=str(ds_path))
+            sp.run(["git", "fetch"], cwd=ds_path_str)
         else:
             sp.run(["git", "clone", "--mirror", "--template=",
-                    url, str(ds_path)])
+                    url, ds_path_str])
+            sp.run(["git", "annex", "init"], cwd=ds_path_str)
 
-        info = _extract_git_info(str(ds_path))
+        info = _extract_git_info(ds_path_str)
+        info.update(_extract_annex_info(ds_path_str))
         info["info_ts"] = time.time()
         info["update_announced"] = 0
         db.session.query(URL).filter_by(url=url).update(info)
