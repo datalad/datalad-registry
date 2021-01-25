@@ -103,6 +103,7 @@ def url(ds_id, url_encoded):
     if request.method == "GET":
         lgr.info("Checking status of registering %s as URL of %s",
                  url, ds_id)
+        resp = {"ds_id": ds_id, "url": url}
         if row_known is None:
             status = "unknown"
             max_status, = db.session.query(
@@ -112,9 +113,13 @@ def url(ds_id, url_encoded):
                 status = Token.describe_status(max_status)
         else:
             status = "known"
+            resp["info"] = {
+                col: getattr(row_known, col, None)
+                for col in ["annex_uuid", "head", "head_describe"]}
 
         lgr.debug("Status for %s: %s", url, status)
-        return jsonify(ds_id=ds_id, url=url, status=status)
+        resp["status"] = status
+        return jsonify(resp)
     elif request.method == "PATCH":
         if row_known is None:
             return jsonify(message="Invalid encoded URL"), 404
