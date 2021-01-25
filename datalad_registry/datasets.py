@@ -4,6 +4,7 @@
 import logging
 
 from flask import Blueprint
+from flask import jsonify
 from flask import request
 from flask import url_for
 
@@ -28,6 +29,6 @@ def datasets():
         # caller doesn't need to construct URL?
         pg_n = url_for(".datasets", page=r.next_num) if r.has_next else None
         pg_p = url_for(".datasets", page=r.prev_num) if r.has_prev else None
-        return {"next": pg_n,
-                "previous": pg_p,
-                "ds_ids": [i.ds_id for i in r.items]}
+        return jsonify({"next": pg_n,
+                        "previous": pg_p,
+                        "ds_ids": [i.ds_id for i in r.items]})

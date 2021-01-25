@@ -60,7 +60,7 @@ def urls(ds_id):
         lgr.info("Reporting which URLs are registered for %s", ds_id)
         urls = [r.url
                 for r in db.session.query(URL).filter_by(ds_id=ds_id)]
-        return {"ds_id": ds_id, "urls": urls}
+        return jsonify(ds_id=ds_id, urls=urls)
     elif request.method == "POST":
         data = request.json or {}
         try:
