@@ -221,11 +221,19 @@ paths:
                       - known
                       - URL pending verification
                       - verification failed
+                  info:
+                    description: subset of collected information
+                    type: object
               example:
                 {
                   "ds_id": "6eeadb86-84be-11e6-b24c-002590f97d84",
                   "url": "https://datasets.datalad.org/labs/haxby/raiders/.git",
-                  "status": "known"
+                  "status": "known",
+                  "info": {
+                    "annex_uuid": "524f92ba-0490-462a-9c7a-f8e4d928484a",
+                    "head": "8dcb5e00a00e18e83056c5fe1978afe90d3e9f8f",
+                    "head_describe": "v1"
+                  },
                 }
         "400":
           $ref: "#/components/responses/invalid-encoded-url"

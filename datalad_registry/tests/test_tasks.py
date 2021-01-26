@@ -151,5 +151,11 @@ def test_collect_dataset_info_announced_update(app_instance, tmp_path):
         app_instance.client.patch(f"/v1/datasets/{ds.id}/urls/{url_encoded}")
         tasks.collect_dataset_info()
         res = ses.query(URL).filter_by(url=url).one()
-        assert res.head == repo.get_hexsha()
+        head = repo.get_hexsha()
+        assert res.head == head
         assert res.head_describe == "v2"
+
+        info = app_instance.client.get(
+            f"/v1/datasets/{ds.id}/urls/{url_encoded}").get_json()["info"]
+        assert info["head"] == head
+        assert info["head_describe"] == "v2"
