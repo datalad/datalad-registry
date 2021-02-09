@@ -54,44 +54,46 @@ def prune_old_tokens(cutoff=None):
     db.session.commit()
 
 
-def _extract_info(path, commands):
+def _extract_info(repo, commands):
+    from datalad.support.exceptions import CommandError
+
     info = {}
     for name, command in commands.items():
-        lgr.debug("Running %s in %s", command, path)
-        res = sp.run(command,
-                     cwd=path, universal_newlines=True, capture_output=True)
-        if res.returncode == 0:
-            info[name] = res.stdout.strip()
-        else:
-            lgr.warning("Command %s in %s had non-zero exit code: %s"
-                        "\nstderr: %s",
-                        command, path, res.returncode, res.stderr)
+        lgr.debug("Running %s in %s", command, repo)
+        try:
+            out = repo.call_git(command)
+        except CommandError as exc:
+            lgr.warning("Command %s in %s had non-zero exit code:\n%s",
+                        command, repo, exc)
+            continue
+        info[name] = out.strip()
     return info
 
 
-def _extract_git_info(path):
+def _extract_git_info(repo):
     return _extract_info(
-        path,
-        {"head": ["git", "rev-parse", "--verify", "HEAD"],
-         "head_describe": ["git", "describe", "--tags"],
-         "branches": ["git", "for-each-ref", "--sort=-creatordate",
-                      "--format=%(objectname) %(refname:lstrip=2)",
-                      "refs/heads/"],
-         "tags": ["git", "for-each-ref", "--sort=-creatordate",
+        repo,
+        {"head": ["rev-parse", "--verify", "HEAD"],
+         "head_describe": ["describe", "--tags"],
+         "branches": ["for-each-ref", "--sort=-creatordate",
+                      "--format=%(objectname) %(refname:lstrip=3)",
+                      "refs/remotes/origin/"],
+         "tags": ["for-each-ref", "--sort=-creatordate",
                   "--format=%(objectname) %(refname:lstrip=2)",
                   "refs/tags/"]})
 
 
-def _extract_annex_info(path):
+def _extract_annex_info(repo):
     return _extract_info(
-        path,
-        {"annex_uuid": ["git", "config", "remote.origin.annex-uuid"]})
+        repo,
+        {"annex_uuid": ["config", "remote.origin.annex-uuid"]})
 
 
 @celery.task
 def collect_dataset_info(urls=None):
     """Collect information about the dataset at each URL in `urls`.
     """
+    import datalad.api as dl
     from flask import current_app
 
     cache_dir = Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
@@ -122,17 +124,17 @@ def collect_dataset_info(urls=None):
     for url in urls:
         ds_path = cache_dir / url_encode(url)
         ds_path_str = str(ds_path)
-        # TODO: Assuming the same clone is used to collect information
-        # with datalad, need to switch away from mirroring.
+        # TODO: Decide how to handle subdatasets.
         if ds_path.exists():
-            sp.run(["git", "fetch"], cwd=ds_path_str)
+            ds = dl.Dataset(ds_path)
+            ds_repo = ds.repo
+            ds_repo.fetch(all_=True)
+            ds_repo.call_git(["reset", "--hard", "refs/remotes/origin/HEAD"])
         else:
-            sp.run(["git", "clone", "--mirror", "--template=",
-                    url, ds_path_str])
-            sp.run(["git", "annex", "init"], cwd=ds_path_str)
-
-        info = _extract_git_info(ds_path_str)
-        info.update(_extract_annex_info(ds_path_str))
+            ds = dl.clone(url, ds_path_str)
+            ds_repo = ds.repo
+        info = _extract_git_info(ds_repo)
+        info.update(_extract_annex_info(ds_repo))
         info["info_ts"] = time.time()
         info["update_announced"] = 0
         db.session.query(URL).filter_by(url=url).update(info)
