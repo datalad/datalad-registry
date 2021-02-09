@@ -41,6 +41,7 @@ def test_prune_old_tokens_explcit_cutoff(app_instance, ds_id):
         assert [r.token for r in ses.query(Token)] == ["c", "d"]
 
 
+@pytest.mark.slow
 def test_collect_dataset_info_empty(app_instance):
     with app_instance.app.app_context():
         tasks.collect_dataset_info()
@@ -84,7 +85,7 @@ def test_collect_dataset_info(app_instance, tmp_path):
         assert res.head_describe == "v2"
         assert res.annex_uuid == repo.uuid
         branches = set(ln.split()[1] for ln in res.branches.splitlines())
-        assert branches == set(repo.get_branches())
+        assert branches == set(repo.get_branches()) | {"HEAD"}
         tags = set(ln.split()[1] for ln in res.tags.splitlines())
         assert tags == set(repo.get_tags(output="name"))
 
@@ -120,7 +121,7 @@ def test_collect_dataset_info_just_init(app_instance, tmp_path):
         assert res.head_describe is None
         assert res.annex_uuid == repo.uuid
         branches = set(ln.split()[1] for ln in res.branches.splitlines())
-        assert branches == set(repo.get_branches())
+        assert branches == set(repo.get_branches()) | {"HEAD"}
         assert not res.tags.strip()
 
 
