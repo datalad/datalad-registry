@@ -231,6 +231,7 @@ paths:
                   "status": "known",
                   "info": {
                     "annex_uuid": "524f92ba-0490-462a-9c7a-f8e4d928484a",
+                    "annex_key_count": 3,
                     "head": "8dcb5e00a00e18e83056c5fe1978afe90d3e9f8f",
                     "head_describe": "v1"
                   },

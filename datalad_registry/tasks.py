@@ -99,6 +99,7 @@ def _extract_annex_info(repo):
         assert len(records) == 1, "bug: unexpected `annex info` output"
         res = records[0]
         info["annex_uuid"] = res["uuid"]
+        info["annex_key_count"] = int(res["remote annex keys"])
     return info
 
 
