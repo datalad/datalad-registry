@@ -54,7 +54,7 @@ def prune_old_tokens(cutoff=None):
     db.session.commit()
 
 
-def _extract_info(repo, commands):
+def _extract_info_call_git(repo, commands):
     from datalad.support.exceptions import CommandError
 
     info = {}
@@ -71,7 +71,7 @@ def _extract_info(repo, commands):
 
 
 def _extract_git_info(repo):
-    return _extract_info(
+    return _extract_info_call_git(
         repo,
         {"head": ["rev-parse", "--verify", "HEAD"],
          "head_describe": ["describe", "--tags"],
@@ -84,9 +84,23 @@ def _extract_git_info(repo):
 
 
 def _extract_annex_info(repo):
-    return _extract_info(
-        repo,
-        {"annex_uuid": ["config", "remote.origin.annex-uuid"]})
+    from datalad.support.exceptions import CommandError
+
+    info = {}
+    try:
+        records = list(repo.call_annex_records(["info"], "origin"))
+    except CommandError as exc:
+        lgr.warning("Running `annex info` in %s had non-zero exit code:\n%s",
+                    repo, exc)
+    except AttributeError:
+        lgr.debug("Skipping annex info collection for non-annex repo: %s",
+                  repo)
+    else:
+        assert len(records) == 1, "bug: unexpected `annex info` output"
+        res = records[0]
+        info["annex_uuid"] = res["uuid"]
+        info["annex_key_count"] = int(res["remote annex keys"])
+    return info
 
 
 @celery.task

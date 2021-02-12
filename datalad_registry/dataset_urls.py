@@ -115,7 +115,8 @@ def url(ds_id, url_encoded):
             status = "known"
             resp["info"] = {
                 col: getattr(row_known, col, None)
-                for col in ["annex_uuid", "head", "head_describe"]}
+                for col in ["annex_uuid", "annex_key_count",
+                            "head", "head_describe"]}
 
         lgr.debug("Status for %s: %s", url, status)
         resp["status"] = status

@@ -126,12 +126,37 @@ def test_collect_dataset_info_just_init(app_instance, tmp_path):
 
 
 @pytest.mark.slow
+def test_collect_dataset_info_no_annex(app_instance, tmp_path):
+    import datalad.api as dl
+
+    ds = dl.Dataset(tmp_path / "ds").create(annex=False)
+    repo = ds.repo
+    url = "file:///" + ds.path
+    _register(ds, url, app_instance.client)
+
+    with app_instance.app.app_context():
+        ses = app_instance.db.session
+        res = ses.query(URL).filter_by(url=url).one()
+        assert res.ds_id == ds.id
+        assert res.head is None
+
+        tasks.collect_dataset_info()
+
+        res = ses.query(URL).filter_by(url=url).one()
+        assert res.head == repo.get_hexsha()
+        assert res.annex_uuid is None
+        assert res.annex_key_count is None
+
+
+@pytest.mark.slow
 def test_collect_dataset_info_announced_update(app_instance, tmp_path):
     import datalad.api as dl
 
     ds = dl.Dataset(tmp_path / "ds").create()
+    (ds.pathobj / "foo").write_text("foo")
+    ds.save()
+
     repo = ds.repo
-    repo.call_git(["commit", "--allow-empty", "-mc1"])
     repo.tag("v1")
 
     url = "file:///" + ds.path
@@ -144,8 +169,10 @@ def test_collect_dataset_info_announced_update(app_instance, tmp_path):
         assert res.head == repo.get_hexsha()
         assert res.head_describe == "v1"
         assert res.annex_uuid == repo.uuid
+        assert res.annex_key_count == 1
 
-        repo.call_git(["commit", "--allow-empty", "-mc2"])
+        (ds.pathobj / "bar").write_text("bar")
+        ds.save()
         repo.tag("v2", message="Version 2")
 
         url_encoded = url_encode(url)
@@ -155,8 +182,10 @@ def test_collect_dataset_info_announced_update(app_instance, tmp_path):
         head = repo.get_hexsha()
         assert res.head == head
         assert res.head_describe == "v2"
+        assert res.annex_key_count == 2
 
         info = app_instance.client.get(
             f"/v1/datasets/{ds.id}/urls/{url_encoded}").get_json()["info"]
         assert info["head"] == head
         assert info["head_describe"] == "v2"
+        assert info["annex_key_count"] == 2
