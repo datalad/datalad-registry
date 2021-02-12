@@ -54,7 +54,7 @@ def prune_old_tokens(cutoff=None):
     db.session.commit()
 
 
-def _extract_info(repo, commands):
+def _extract_info_call_git(repo, commands):
     from datalad.support.exceptions import CommandError
 
     info = {}
@@ -71,7 +71,7 @@ def _extract_info(repo, commands):
 
 
 def _extract_git_info(repo):
-    return _extract_info(
+    return _extract_info_call_git(
         repo,
         {"head": ["rev-parse", "--verify", "HEAD"],
          "head_describe": ["describe", "--tags"],
@@ -84,7 +84,7 @@ def _extract_git_info(repo):
 
 
 def _extract_annex_info(repo):
-    return _extract_info(
+    return _extract_info_call_git(
         repo,
         {"annex_uuid": ["config", "remote.origin.annex-uuid"]})
 
