@@ -126,6 +126,28 @@ def test_collect_dataset_info_just_init(app_instance, tmp_path):
 
 
 @pytest.mark.slow
+def test_collect_dataset_info_no_annex(app_instance, tmp_path):
+    import datalad.api as dl
+
+    ds = dl.Dataset(tmp_path / "ds").create(annex=False)
+    repo = ds.repo
+    url = "file:///" + ds.path
+    _register(ds, url, app_instance.client)
+
+    with app_instance.app.app_context():
+        ses = app_instance.db.session
+        res = ses.query(URL).filter_by(url=url).one()
+        assert res.ds_id == ds.id
+        assert res.head is None
+
+        tasks.collect_dataset_info()
+
+        res = ses.query(URL).filter_by(url=url).one()
+        assert res.head == repo.get_hexsha()
+        assert res.annex_uuid is None
+
+
+@pytest.mark.slow
 def test_collect_dataset_info_announced_update(app_instance, tmp_path):
     import datalad.api as dl
 
