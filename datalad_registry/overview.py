@@ -26,8 +26,13 @@ _SORT_ATTRS = {"keys-asc": ("annex_key_count", "asc"),
 @bp.route("/")
 def overview():
     if request.method == "GET":
-        r = db.session.query(URL).group_by(URL.ds_id)
+        r = db.session.query(URL)
+        url_filter = request.args.get('filter', None, type=str)
+        if url_filter:
+            lgr.debug("Filter URLs by '%s'", url_filter)
+            r = r.filter(URL.url.contains(url_filter, autoescape=True))
 
+        r = r.group_by(URL.ds_id)
         sort_by = request.args.get('sort', "update-desc", type=str)
         if sort_by not in _SORT_ATTRS:
             lgr.debug("Ignoring unknown sort parameter: %s", sort_by)
@@ -55,4 +60,5 @@ def overview():
         return render_template(
             'overview.html', rows=rows,
             page=page, has_next=r.has_next, has_prev=r.has_prev,
-            sort_by=sort_by, num_urls=num_urls)
+            sort_by=sort_by, url_filter=url_filter,
+            num_urls=num_urls)

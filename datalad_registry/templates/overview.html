@@ -4,11 +4,12 @@
 {%- else -%}
 {%- set new_sort = default -%}
 {%- endif -%}
-href="{{ url_for('.overview', sort='{}'.format(new_sort)) }}"
+href="{{ url_for('.overview', filter=url_filter, sort='{}'.format(new_sort)) }}"
 {%- endmacro -%}
 
 {%- macro page_href(page) -%}
-href="{{ url_for('.overview', sort=sort_by, page='{}'.format(page)) }}"
+href="{{ url_for('.overview', sort=sort_by, filter=url_filter,
+                 page='{}'.format(page)) }}"
 {%- endmacro -%}
 
 <!DOCTYPE html>
@@ -20,6 +21,17 @@ href="{{ url_for('.overview', sort=sort_by, page='{}'.format(page)) }}"
   <body>
     <div id="datalad-registry">
       <div class="content">
+        <form action="{{ url_for('.overview') }}" formmethod="get">
+          <input type='search' name='filter'
+                 {%- if url_filter %} value="{{ url_filter|escape }}"
+                 {%- endif -%}
+                 />
+          <input type="hidden" name="sort" value="{{ sort_by }}"/>
+          <input type='submit' value='Filter URLs'/>
+          {% if url_filter -%}
+          <a href="{{ url_for('.overview', sort=sort_by) }}"> remove filter</a>
+          {%- endif %}
+        </form>
         <table class="list">
           <tr>
             <th><a {{ sort_href('url-desc', 'url-asc') }}>URL</a></th>

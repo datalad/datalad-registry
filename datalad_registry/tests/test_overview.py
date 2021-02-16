@@ -79,3 +79,29 @@ def test_overview_sort(client, tmp_path):
 
     # Unknown falls back to default.
     assert r_default.data == client.get("/overview/?sort=unknown").data
+
+
+@pytest.mark.slow
+def test_overview_filter(client, tmp_path):
+    import datalad.api as dl
+    from datalad_registry import tasks
+
+    for name in ["foo", "foobar", "baz"]:
+        ds = dl.Dataset(tmp_path / name).create()
+        url = "file:///" + ds.path
+        register_dataset(ds, url, client)
+        tasks.collect_dataset_info()
+
+    r_no_filter = client.get("/overview/")
+    for name in [b"foo", b"foobar", b"baz"]:
+        assert name in r_no_filter.data
+
+    r_ba_filter = client.get("/overview/?filter=ba")
+    for name in [b"foobar", b"baz"]:
+        assert name in r_ba_filter.data
+    assert b"foo</td>" not in r_ba_filter.data
+
+    r_foo_filter = client.get("/overview/?filter=foo")
+    for name in [b"foo", b"foobar"]:
+        assert name in r_foo_filter.data
+    assert b"baz" not in r_foo_filter.data
