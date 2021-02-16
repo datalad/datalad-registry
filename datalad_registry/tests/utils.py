@@ -59,3 +59,14 @@ def create_and_register_repos(client, path, n):
 
         records.append({"ds_id": ds_id, "url_encoded": url_encoded})
     return records
+
+
+def register_dataset(ds, url, client):
+    """Register `url` for dataset `ds` with `client`.
+    """
+    ds_id = ds.id
+    url_encoded = url_encode(url)
+    d_token = client.get(
+        f"/v1/datasets/{ds_id}/urls/{url_encoded}/token").get_json()
+    ds.repo.call_git(["update-ref", d_token["ref"], "HEAD"])
+    client.post(f"/v1/datasets/{ds_id}/urls", json=d_token)

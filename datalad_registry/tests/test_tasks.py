@@ -5,6 +5,7 @@ import pytest
 from datalad_registry import tasks
 from datalad_registry.models import Token
 from datalad_registry.models import URL
+from datalad_registry.tests.utils import register_dataset
 from datalad_registry.utils import url_encode
 
 
@@ -47,15 +48,6 @@ def test_collect_dataset_info_empty(app_instance):
         tasks.collect_dataset_info()
 
 
-def _register(ds, url, client):
-    ds_id = ds.id
-    url_encoded = url_encode(url)
-    d_token = client.get(
-        f"/v1/datasets/{ds_id}/urls/{url_encoded}/token").get_json()
-    ds.repo.call_git(["update-ref", d_token["ref"], "HEAD"])
-    client.post(f"/v1/datasets/{ds_id}/urls", json=d_token)
-
-
 @pytest.mark.slow
 def test_collect_dataset_info(app_instance, tmp_path):
     import datalad.api as dl
@@ -70,7 +62,7 @@ def test_collect_dataset_info(app_instance, tmp_path):
     repo.tag("v2", message="Version 2")
 
     url = "file:///" + ds.path
-    _register(ds, url, app_instance.client)
+    register_dataset(ds, url, app_instance.client)
 
     with app_instance.app.app_context():
         ses = app_instance.db.session
@@ -106,7 +98,7 @@ def test_collect_dataset_info_just_init(app_instance, tmp_path):
     ds = dl.Dataset(tmp_path / "ds").create()
     repo = ds.repo
     url = "file:///" + ds.path
-    _register(ds, url, app_instance.client)
+    register_dataset(ds, url, app_instance.client)
 
     with app_instance.app.app_context():
         ses = app_instance.db.session
@@ -132,7 +124,7 @@ def test_collect_dataset_info_no_annex(app_instance, tmp_path):
     ds = dl.Dataset(tmp_path / "ds").create(annex=False)
     repo = ds.repo
     url = "file:///" + ds.path
-    _register(ds, url, app_instance.client)
+    register_dataset(ds, url, app_instance.client)
 
     with app_instance.app.app_context():
         ses = app_instance.db.session
@@ -160,7 +152,7 @@ def test_collect_dataset_info_announced_update(app_instance, tmp_path):
     repo.tag("v1")
 
     url = "file:///" + ds.path
-    _register(ds, url, app_instance.client)
+    register_dataset(ds, url, app_instance.client)
 
     with app_instance.app.app_context():
         ses = app_instance.db.session
