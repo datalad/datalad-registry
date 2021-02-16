@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>DataLad Registry: Overview</title>
+    <link rel="stylesheet" href="/static/main.css"/>
+  </head>
+  <body>
+    <div id="datalad-registry">
+      <div class="content">
+        <table class="list">
+          <tr>
+            <th>URL</th>
+            <th>Dataset</th>
+            <th>Commit</th>
+            <th>Annex keys</th>
+            <th>Last update</th>
+          </tr>
+          {%- for r in rows -%}
+          <tr>
+            <td>{{ r["url"] }}</td>
+            <td class="mono">{{ r["ds_id"] }}</td>
+            <td class="mono">{{ r["head_describe"] if r["head_describe"]
+              else r["head"]|truncate(9, False, "")
+              if r["head"] }}</td>
+            <td>{{ r["annex_key_count"] if r["annex_key_count"] is not none }}</td>
+            <td>{{ r["last_update"] if r["last_update"] }}</td>
+          </tr>
+          {%- endfor -%}
+        </table>
+        <table class="pager">
+          <tr><td colspan="2">page {{ page }} ({{ num_urls }} URLs total)</td></tr>
+          <tr>
+            {%- if has_prev -%}
+            <td><a href="{{ url_for('.overview', page=page-1, sort=sort_by) }}">previous</a></td>
+            {%- else -%}
+            <td></td>
+            {%- endif -%}
+            {%- if has_next -%}
+            <td><a href="{{ url_for('.overview', page=page+1, sort=sort_by) }}">next</a></td>
+            {%- else -%}
+            <td></td>
+            {%- endif -%}
+          </tr>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>

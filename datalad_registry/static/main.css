@@ -1,0 +1,34 @@
+
+div#datalad-registry table.list {
+    border-collapse: collapse;
+    border: none;
+    white-space: nowrap;
+    width: 100%;
+}
+
+div#datalad-registry table.list th {
+    text-align: left;
+}
+
+
+div#datalad-registry table.list tr:nth-child(even) {
+    background: #f8f8f8;
+}
+
+div#datalad-registry table.list tr:nth-child(odd) {
+    background: white;
+}
+
+div#datalad-registry table.list td.mono {
+    font-family: monospace;
+}
+
+div#datalad-registry table.pager {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+div#datalad-registry table.pager td {
+    text-align: center;
+    width: 7em;
+}
