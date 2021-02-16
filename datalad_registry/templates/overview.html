@@ -1,3 +1,16 @@
+{%- macro sort_href(default, other) -%}
+{%- if sort_by == default -%}
+{%- set new_sort = other -%}
+{%- else -%}
+{%- set new_sort = default -%}
+{%- endif -%}
+href="{{ url_for('.overview', sort='{}'.format(new_sort)) }}"
+{%- endmacro -%}
+
+{%- macro page_href(page) -%}
+href="{{ url_for('.overview', sort=sort_by, page='{}'.format(page)) }}"
+{%- endmacro -%}
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -9,26 +22,11 @@
       <div class="content">
         <table class="list">
           <tr>
-            <th><a {% if sort_by == 'url-desc' -%}
-                   href="{{ url_for('.overview', sort='url-asc') }}"
-                   {%- else -%}
-                   href="{{ url_for('.overview', sort='url-desc') }}"
-                   {%- endif -%}
-                   >URL</a></th>
+            <th><a {{ sort_href('url-desc', 'url-asc') }}>URL</a></th>
             <th>Dataset</th>
             <th>Commit</th>
-            <th><a {% if sort_by == 'keys-desc' -%}
-                   href="{{ url_for('.overview', sort='keys-asc') }}"
-                   {%- else -%}
-                   href="{{ url_for('.overview', sort='keys-desc') }}"
-                   {%- endif -%}
-                   >Annex keys</a></th>
-            <th><a {% if sort_by == 'update-desc' -%}
-                   href="{{ url_for('.overview', sort='update-asc') }}"
-                   {%- else -%}
-                   href="{{ url_for('.overview', sort='update-desc') }}"
-                   {%- endif -%}
-                   >Last update</a></th>
+            <th><a {{ sort_href('keys-desc', 'keys-asc') }}>Annex keys</a></th>
+            <th><a {{ sort_href('update-desc', 'update-asc') }}>Last update</a></th>
           </tr>
           {%- for r in rows -%}
           <tr>
@@ -46,12 +44,12 @@
           <tr><td colspan="2">page {{ page }} ({{ num_urls }} URLs total)</td></tr>
           <tr>
             {%- if has_prev -%}
-            <td><a href="{{ url_for('.overview', page=page-1, sort=sort_by) }}">previous</a></td>
+            <td><a {{ page_href(page-1) }}>previous</a></td>
             {%- else -%}
             <td></td>
             {%- endif -%}
             {%- if has_next -%}
-            <td><a href="{{ url_for('.overview', page=page+1, sort=sort_by) }}">next</a></td>
+            <td><a {{ page_href(page+1) }}>next</a></td>
             {%- else -%}
             <td></td>
             {%- endif -%}
