@@ -15,13 +15,26 @@ lgr = logging.getLogger(__name__)
 bp = Blueprint("overview", __name__, url_prefix="/overview")
 
 _PAGE_NITEMS = 25  # TODO: Should eventually be configurable by app.
+_SORT_ATTRS = {"keys-asc": ("annex_key_count", "asc"),
+               "keys-desc": ("annex_key_count", "desc"),
+               "update-asc": ("info_ts", "asc"),
+               "update-desc": ("info_ts", "desc"),
+               "url-asc": ("url", "asc"),
+               "url-desc": ("url", "desc")}
 
 
 @bp.route("/")
 def overview():
     if request.method == "GET":
         r = db.session.query(URL).group_by(URL.ds_id)
-        r = r.order_by(URL.info_ts.desc())
+
+        sort_by = request.args.get('sort', "update-desc", type=str)
+        if sort_by not in _SORT_ATTRS:
+            lgr.debug("Ignoring unknown sort parameter: %s", sort_by)
+            sort_by = "update-desc"
+        col, sort_method = _SORT_ATTRS[sort_by]
+
+        r = r.order_by(getattr(getattr(URL, col), sort_method)())
         num_urls = r.count()
         page = request.args.get('page', 1, type=int)
         r = r.paginate(page, _PAGE_NITEMS, False)
@@ -42,4 +55,4 @@ def overview():
         return render_template(
             'overview.html', rows=rows,
             page=page, has_next=r.has_next, has_prev=r.has_prev,
-            num_urls=num_urls)
+            sort_by=sort_by, num_urls=num_urls)

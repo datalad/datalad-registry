@@ -9,11 +9,26 @@
       <div class="content">
         <table class="list">
           <tr>
-            <th>URL</th>
+            <th><a {% if sort_by == 'url-desc' -%}
+                   href="{{ url_for('.overview', sort='url-asc') }}"
+                   {%- else -%}
+                   href="{{ url_for('.overview', sort='url-desc') }}"
+                   {%- endif -%}
+                   >URL</a></th>
             <th>Dataset</th>
             <th>Commit</th>
-            <th>Annex keys</th>
-            <th>Last update</th>
+            <th><a {% if sort_by == 'keys-desc' -%}
+                   href="{{ url_for('.overview', sort='keys-asc') }}"
+                   {%- else -%}
+                   href="{{ url_for('.overview', sort='keys-desc') }}"
+                   {%- endif -%}
+                   >Annex keys</a></th>
+            <th><a {% if sort_by == 'update-desc' -%}
+                   href="{{ url_for('.overview', sort='update-asc') }}"
+                   {%- else -%}
+                   href="{{ url_for('.overview', sort='update-desc') }}"
+                   {%- endif -%}
+                   >Last update</a></th>
           </tr>
           {%- for r in rows -%}
           <tr>
