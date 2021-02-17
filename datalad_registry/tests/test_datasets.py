@@ -1,30 +1,11 @@
 from unittest.mock import patch
 
-from datalad_registry.utils import url_encode
-from datalad_registry.tests.utils import init_repo_with_token
-from datalad_registry.tests.utils import make_ds_id
+from datalad_registry.tests.utils import create_and_register_repos
 
 
 def test_datasets(client, tmp_path):
-    ds_ids = []
-    for idx in range(5):
-        ds_id = make_ds_id()
-        dset = tmp_path / f"ds{idx}"
-        dset.mkdir()
-
-        url = "file:///" + str(dset)
-        url_encoded = url_encode(url)
-
-        d_token = client.get(
-            f"/v1/datasets/{ds_id}/urls/{url_encoded}/token").get_json()
-
-        init_repo_with_token(str(dset), d_token)
-
-        r_post = client.post(f"/v1/datasets/{ds_id}/urls", json=d_token)
-        assert r_post.status_code == 202
-
-        ds_ids.append(ds_id)
-    ds_ids = sorted(ds_ids)
+    repos = create_and_register_repos(client, tmp_path, 5)
+    ds_ids = sorted(r["ds_id"] for r in repos)
 
     r_datasets = client.get("/v1/datasets").get_json()
     assert r_datasets["next"] is None
