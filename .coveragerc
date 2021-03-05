@@ -1,2 +1,4 @@
 [run]
-source = datalad_registry
+source =
+    datalad_registry
+    datalad_registry_client
