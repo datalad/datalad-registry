@@ -14,9 +14,13 @@ export FLASK_ENV=development
 mkdir -p "$DATALAD_REGISTRY_INSTANCE_PATH"
 python -m flask init-db
 docker-compose -f docker-compose.broker.yml up &
-python -m celery -A datalad_registry.runcelery.celery worker \
-       --loglevel "$DATALAD_REGISTRY_LOG_LEVEL" &
-python -m celery -A datalad_registry.runcelery.celery beat \
-       --loglevel "$DATALAD_REGISTRY_LOG_LEVEL" \
+
+celery () {
+    python -m celery -A datalad_registry.runcelery.celery "$@"
+}
+
+celery worker --loglevel "$DATALAD_REGISTRY_LOG_LEVEL" &
+celery beat --loglevel "$DATALAD_REGISTRY_LOG_LEVEL" \
        --schedule "$DATALAD_REGISTRY_INSTANCE_PATH"/celerybeat-schedule &
+
 python -m flask run
