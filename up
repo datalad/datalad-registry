@@ -13,7 +13,22 @@ export FLASK_ENV=development
 
 mkdir -p "$DATALAD_REGISTRY_INSTANCE_PATH"
 python -m flask init-db
+docker-compose -f docker-compose.broker.yml pull
 docker-compose -f docker-compose.broker.yml up &
+
+broker_ok=
+for i in $(seq 30)
+do
+    echo "Checking for broker connection (try $i)..."
+    if ! nc -nvz 127.0.0.1 5672
+    then
+        sleep 1
+    else
+        broker_ok=1
+        break
+    fi
+done
+test -z "$broker_ok" && exit 1
 
 celery () {
     python -m celery -A datalad_registry.runcelery.celery "$@"
@@ -22,5 +37,20 @@ celery () {
 celery worker --loglevel "$DATALAD_REGISTRY_LOG_LEVEL" &
 celery beat --loglevel "$DATALAD_REGISTRY_LOG_LEVEL" \
        --schedule "$DATALAD_REGISTRY_INSTANCE_PATH"/celerybeat-schedule &
+
+celery_ok=
+for i in $(seq 10)
+do
+    echo "Checking celery status (try $i)..."
+    if celery status --timeout 1 --json | grep -q pong
+    then
+        echo "Celery node found"
+        celery_ok=1
+        break
+    else
+        sleep 5
+    fi
+done
+test -z "$celery_ok" && exit 1
 
 python -m flask run
