@@ -2,19 +2,21 @@
 
 set -eu
 
-: "${DATALAD_REGISTRY_DATASET_CACHE:=$PWD/instance/cache}"
+: "${DATALAD_REGISTRY_INSTANCE_PATH:=$PWD/instance}"
+export DATALAD_REGISTRY_INSTANCE_PATH
+: "${DATALAD_REGISTRY_DATASET_CACHE:=$DATALAD_REGISTRY_INSTANCE_PATH/cache}"
 export DATALAD_REGISTRY_DATASET_CACHE
 : "${DATALAD_REGISTRY_LOG_LEVEL:=DEBUG}"
 export DATALAD_REGISTRY_LOG_LEVEL
 export FLASK_APP=datalad_registry.factory:create_app
 export FLASK_ENV=development
 
-mkdir -p instance
+mkdir -p "$DATALAD_REGISTRY_INSTANCE_PATH"
 python -m flask init-db
 docker-compose -f docker-compose.broker.yml up &
 python -m celery -A datalad_registry.runcelery.celery worker \
        --loglevel "$DATALAD_REGISTRY_LOG_LEVEL" &
 python -m celery -A datalad_registry.runcelery.celery beat \
        --loglevel "$DATALAD_REGISTRY_LOG_LEVEL" \
-       --schedule instance/celerybeat-schedule &
+       --schedule "$DATALAD_REGISTRY_INSTANCE_PATH"/celerybeat-schedule &
 python -m flask run
