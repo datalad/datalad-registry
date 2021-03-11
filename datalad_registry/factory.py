@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 
 from celery.schedules import crontab
@@ -48,8 +49,10 @@ def setup_celery(app, celery):
     return celery
 
 
-def create_app(test_config=None):
-    app = Flask(__name__)
+def create_app(test_config=None, instance_path=None):
+    app = Flask(
+        __name__,
+        instance_path=os.environ.get("DATALAD_REGISTRY_INSTANCE_PATH"))
     instance_path = Path(app.instance_path)
     db_uri = "sqlite:///" + str(instance_path / "registry.sqlite")
     app.config.from_mapping(
