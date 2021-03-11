@@ -123,7 +123,7 @@ def url(ds_id, url_encoded):
         return jsonify(resp)
     elif request.method == "PATCH":
         if row_known is None:
-            return jsonify(message="Invalid encoded URL"), 404
+            return jsonify(message="Unknown URL"), 404
         result.update({"update_announced": 1})
         db.session.commit()
         return "", 202
