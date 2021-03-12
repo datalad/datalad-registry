@@ -1,0 +1,26 @@
+#!/bin/sh
+
+set -eu
+
+echo "pgid: $$"  # for easy clean-up
+
+ipath=$(mktemp -d "${TMPDIR:-/tmp}"/dl-registry-tests-XXXX)
+: "${DATALAD_REGISTRY_INSTANCE_PATH:=$ipath}"
+export DATALAD_REGISTRY_INSTANCE_PATH
+logfile="$ipath/up.log"
+echo "Dumping ./up output to $logfile"
+
+./up >"$logfile" 2>&1 &
+
+for i in $(seq 30)
+do
+    echo "Checking for Flask server connection (try $i)..."
+    if ! nc -nvz 127.0.0.1 5000
+    then
+        sleep 5
+    else
+        exit 0
+    fi
+done
+
+exit 1

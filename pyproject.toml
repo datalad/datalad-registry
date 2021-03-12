@@ -3,5 +3,6 @@ requires = ["setuptools >= 30.3.0", "wheel"]
 
 [tool.pytest.ini_options]
 markers = [
+    "devserver: mark tests that require Flask development server",
     "slow: mark tests as slow",
 ]
