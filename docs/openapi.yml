@@ -3,14 +3,13 @@ info:
   title: DataLad Registry API
   version: 1.0.0
   description: |
-    Registering new dataset URL
-    ---------------------------
-
-    Registering a new URL for a dataset consists of the following steps:
-      * retrieving a challenge token
-      * adding the challenge token to the specified git reference and
-        making that change available via the URL
-      * issuing a request to add the URL
+    Endpoints
+    ---------
+    * Return list of registered URLs for a dataset
+    * Add a new URL
+    * Query status of added URL
+    * Announce that dataset at URL has been updated
+    * Return list of known dataset IDs
 
 servers:
   - url: /v1
@@ -56,50 +55,6 @@ components:
             }
 
 paths:
-  /datasets/{ds_id}/urls/{url_encoded}/token:
-    parameters:
-      - $ref: "#/components/parameters/ds_id"
-      - $ref: "#/components/parameters/url_encoded"
-    get:
-      summary: Return challenge token for registering a dataset URL
-      description: |
-        Get a challenge token for dataset and URL (base64-encoded
-        using Python's URL-safe character set).
-      operationId: dataset_urls.token.get
-      responses:
-        "200":
-          description: challenge token
-          headers:
-            Cache-Control:
-              description: Cache-Control header with max-age directive
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ds_id:
-                    $ref: "#/components/schemas/ds_id"
-                  url:
-                    type: string
-                    description: dataset URL
-                  ref:
-                    type: string
-                    description: challenge reference
-                  token:
-                    type: string
-                    description: challenge token
-              example:
-                {
-                  "ds_id": "6eeadb86-84be-11e6-b24c-002590f97d84",
-                  "url": "https://datasets.datalad.org/labs/haxby/raiders/.git",
-                  "ref": "refs/datalad-registry/0612a88655746eb05d73732e9cc5ea289253a53b",
-                  "token": "0612a88655746eb05d73732e9cc5ea289253a53b"
-                }
-        "400":
-          $ref: "#/components/responses/invalid-encoded-url"
-
   /datasets/{ds_id}/urls:
     parameters:
       - $ref: "#/components/parameters/ds_id"
@@ -136,15 +91,9 @@ paths:
               properties:
                 url:
                   type: string
-                token:
-                  type: string
-                ref:
-                  type: string
             example:
               {
                 "url": "https://datasets.datalad.org/labs/haxby/raiders/.git",
-                "token": "0612a88655746eb05d73732e9cc5ea289253a53b",
-                "ref": "refs/datalad-registry/0612a88655746eb05d73732e9cc5ea289253a53b"
               }
       responses:
         "202":
@@ -169,7 +118,7 @@ paths:
                   "url_encoded": "aHR0cHM6Ly9kYXRhc2V0cy5kYXRhbGFkLm9yZy9sYWJzL2hheGJ5L3JhaWRlcnMvLmdpdA=="
                 }
         "400":
-          description: invalid data or unknown token
+          description: invalid data
           content:
             application/json:
               schema:
@@ -179,20 +128,7 @@ paths:
                     type: string
               example:
                 {
-                  "message": "Unknown token"
-                }
-        "410":
-          description: expired token
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-              example:
-                {
-                  "message": "Expired token"
+                  "message": "Invalid data"
                 }
   /datasets/{ds_id}/urls/{url_encoded}:
     parameters:
