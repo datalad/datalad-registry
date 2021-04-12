@@ -37,16 +37,16 @@ def test_submit_via_local(tmp_path):
     assert_in_results(
         ds.registry_submit(url=ds.path),
         action="registry-submit", type="dataset",
-        location=query_url,
         path=ds.path, status="ok")
 
     assert requests.get(query_url).json()["status"] != "unknown"
 
-    # Redoing leads to notneeded.
+    # Redoing announces.
+    res = ds.registry_submit(url=ds.path)
     assert_in_results(
-        ds.registry_submit(url=ds.path),
+        res,
         action="registry-submit", type="dataset",
-        path=ds.path, status="notneeded")
+        path=ds.path, status="ok")
 
 
 @pytest.mark.slow
@@ -78,7 +78,6 @@ def test_submit_via_sibling(tmp_path):
     assert_in_results(
         ds.registry_submit(sibling="origin"),
         action="registry-submit", type="dataset",
-        location=query_url,
         path=ds.path, status="ok")
 
     assert requests.get(query_url).json()["status"] != "unknown"
@@ -103,7 +102,6 @@ def test_submit_explicit_endpoint(tmp_path):
     assert_in_results(
         ds.registry_submit(url=ds.path, endpoint=ENDPOINT),
         action="registry-submit", type="dataset",
-        location=query_url,
         path=ds.path, status="ok")
 
     assert requests.get(query_url).json()["status"] != "unknown"

@@ -47,8 +47,8 @@ def create_and_register_repos(client, path, n):
 
         init_repo(str(dset))
 
-        r_post = client.post(f"/v1/datasets/{ds_id}/urls", json={"url": url})
-        assert r_post.status_code == 202
+        r_patch = client.patch(f"/v1/datasets/{ds_id}/urls/{url_encoded}")
+        assert r_patch.status_code == 202
 
         records.append({"ds_id": ds_id, "url_encoded": url_encoded})
     return records
@@ -58,4 +58,5 @@ def register_dataset(ds, url, client):
     """Register `url` for dataset `ds` with `client`.
     """
     ds_id = ds.id
-    client.post(f"/v1/datasets/{ds_id}/urls", json={"url": url})
+    url_encoded = url_encode(url)
+    client.patch(f"/v1/datasets/{ds_id}/urls/{url_encoded}")

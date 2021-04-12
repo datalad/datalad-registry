@@ -6,9 +6,8 @@ info:
     Endpoints
     ---------
     * Return list of registered URLs for a dataset
-    * Add a new URL
+    * Add a new URL or announce update of existing one
     * Query status of added URL
-    * Announce that dataset at URL has been updated
     * Return list of known dataset IDs
 
 servers:
@@ -80,21 +79,6 @@ paths:
                   "ds_id": "6eeadb86-84be-11e6-b24c-002590f97d84",
                   "urls": ["https://datasets.datalad.org/labs/haxby/raiders/.git"]
                 }
-    post:
-      summary: Add a new URL
-      operationId: dataset_urls.urls.post
-      requestBody:
-        content:
-          "application/json":
-            schema:
-              type: object
-              properties:
-                url:
-                  type: string
-            example:
-              {
-                "url": "https://datasets.datalad.org/labs/haxby/raiders/.git",
-              }
       responses:
         "202":
           description: URL submitted
@@ -175,7 +159,7 @@ paths:
         "400":
           $ref: "#/components/responses/invalid-encoded-url"
     patch:
-      summary: Announce that dataset at URL has been updated
+      summary: Add new dataset URL or announce existing one has been updated
       operationId: dataset_urls.url.patch
       responses:
         "202":

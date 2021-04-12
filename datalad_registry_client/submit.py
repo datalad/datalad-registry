@@ -31,6 +31,7 @@ class RegistrySubmit(Interface):
             dataset=dataset, sibling=sibling, url=url, endpoint=endpoint)
         ds_id = options["ds_id"]
         url = options["url"]
+        url_encoded = options['url_encoded']
 
         res_base = get_status_dict(action="registry-submit",
                                    logger=lgr, **options)
@@ -39,7 +40,7 @@ class RegistrySubmit(Interface):
 
         try:
             r_url = requests.get(
-                f"{base_url}/{ds_id}/urls/{options['url_encoded']}",
+                f"{base_url}/{ds_id}/urls/{url_encoded}",
                 timeout=1)
             r_url.raise_for_status()
         except requests.exceptions.RequestException as exc:
@@ -47,20 +48,18 @@ class RegistrySubmit(Interface):
                        message=("Check if URL is known failed: %s", exc))
             return
         url_info = r_url.json()
-        if url_info.get("status") != "unknown":
-            yield dict(res_base, status="notneeded",
-                       message="URL already known to registry")
-            return
+        if url_info.get("status") == "unknown":
+            msg = "Registered URL"
+        else:
+            msg = "Announced update"
 
-        # Register URL.
         try:
-            r_post = requests.post(f"{base_url}/{ds_id}/urls",
-                                   json={"url": url}, timeout=1)
-            r_post.raise_for_status()
+            r_patch = requests.patch(f"{base_url}/{ds_id}/urls/{url_encoded}",
+                                     timeout=1)
+            r_patch.raise_for_status()
         except requests.exceptions.RequestException as exc:
             yield dict(res_base, status="error",
-                       message=("Adding URL failed: %s", exc))
+                       message=("Submitting URL failed: %s", exc))
             return
         yield dict(res_base, status="ok",
-                   location=r_post.headers["Location"],
-                   message=("Registered URL: %s", options["url"]))
+                   message=("%s: %s", msg, url))
