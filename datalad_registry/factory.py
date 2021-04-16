@@ -24,11 +24,7 @@ def _setup_logging(level):
 
 
 def setup_celery(app, celery):
-    celery.conf.beat_schedule = {
-        "prune_old_tokens": {
-            "task": "datalad_registry.tasks.prune_old_tokens",
-            "schedule": crontab(hour=4, minute=0)},
-    }
+    celery.conf.beat_schedule = {}
     cache_dir = app.config.get("DATALAD_REGISTRY_DATASET_CACHE")
     if cache_dir:
         celery.conf.beat_schedule["collect_dataset_info"] = {
