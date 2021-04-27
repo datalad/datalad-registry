@@ -10,6 +10,8 @@ from flask import Blueprint
 from flask import jsonify
 from flask import request
 
+from datalad_registry import tasks
+
 from datalad_registry.models import db
 from datalad_registry.models import URL
 
@@ -60,7 +62,9 @@ def url(ds_id, url_encoded):
     elif request.method == "PATCH":
         if row_known is None:
             db.session.add(URL(ds_id=ds_id, url=url))
+            db.session.commit()
+            tasks.collect_dataset_info.delay([(ds_id, url)])
         else:
             result.update({"update_announced": 1})
-        db.session.commit()
+            db.session.commit()
         return "", 202

@@ -66,8 +66,8 @@ def collect_dataset_info(datasets=None):
     Parameters
     ----------
     datasets : list of (<dataset ID>, <url>) tuples, optional
-        If not specified, look for registered datasets that are not
-        yet cloned or that have an announced update.
+        If not specified, look for registered datasets that have an
+        announced update.
     """
     import datalad.api as dl
     from flask import current_app
@@ -78,18 +78,8 @@ def collect_dataset_info(datasets=None):
     ses = db.session
     if datasets is None:
         datasets = [(r.ds_id, r.url)
-                    # Work on a few at a time, letting remaining be
-                    # handled by next task.
-                    #
-                    # TODO: Think about better ways to handle this
-                    # (here and for the update_announced query below).
-                    for r in ses.query(URL).filter_by(info_ts=None).limit(3)]
-        # TODO: Look at info_ts timestamp and refresh previous
-        # information.
-        if not datasets:
-            datasets = [(r.ds_id, r.url)
-                        for r in ses.query(URL).filter_by(update_announced=1)
-                        .limit(3)]
+                    for r in ses.query(URL).filter_by(update_announced=1)
+                    .limit(3)]
     if not datasets:
         lgr.debug("Did not find URLs that needed information collected")
         return

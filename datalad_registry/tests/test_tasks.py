@@ -32,11 +32,6 @@ def test_collect_dataset_info(app_instance, tmp_path):
         ses = app_instance.db.session
         res = ses.query(URL).filter_by(url=url).one()
         assert res.ds_id == ds.id
-        assert res.head is None
-
-        tasks.collect_dataset_info()
-
-        res = ses.query(URL).filter_by(url=url).one()
         assert res.head == repo.get_hexsha()
         assert res.head_describe == "v2"
         assert res.annex_uuid == repo.uuid
@@ -68,11 +63,6 @@ def test_collect_dataset_info_just_init(app_instance, tmp_path):
         ses = app_instance.db.session
         res = ses.query(URL).filter_by(url=url).one()
         assert res.ds_id == ds.id
-        assert res.head is None
-
-        tasks.collect_dataset_info()
-
-        res = ses.query(URL).filter_by(url=url).one()
         assert res.head == repo.get_hexsha()
         assert res.head_describe is None
         assert res.annex_uuid == repo.uuid
@@ -94,11 +84,6 @@ def test_collect_dataset_info_no_annex(app_instance, tmp_path):
         ses = app_instance.db.session
         res = ses.query(URL).filter_by(url=url).one()
         assert res.ds_id == ds.id
-        assert res.head is None
-
-        tasks.collect_dataset_info()
-
-        res = ses.query(URL).filter_by(url=url).one()
         assert res.head == repo.get_hexsha()
         assert res.annex_uuid is None
         assert res.annex_key_count is None
