@@ -49,7 +49,7 @@ def test_collect_dataset_info(app_instance, tmp_path):
         # now, test a direct fetch by giving the URL explicitly.
         repo.call_git(["commit", "--allow-empty", "-mc4"])
         repo.tag("v3", message="Version 3")
-        tasks.collect_dataset_info(urls=[url])
+        tasks.collect_dataset_info(datasets=[(ds.id, url)])
         res = ses.query(URL).filter_by(url=url).one()
         assert res.head == repo.get_hexsha()
         assert res.head_describe == "v3"
