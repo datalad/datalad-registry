@@ -1,5 +1,4 @@
 import pytest
-from unittest.mock import patch
 
 from datalad_registry.utils import url_encode
 from datalad_registry.tests.utils import init_repo
