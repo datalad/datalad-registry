@@ -1,4 +1,5 @@
 import base64
+import binascii
 
 
 class InvalidURL(Exception):
@@ -8,7 +9,7 @@ class InvalidURL(Exception):
 def url_decode(url):
     try:
         return base64.urlsafe_b64decode(url.encode()).decode()
-    except (base64.binascii.Error, UnicodeDecodeError):
+    except (binascii.Error, UnicodeDecodeError):
         raise InvalidURL
 
 
