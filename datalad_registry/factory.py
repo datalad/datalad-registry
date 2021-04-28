@@ -29,7 +29,7 @@ def setup_celery(app, celery):
     if cache_dir:
         celery.conf.beat_schedule["collect_dataset_info"] = {
             "task": "datalad_registry.tasks.collect_dataset_info",
-            "schedule": crontab(hour="*/3", minute=30)}
+            "schedule": crontab(minute="*/5")}
     else:
         lgr.debug("DATALAD_REGISTRY_DATASET_CACHE isn't configured. "
                   "Not registering periodic tasks that depend on it")

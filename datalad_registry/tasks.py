@@ -60,8 +60,14 @@ def _extract_annex_info(repo):
 
 
 @celery.task
-def collect_dataset_info(urls=None):
-    """Collect information about the dataset at each URL in `urls`.
+def collect_dataset_info(datasets=None):
+    """Collect information about `datasets`.
+
+    Parameters
+    ----------
+    datasets : list of (<dataset ID>, <url>) tuples, optional
+        If not specified, look for registered datasets that have an
+        announced update.
     """
     import datalad.api as dl
     from flask import current_app
@@ -70,29 +76,19 @@ def collect_dataset_info(urls=None):
     cache_dir.mkdir(parents=True, exist_ok=True)
 
     ses = db.session
-    if urls is None:
-        urls = [r.url
-                # Work on a few at a time, letting remaining be
-                # handled by next task.
-                #
-                # TODO: Think about better ways to handle this (here
-                # and for the update_announced query below).
-                for r in ses.query(URL).filter_by(info_ts=None).limit(3)]
-        # TODO: Look at info_ts timestamp and refresh previous
-        # information.
-        if not urls:
-            urls = [r.url
+    if datasets is None:
+        datasets = [(r.ds_id, r.url)
                     for r in ses.query(URL).filter_by(update_announced=1)
                     .limit(3)]
-    if not urls:
+    if not datasets:
         lgr.debug("Did not find URLs that needed information collected")
         return
 
-    lgr.info("Collecting information for %s URLs", len(urls))
-    lgr.debug("URLs: %s", urls)
+    lgr.info("Collecting information for %s URLs", len(datasets))
+    lgr.debug("Datasets: %s", datasets)
 
-    for url in urls:
-        ds_path = cache_dir / url_encode(url)
+    for (ds_id, url) in datasets:
+        ds_path = cache_dir / ds_id[:3] / url_encode(url)
         ds_path_str = str(ds_path)
         # TODO: Decide how to handle subdatasets.
         if ds_path.exists():
