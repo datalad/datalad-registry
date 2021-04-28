@@ -2,11 +2,9 @@
 import logging
 
 import requests
-
 from datalad.distribution.dataset import datasetmethod
-
-from datalad.interface.base import Interface
 from datalad.interface.base import build_doc
+from datalad.interface.base import Interface
 from datalad.interface.results import get_status_dict
 from datalad.interface.utils import eval_results
 

@@ -1,7 +1,7 @@
 import pytest
 
-from datalad_registry.utils import url_encode
 from datalad_registry.tests.utils import init_repo
+from datalad_registry.utils import url_encode
 
 
 def test_urls_get_empty(client, ds_id):

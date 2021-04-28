@@ -1,7 +1,8 @@
-import pytest
 import re
 import time
 from unittest.mock import patch
+
+import pytest
 
 from datalad_registry.tests.utils import create_and_register_repos
 from datalad_registry.tests.utils import register_dataset

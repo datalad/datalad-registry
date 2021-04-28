@@ -7,7 +7,6 @@ from datalad_registry.factory import create_app
 from datalad_registry.models import db
 from datalad_registry.tests.utils import make_ds_id
 
-
 AppInstance = namedtuple("AppInstance", ["app", "db", "client"])
 
 

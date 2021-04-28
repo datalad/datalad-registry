@@ -11,10 +11,8 @@ from flask import jsonify
 from flask import request
 
 from datalad_registry import tasks
-
 from datalad_registry.models import db
 from datalad_registry.models import URL
-
 from datalad_registry.utils import InvalidURL
 from datalad_registry.utils import url_decode
 

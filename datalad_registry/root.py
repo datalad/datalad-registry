@@ -6,7 +6,6 @@ from flask import Blueprint
 from flask import redirect
 from flask import url_for
 
-
 lgr = logging.getLogger(__name__)
 bp = Blueprint("root", __name__, url_prefix="")
 

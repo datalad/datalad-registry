@@ -1,6 +1,6 @@
+from random import Random
 import subprocess as sp
 import uuid
-from random import Random
 
 from datalad_registry.utils import url_encode
 

@@ -1,8 +1,8 @@
-import pytest
-import requests
 import subprocess as sp
 
 import datalad.api as dl
+import pytest
+import requests
 from datalad.tests.utils import assert_in_results
 
 from datalad_registry.utils import url_encode
