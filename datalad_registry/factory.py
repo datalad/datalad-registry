@@ -45,7 +45,7 @@ def setup_celery(app, celery):
     return celery
 
 
-def create_app(test_config=None, instance_path=None):
+def create_app(test_config=None):
     app = Flask(
         __name__,
         instance_path=os.environ.get("DATALAD_REGISTRY_INSTANCE_PATH"))
