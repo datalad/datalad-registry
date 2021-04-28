@@ -24,7 +24,7 @@ _SORT_ATTRS = {"keys-asc": ("annex_key_count", "asc"),
 
 
 @bp.route("/")
-def overview():
+def overview():  # No type hints due to mypy#7187.
     if request.method == "GET":
         r = db.session.query(URL)
         url_filter = request.args.get('filter', None, type=str)

@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 
-class URL(db.Model):
+class URL(db.Model):  # type: ignore
 
     __tablename__ = "urls"
 
@@ -20,11 +20,11 @@ class URL(db.Model):
     branches = db.Column(db.Text)
     tags = db.Column(db.Text)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<URL(url={self.url!r}, ds_id={self.ds_id!r})>"
 
 
 @click.command("init-db")
 @with_appcontext
-def init_db_command():
+def init_db_command() -> None:
     db.create_all()

@@ -5,6 +5,7 @@ the operationId dataset_urls.{function_name}.{request_method}.
 """
 
 import logging
+from typing import Any
 
 from flask import Blueprint
 from flask import jsonify
@@ -19,9 +20,11 @@ from datalad_registry.utils import url_decode
 lgr = logging.getLogger(__name__)
 bp = Blueprint("dataset_urls", __name__, url_prefix="/v1/datasets/")
 
+# See mypy#7187 for why Any is used for return value.
+
 
 @bp.route("<uuid:ds_id>/urls")
-def urls(ds_id):
+def urls(ds_id: str) -> Any:
     ds_id = str(ds_id)
     if request.method == "GET":
         lgr.info("Reporting which URLs are registered for %s", ds_id)
@@ -31,7 +34,7 @@ def urls(ds_id):
 
 
 @bp.route("<uuid:ds_id>/urls/<string:url_encoded>", methods=["GET", "PATCH"])
-def url(ds_id, url_encoded):
+def url(ds_id: str, url_encoded: str) -> Any:
     ds_id = str(ds_id)
     try:
         url = url_decode(url_encoded)
@@ -44,7 +47,7 @@ def url(ds_id, url_encoded):
     if request.method == "GET":
         lgr.info("Checking status of registering %s as URL of %s",
                  url, ds_id)
-        resp = {"ds_id": ds_id, "url": url}
+        resp: Any = {"ds_id": ds_id, "url": url}
         if row_known is None:
             status = "unknown"
         else:

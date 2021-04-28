@@ -1,6 +1,11 @@
 import logging
 from pathlib import Path
 import time
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 from datalad_registry import celery
 from datalad_registry.models import db
@@ -9,8 +14,14 @@ from datalad_registry.utils import url_encode
 
 lgr = logging.getLogger(__name__)
 
+InfoType = Dict[str, Union[str, float]]
 
-def _extract_info_call_git(repo, commands):
+# NOTE: A type isn't specified for repo using a top-level DataLad
+# import leads to an asyncio-related error: "RuntimeError: Cannot add
+# child handler, the child watcher does not have a loop attached".
+
+
+def _extract_info_call_git(repo, commands: Dict[str, List[str]]) -> InfoType:
     from datalad.support.exceptions import CommandError
 
     info = {}
@@ -26,7 +37,7 @@ def _extract_info_call_git(repo, commands):
     return info
 
 
-def _extract_git_info(repo):
+def _extract_git_info(repo) -> InfoType:
     return _extract_info_call_git(
         repo,
         {"head": ["rev-parse", "--verify", "HEAD"],
@@ -39,7 +50,7 @@ def _extract_git_info(repo):
                   "refs/tags/"]})
 
 
-def _extract_annex_info(repo):
+def _extract_annex_info(repo) -> InfoType:
     from datalad.support.exceptions import CommandError
 
     info = {}
@@ -60,7 +71,8 @@ def _extract_annex_info(repo):
 
 
 @celery.task
-def collect_dataset_info(datasets=None):
+def collect_dataset_info(
+        datasets: Optional[List[Tuple[str, str]]] = None) -> None:
     """Collect information about `datasets`.
 
     Parameters
@@ -99,7 +111,7 @@ def collect_dataset_info(datasets=None):
         else:
             ds = dl.clone(url, ds_path_str)
             ds_repo = ds.repo
-        info = _extract_git_info(ds_repo)
+        info: InfoType = _extract_git_info(ds_repo)
         info.update(_extract_annex_info(ds_repo))
         info["info_ts"] = time.time()
         info["update_announced"] = 0
