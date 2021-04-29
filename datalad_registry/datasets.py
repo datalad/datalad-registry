@@ -18,7 +18,7 @@ _PAGE_NITEMS = 100  # TODO: Should eventually be configurable by app.
 
 
 @bp.route("datasets")
-def datasets():
+def datasets():  # No type hints due to mypy#7187.
     if request.method == "GET":
         lgr.info("Getting list of known datasets")
         r = db.session.query(URL.ds_id).group_by(URL.ds_id)

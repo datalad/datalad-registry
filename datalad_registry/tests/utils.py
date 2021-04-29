@@ -1,6 +1,12 @@
+from pathlib import Path
 from random import Random
 import subprocess as sp
+from typing import Dict
+from typing import List
 import uuid
+
+from datalad.distribution.dataset import Dataset
+from flask.testing import FlaskClient
 
 from datalad_registry.utils import url_encode
 
@@ -8,7 +14,7 @@ random = Random()
 random.seed("datalad-registry")
 
 
-def make_ds_id():
+def make_ds_id() -> str:
     """Generate a dataset ID like DataLad would.
 
     This is intended for lightweight tests that don't create
@@ -17,7 +23,7 @@ def make_ds_id():
     return str(uuid.UUID(int=random.getrandbits(128)))
 
 
-def init_repo(path):
+def init_repo(path: str) -> None:
     """Initialize empty repo.
 
     This creates a minimal repository suitable for tests that don't
@@ -33,7 +39,8 @@ def init_repo(path):
     sp.run(["git", "commit", "--allow-empty", "-mc0"], cwd=path)
 
 
-def create_and_register_repos(client, path, n):
+def create_and_register_repos(
+        client: FlaskClient, path: Path, n: int) -> List[Dict[str, str]]:
     """Create `n` empty repos under `path` and register URL with `client`.
     """
     records = []
@@ -54,7 +61,7 @@ def create_and_register_repos(client, path, n):
     return records
 
 
-def register_dataset(ds, url, client):
+def register_dataset(ds: Dataset, url: str, client: FlaskClient) -> None:
     """Register `url` for dataset `ds` with `client`.
     """
     ds_id = ds.id

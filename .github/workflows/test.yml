@@ -33,11 +33,14 @@ jobs:
         pip install --upgrade pip
         pip install wheel
         pip install codecov
+        pip install mypy
         pip install .
         pip install .[tests]
     - name: Set up dev server
       run: ./up-tests
     - name: Run tests
       run: coverage run -m pytest --devserver && coverage xml
+    - name: mypy check
+      run: mypy datalad_registry datalad_registry_client
     - name: Upload coverage to codecov
       uses: codecov/codecov-action@v1

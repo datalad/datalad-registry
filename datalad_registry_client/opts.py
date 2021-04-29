@@ -1,6 +1,11 @@
 """Common parameters and option handling.
 """
 
+from typing import Any
+from typing import Dict
+from typing import Optional
+
+from datalad.distribution.dataset import Dataset
 from datalad.distribution.dataset import EnsureDataset
 from datalad.distribution.dataset import require_dataset
 from datalad.support.constraints import EnsureNone
@@ -38,7 +43,12 @@ common_params = dict(
         constraints=EnsureStr() | EnsureNone()))
 
 
-def process_args(*, dataset=None, sibling=None, url=None, endpoint=None):
+def process_args(
+        *, dataset: Optional[Dataset] = None,
+        sibling: Optional[str] = None,
+        url: Optional[str] = None,
+        endpoint: Optional[str] = None
+) -> Dict[str, Any]:
     """Process common arguments, returning dict with resolved/derived values.
     """
     ds = require_dataset(dataset, purpose="interact with a registry",

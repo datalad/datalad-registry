@@ -1,7 +1,12 @@
 import logging
 import os
 from pathlib import Path
+from typing import Any
+from typing import Dict
+from typing import Optional
+from typing import Union
 
+from celery.app.base import Celery
 from celery.schedules import crontab
 from flask import Flask
 from flask.logging import default_handler
@@ -17,13 +22,13 @@ from datalad_registry.models import init_db_command
 lgr = logging.getLogger(__name__)
 
 
-def _setup_logging(level):
+def _setup_logging(level: Union[int, str]) -> None:
     lgr = logging.getLogger("datalad_registry")
     lgr.setLevel(level)
     lgr.addHandler(default_handler)
 
 
-def setup_celery(app, celery):
+def setup_celery(app: Flask, celery: Celery) -> Celery:
     celery.conf.beat_schedule = {}
     cache_dir = app.config.get("DATALAD_REGISTRY_DATASET_CACHE")
     if cache_dir:
@@ -36,7 +41,7 @@ def setup_celery(app, celery):
 
     celery.config_from_object(app.config, namespace="CELERY")
 
-    class ContextTask(celery.Task):
+    class ContextTask(celery.Task):  # type: ignore
         def __call__(self, *args, **kwargs):
             with app.app_context():
                 return self.run(*args, **kwargs)
@@ -45,7 +50,7 @@ def setup_celery(app, celery):
     return celery
 
 
-def create_app(test_config=None):
+def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
     app = Flask(
         __name__,
         instance_path=os.environ.get("DATALAD_REGISTRY_INSTANCE_PATH"))

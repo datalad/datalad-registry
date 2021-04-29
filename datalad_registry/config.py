@@ -1,8 +1,10 @@
 import os
+from typing import Union
 
 
-def _log_level():
+def _log_level() -> Union[str, int]:
     env = os.environ.get("DATALAD_REGISTRY_LOG_LEVEL")
+    level: Union[str, int]
     if env:
         try:
             level = int(env)

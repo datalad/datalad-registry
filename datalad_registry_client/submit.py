@@ -1,7 +1,12 @@
 
 import logging
+from typing import Any
+from typing import Dict
+from typing import Optional
+from typing import Iterator
 
 import requests
+from datalad.distribution.dataset import Dataset
 from datalad.distribution.dataset import datasetmethod
 from datalad.interface.base import build_doc
 from datalad.interface.base import Interface
@@ -23,7 +28,12 @@ class RegistrySubmit(Interface):
     @staticmethod
     @datasetmethod(name="registry_submit")
     @eval_results
-    def __call__(dataset=None, sibling=None, url=None, endpoint=None):
+    def __call__(
+            dataset: Optional[Dataset] = None,
+            sibling: Optional[str] = None,
+            url: Optional[str] = None,
+            endpoint: Optional[str] = None
+    ) -> Iterator[Dict[str, Any]]:
         # TODO: Allow recursive operation?
         options = opts.process_args(
             dataset=dataset, sibling=sibling, url=url, endpoint=endpoint)
