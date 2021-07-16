@@ -89,8 +89,17 @@ def collect_dataset_info(
 
     ses = db.session
     if datasets is None:
+        # this one is done on celery's beat/cron
+        # TODO: might "collide" between announced update (datasets is provided)
+        # and cron.  How can we lock/protect?
+        # see https://github.com/datalad/datalad-registry/issues/34 which might be
+        # manifestation of absent protection/support for concurrency
         datasets = [(r.ds_id, r.url)
                     for r in ses.query(URL).filter_by(update_announced=1)
+                    # TODO: get all, group by id, send individual tasks
+                    # Q: could multiple instances of this task be running
+                    # at the same time????
+                    # TODO: if no updates, still do some randomly
                     .limit(3)]
     if not datasets:
         lgr.debug("Did not find URLs that needed information collected")
@@ -99,10 +108,16 @@ def collect_dataset_info(
     lgr.info("Collecting information for %s URLs", len(datasets))
     lgr.debug("Datasets: %s", datasets)
 
+    # TODO: this should be done by celery! it is silly to do it sequentially here
+    # I guess they might need to be groupped by ds_id since the same
+    # cache location is to be reused - each task should then handle it
     for (ds_id, url) in datasets:
         ds_path = cache_dir / ds_id[:3] / url_encode(url)
         ds_path_str = str(ds_path)
-        # TODO: Decide how to handle subdatasets.
+        # TODO (later): Decide how to handle subdatasets.
+        # TODO: support multiple URLs/remotes per dataset
+        # Make remote name to be a hash of url. Check below if among
+        # remotes and add one if missing, then use that remote, not 'origin'
         if ds_path.exists():
             ds = dl.Dataset(ds_path)
             ds_repo = ds.repo
@@ -113,6 +128,8 @@ def collect_dataset_info(
             ds_repo = ds.repo
         info: InfoType = _extract_git_info(ds_repo)
         info.update(_extract_annex_info(ds_repo))
+        # TODO: check if ds_id is still the same. If changed -- create a new
+        # entry for it?
         info["info_ts"] = time.time()
         info["update_announced"] = 0
         db.session.query(URL).filter_by(url=url).update(info)

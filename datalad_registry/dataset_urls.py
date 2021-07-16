@@ -42,6 +42,9 @@ def url(ds_id: str, url_encoded: str) -> Any:
         return jsonify(message="Invalid encoded URL"), 400
 
     result = db.session.query(URL).filter_by(url=url, ds_id=ds_id)
+    # even here could lead to sqlite locking issue, I guess if
+    # collect_dataset_info is in progress:
+    # https://github.com/datalad/datalad-registry/issues/34
     row_known = result.first()
 
     if request.method == "GET":
