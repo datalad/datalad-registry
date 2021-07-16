@@ -33,7 +33,7 @@ jobs:
         pip install --upgrade pip
         pip install wheel
         pip install codecov
-        pip install mypy
+        pip install mypy types-requests
         pip install .
         pip install .[tests]
     - name: Set up dev server
