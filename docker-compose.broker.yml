@@ -14,4 +14,4 @@ services:
       POSTGRES_PASSWORD: dlreg
       POSTGRES_INITDB_ARGS: --encoding utf8 --locale C
     volumes:
-      - ./instance:/var/lib/postgresql/data
+      - ./instance/db:/var/lib/postgresql/data
