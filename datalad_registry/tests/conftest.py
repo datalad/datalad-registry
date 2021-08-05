@@ -96,6 +96,7 @@ def app_instance(_app_instance):
     AppInstance namedtuple with app, db, and client fields.
     """
     with _app_instance.app.app_context():
+        db.drop_all()
         db.create_all()
         yield _app_instance
 
