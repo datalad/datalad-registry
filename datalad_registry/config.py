@@ -28,3 +28,12 @@ class DevelopmentConfig(Config):
 
 
 # TODO: ProductionConfig
+# from sqlalchemy.engine.url import URL
+# SQLALCHEMY_DATABASE_URI=str(URL.create(
+#     drivername = "postgresql",
+#     host       = "db",
+#     port       = 5432,
+#     database   = "dlreg",
+#     username   = "dlreg",
+#     password   = "dlreg",
+# ))

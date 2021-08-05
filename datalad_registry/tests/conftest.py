@@ -1,7 +1,12 @@
 from collections import namedtuple
 import os
+from pathlib import Path
+import shutil
+from subprocess import PIPE, run
+from time import sleep
 
 import pytest
+from sqlalchemy.engine.url import URL
 
 from datalad_registry.factory import create_app
 from datalad_registry.models import db
@@ -22,19 +27,58 @@ def cache_dir(tmp_path_factory):
     return tmp_path_factory.mktemp("cache_dir")
 
 
-@pytest.fixture(scope="session")
-def _app_instance(tmp_path_factory, cache_dir):
-    if "DATALAD_REGISTRY_TESTS_DISK_DB" in os.environ:
-        tmp_path = tmp_path_factory.mktemp("db")
-        db_uri = "sqlite:///" + str(tmp_path / "registry.sqlite3")
-    else:
-        db_uri = "sqlite:///:memory:"
+LOCAL_DOCKER_DIR = Path(__file__).with_name("data") / "datalad-registry-db"
+LOCAL_DOCKER_ENV = LOCAL_DOCKER_DIR.name
 
-    config = {"CELERY_BEAT_SCHEDULE": {},
-              "CELERY_TASK_ALWAYS_EAGER": True,
-              "DATALAD_REGISTRY_DATASET_CACHE": str(cache_dir),
-              "SQLALCHEMY_DATABASE_URI": db_uri,
-              "TESTING": True}
+
+@pytest.fixture(scope="session")
+def dockerdb():
+    if shutil.which("docker-compose") is None:
+        pytest.skip("docker-compose required")
+    if os.name != "posix":
+        pytest.skip("Docker images require Unix host")
+    try:
+        run(["docker-compose", "up", "-d"], cwd=str(LOCAL_DOCKER_DIR), check=True)
+        for _ in range(10):
+            health = run(
+                [
+                    "docker",
+                    "inspect",
+                    "--format={{.State.Health.Status}}",
+                    f"{LOCAL_DOCKER_ENV}_db_1",
+                ],
+                stdout=PIPE,
+                check=True,
+                universal_newlines=True,
+            ).stdout.strip()
+            if health == "healthy":
+                break
+            sleep(3)
+        else:
+            raise RuntimeError("Database container did not initialize in time")
+        yield str(
+            URL.create(
+                drivername="postgresql",
+                host="127.0.0.1",
+                port=5432,
+                database="dlreg",
+                username="dlreg",
+                password="dlreg",
+            )
+        )
+    finally:
+        run(["docker-compose", "down", "-v"], cwd=str(LOCAL_DOCKER_DIR), check=True)
+
+
+@pytest.fixture(scope="session")
+def _app_instance(dockerdb, tmp_path_factory, cache_dir):
+    config = {
+        "CELERY_BEAT_SCHEDULE": {},
+        "CELERY_TASK_ALWAYS_EAGER": True,
+        "DATALAD_REGISTRY_DATASET_CACHE": str(cache_dir),
+        "SQLALCHEMY_DATABASE_URI": dockerdb,
+        "TESTING": True,
+    }
     app = create_app(config)
     with app.test_client() as client:
         yield AppInstance(app, db, client)
@@ -52,10 +96,6 @@ def app_instance(_app_instance):
     AppInstance namedtuple with app, db, and client fields.
     """
     with _app_instance.app.app_context():
-        # Drop here, rather than after the yield, to support running a
-        # single test and inspecting the database afterwards when
-        # DATALAD_REGISTRY_TESTS_DISK_DB is set.
-        db.drop_all()
         db.create_all()
         yield _app_instance
 

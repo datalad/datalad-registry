@@ -1,9 +1,10 @@
 *.egg-info
 *.pyc
-.coverage
+.coverage*
 .dir-locals.el
 .flake8
 .mypy_cache/
+.tox/
 build/
 dist/
 htmlcov/
