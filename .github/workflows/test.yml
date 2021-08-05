@@ -39,7 +39,10 @@ jobs:
     - name: Set up dev server
       run: ./up-tests
     - name: Run tests
-      run: coverage run -m pytest --devserver && coverage xml
+      run: |
+        coverage run -m pytest --devserver
+        coverage combine
+        coverage xml
     - name: mypy check
       run: mypy datalad_registry datalad_registry_client
     - name: Upload coverage to codecov
