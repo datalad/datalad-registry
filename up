@@ -11,10 +11,12 @@ export DATALAD_REGISTRY_LOG_LEVEL
 export FLASK_APP=datalad_registry.factory:create_app
 export FLASK_ENV=development
 
+: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD envvar not set}"
+
 mkdir -p "$DATALAD_REGISTRY_INSTANCE_PATH"
-python -m flask init-db
 docker-compose -f docker-compose.broker.yml pull
 docker-compose -f docker-compose.broker.yml up &
+python -m flask init-db
 
 broker_ok=
 for i in $(seq 30)
