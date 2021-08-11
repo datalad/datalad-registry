@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -eu
 
@@ -15,7 +15,7 @@ export FLASK_ENV=development
 
 mkdir -p "$DATALAD_REGISTRY_INSTANCE_PATH"
 docker-compose -f docker-compose.broker.yml pull
-docker-compose -f docker-compose.broker.yml up &
+UID_GID="$(id -u):$(id -g)" docker-compose -f docker-compose.broker.yml up &
 python -m flask init-db
 
 broker_ok=
