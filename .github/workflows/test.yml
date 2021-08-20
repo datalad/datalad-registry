@@ -8,6 +8,9 @@ on:
     branches:
       - master
 
+env:
+  POSTGRES_PASSWORD: foobar123
+
 jobs:
   test:
     runs-on: ubuntu-latest
