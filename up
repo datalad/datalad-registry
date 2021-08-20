@@ -14,8 +14,23 @@ export FLASK_ENV=development
 : "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD envvar not set}"
 
 mkdir -p "$DATALAD_REGISTRY_INSTANCE_PATH"
+export UID_GID="$(id -u):$(id -g)"
 docker-compose -f docker-compose.broker.yml pull
-UID_GID="$(id -u):$(id -g)" docker-compose -f docker-compose.broker.yml up &
+docker-compose -f docker-compose.broker.yml up &
+
+echo "Waiting for database to come up..."
+while true
+do
+    sleep 3
+    printf .
+    health="$(docker inspect --format='{{.State.Health.Status}}' datalad-registry_db_1)"
+    if [ "$health" = healthy ]
+    then
+        echo
+        break
+    fi
+done
+
 python -m flask init-db
 
 broker_ok=
