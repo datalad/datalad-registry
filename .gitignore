@@ -9,3 +9,4 @@ build/
 dist/
 htmlcov/
 instance/
+instance-db/

@@ -1,16 +1,13 @@
-#!/bin/sh
-
+#!/bin/bash
 set -eu
 
-echo "pgid: $$"  # for easy clean-up
-
 ipath=$(mktemp -d "${TMPDIR:-/tmp}"/dl-registry-tests-XXXX)
-: "${DATALAD_REGISTRY_INSTANCE_PATH:=$ipath}"
+: "${DATALAD_REGISTRY_INSTANCE_PATH:=$ipath/instance}"
+: "${DATALAD_REGISTRY_DB_INSTANCE_PATH:=$ipath/db}"
 export DATALAD_REGISTRY_INSTANCE_PATH
-logfile="$ipath/up.log"
-echo "Dumping ./up output to $logfile"
+export DATALAD_REGISTRY_DB_INSTANCE_PATH
 
-./up >"$logfile" 2>&1 &
+./up
 
 for i in $(seq 30)
 do

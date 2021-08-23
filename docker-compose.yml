@@ -1,9 +1,12 @@
-version: "3"
+version: "2.1"
 services:
   web:
     build: .
     depends_on:
-      - broker
+      broker:
+        condition: service_healthy
+      db:
+        condition: service_healthy
     ports:
       - "5000:5000"
     environment: &env
@@ -15,9 +18,11 @@ services:
       RABBITMQ_DEFAULT_PASS: password
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_VHOST: /
+      POSTGRES_PASSWORD: postgres
     command: [sh, -c, "flask init-db && flask run --host=0.0.0.0"]
     volumes:
-      - ./instance:/app/instance
+      - $DATALAD_REGISTRY_INSTANCE_PATH:/app/instance
+
   broker:
     image: rabbitmq:3-alpine
     environment:
@@ -26,21 +31,53 @@ services:
       - "5672:5672"
     expose:
       - "5672"
+    healthcheck:
+      test: ["CMD", "nc", "-nvz", "127.0.0.1", "5672"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
   worker:
     build: .
     depends_on:
-      - broker
-    command: [celery, -A, datalad_registry.runcelery.celery, worker]
+      broker:
+        condition: service_healthy
+    command: [celery, -A, datalad_registry.runcelery.celery, worker, --loglevel, DEBUG, --pool, prefork]
     volumes:
-      - ./instance:/app/instance
+      - $DATALAD_REGISTRY_INSTANCE_PATH:/app/instance
     environment:
       <<: *env
+    healthcheck:
+      test: ["CMD-SHELL", "celery status --timeout 1 --json | grep -q pong"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   scheduler:
     build: .
     depends_on:
-      - broker
-    command: [celery, -A, datalad_registry.runcelery.celery, beat]
+      broker:
+        condition: service_healthy
+    command: [celery, -A, datalad_registry.runcelery.celery, beat, --loglevel, DEBUG]
     volumes:
-      - ./instance:/app/instance
+      - $DATALAD_REGISTRY_INSTANCE_PATH:/app/instance
     environment:
       <<: *env
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: dlreg
+      POSTGRES_USER: dlreg
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_INITDB_ARGS: --encoding utf8 --locale C
+    user: "${UID_GID}"
+    ports:
+      - 5432:5432
+    volumes:
+      - $DATALAD_REGISTRY_DB_INSTANCE_PATH:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "dlreg"]
+      interval: 7s
+      timeout: 3s
+      retries: 5

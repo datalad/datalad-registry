@@ -1,73 +1,9 @@
 #!/bin/bash
-
 set -eu
 
-: "${DATALAD_REGISTRY_INSTANCE_PATH:=$PWD/instance}"
-export DATALAD_REGISTRY_INSTANCE_PATH
-: "${DATALAD_REGISTRY_DATASET_CACHE:=$DATALAD_REGISTRY_INSTANCE_PATH/cache}"
-export DATALAD_REGISTRY_DATASET_CACHE
-: "${DATALAD_REGISTRY_LOG_LEVEL:=DEBUG}"
-export DATALAD_REGISTRY_LOG_LEVEL
-export FLASK_APP=datalad_registry.factory:create_app
-export FLASK_ENV=development
-
-: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD envvar not set}"
-
-mkdir -p "$DATALAD_REGISTRY_INSTANCE_PATH"
+mkdir -p "${DATALAD_REGISTRY_INSTANCE_PATH:-instance}"
+mkdir -p "${DATALAD_REGISTRY_DB_INSTANCE_PATH:-instance-db}"
 export UID_GID="$(id -u):$(id -g)"
-docker-compose -f docker-compose.broker.yml pull
-docker-compose -f docker-compose.broker.yml up &
-
-echo "Waiting for database to come up..."
-while true
-do
-    sleep 3
-    printf .
-    health="$(docker inspect --format='{{.State.Health.Status}}' datalad-registry_db_1)"
-    if [ "$health" = healthy ]
-    then
-        echo
-        break
-    fi
-done
-
-python -m flask init-db
-
-broker_ok=
-for i in $(seq 30)
-do
-    echo "Checking for broker connection (try $i)..."
-    if ! nc -nvz 127.0.0.1 5672
-    then
-        sleep 1
-    else
-        broker_ok=1
-        break
-    fi
-done
-test -z "$broker_ok" && exit 1
-
-celery () {
-    python -m celery -A datalad_registry.runcelery.celery "$@"
-}
-
-celery worker --loglevel "$DATALAD_REGISTRY_LOG_LEVEL" &
-celery beat --loglevel "$DATALAD_REGISTRY_LOG_LEVEL" \
-       --schedule "$DATALAD_REGISTRY_INSTANCE_PATH"/celerybeat-schedule &
-
-celery_ok=
-for i in $(seq 10)
-do
-    echo "Checking celery status (try $i)..."
-    if celery status --timeout 1 --json | grep -q pong
-    then
-        echo "Celery node found"
-        celery_ok=1
-        break
-    else
-        sleep 5
-    fi
-done
-test -z "$celery_ok" && exit 1
-
-python -m flask run
+docker-compose pull
+docker-compose build
+docker-compose up -d

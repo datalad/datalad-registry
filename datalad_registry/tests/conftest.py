@@ -32,11 +32,27 @@ LOCAL_DOCKER_ENV = LOCAL_DOCKER_DIR.name
 
 
 @pytest.fixture(scope="session")
-def dockerdb():
+def dockerdb(request):
     if shutil.which("docker-compose") is None:
         pytest.skip("docker-compose required")
     if os.name != "posix":
         pytest.skip("Docker images require Unix host")
+
+    dburl = str(
+        URL.create(
+            drivername="postgresql",
+            host="127.0.0.1",
+            port=5432,
+            database="dlreg",
+            username="dlreg",
+            password="postgres",
+        )
+    )
+
+    if request.config.getoption("--devserver"):
+        yield dburl
+        return
+
     try:
         run(["docker-compose", "up", "-d"], cwd=str(LOCAL_DOCKER_DIR), check=True)
         for _ in range(10):
@@ -56,16 +72,7 @@ def dockerdb():
             sleep(3)
         else:
             raise RuntimeError("Database container did not initialize in time")
-        yield str(
-            URL.create(
-                drivername="postgresql",
-                host="127.0.0.1",
-                port=5432,
-                database="dlreg",
-                username="dlreg",
-                password="dlreg",
-            )
-        )
+        yield dburl
     finally:
         run(["docker-compose", "down", "-v"], cwd=str(LOCAL_DOCKER_DIR), check=True)
 
