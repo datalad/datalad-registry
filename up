@@ -2,7 +2,7 @@
 set -eu
 
 mkdir -p "${DATALAD_REGISTRY_INSTANCE_PATH:-instance}"
-mkdir -p "${DATALAD_REGISTRY_DB_INSTANCE_PATH:-instance-db}"
+mkdir -p "${DATALAD_REGISTRY_DB_INSTANCE_PATH:-instance/db}"
 export UID_GID="$(id -u):$(id -g)"
 docker-compose pull
 docker-compose build
