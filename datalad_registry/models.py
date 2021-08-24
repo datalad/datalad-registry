@@ -19,6 +19,7 @@ class URL(db.Model):  # type: ignore
     head_describe = db.Column(db.Text)
     branches = db.Column(db.Text)
     tags = db.Column(db.Text)
+    git_objects_kb = db.Column(db.BigInteger)
 
     def __repr__(self) -> str:
         return f"<URL(url={self.url!r}, ds_id={self.ds_id!r})>"

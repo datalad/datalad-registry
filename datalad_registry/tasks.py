@@ -132,5 +132,6 @@ def collect_dataset_info(
         # entry for it?
         info["info_ts"] = time.time()
         info["update_announced"] = 0
+        info["git_objects_kb"] = ds_repo.count_objects["size"]
         db.session.query(URL).filter_by(url=url).update(info)
     db.session.commit()

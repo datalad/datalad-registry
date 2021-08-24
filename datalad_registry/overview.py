@@ -47,7 +47,7 @@ def overview():  # No type hints due to mypy#7187.
         for info in r.items:
             row = {}
             for col in ["ds_id", "url", "annex_key_count", "head",
-                        "head_describe"]:
+                        "head_describe", "git_objects_kb"]:
                 row[col] = getattr(info, col)
 
             ts = info.info_ts
