@@ -55,10 +55,7 @@ def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
         __name__,
         instance_path=os.environ.get("DATALAD_REGISTRY_INSTANCE_PATH"))
     instance_path = Path(app.instance_path)
-    db_uri = "sqlite:///" + str(instance_path / "registry.sqlite")
-    app.config.from_mapping(
-        SQLALCHEMY_DATABASE_URI=db_uri,
-        SQLALCHEMY_TRACK_MODIFICATIONS=False)
+    app.config.from_mapping(SQLALCHEMY_TRACK_MODIFICATIONS=False)
 
     if app.config["ENV"] == "production" and not test_config:
         raise RuntimeError("Not ready yet")

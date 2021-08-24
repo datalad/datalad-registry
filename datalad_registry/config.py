@@ -1,5 +1,6 @@
 import os
 from typing import Union
+from sqlalchemy.engine.url import URL
 
 
 def _log_level() -> Union[str, int]:
@@ -25,6 +26,23 @@ class Config(object):
 
 class DevelopmentConfig(Config):
     DEBUG = True
+    SQLALCHEMY_DATABASE_URI=str(URL.create(
+        drivername = "postgresql",
+        host       = "db",
+        port       = 5432,
+        database   = "dlreg",
+        username   = "dlreg",
+        password   = os.environ.get("POSTGRES_PASSWORD", "postgres"),
+    ))
 
 
 # TODO: ProductionConfig
+# from sqlalchemy.engine.url import URL
+# SQLALCHEMY_DATABASE_URI=str(URL.create(
+#     drivername = "postgresql",
+#     host       = "db",
+#     port       = 5432,
+#     database   = "dlreg",
+#     username   = "dlreg",
+#     password   = os.environ.get("POSTGRES_PASSWORD", "postgres"),
+# ))

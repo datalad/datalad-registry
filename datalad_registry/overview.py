@@ -32,7 +32,7 @@ def overview():  # No type hints due to mypy#7187.
             lgr.debug("Filter URLs by '%s'", url_filter)
             r = r.filter(URL.url.contains(url_filter, autoescape=True))
 
-        r = r.group_by(URL.ds_id)
+        r = r.group_by(URL)
         sort_by = request.args.get('sort', "update-desc", type=str)
         if sort_by not in _SORT_ATTRS:
             lgr.debug("Ignoring unknown sort parameter: %s", sort_by)

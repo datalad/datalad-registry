@@ -1,11 +1,5 @@
 version: "2.1"
 services:
-  broker:
-    image: rabbitmq:3-alpine
-    ports:
-      - "5672:5672"
-    expose:
-      - "5672"
   db:
     image: postgres:13
     environment:
@@ -13,11 +7,8 @@ services:
       POSTGRES_USER: dlreg
       POSTGRES_PASSWORD: postgres
       POSTGRES_INITDB_ARGS: --encoding utf8 --locale C
-    user: "${UID_GID}"
     ports:
-      - 5432:5432
-    volumes:
-      - ./instance/db:/var/lib/postgresql/data
+      - "5432:5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "dlreg"]
       interval: 7s

@@ -30,7 +30,7 @@ $ docker-compose up
 ```
 
 With a virtual environment activated, the database at
-instance/registry.sqlite can optionally be initiated before executing
+`instance/db` can optionally be initiated before executing
 the above command by running `./flask init-db`.  This makes inspecting
 the database from the local machine easier because the permissions
 will match the local user's.
