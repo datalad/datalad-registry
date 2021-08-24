@@ -47,6 +47,7 @@ services:
       - $DATALAD_REGISTRY_INSTANCE_PATH:/app/instance
     environment:
       <<: *env
+    user: "${UID_GID}"
     healthcheck:
       test: ["CMD-SHELL", "celery status --timeout 1 --json | grep -q pong"]
       interval: 5s
@@ -58,11 +59,17 @@ services:
     depends_on:
       broker:
         condition: service_healthy
-    command: [celery, -A, datalad_registry.runcelery.celery, beat, --loglevel, DEBUG]
+    command: [
+      celery, -A, datalad_registry.runcelery.celery,
+      beat,
+      --loglevel, DEBUG,
+      -s, /app/instance/celerybeat-schedule
+    ]
     volumes:
       - $DATALAD_REGISTRY_INSTANCE_PATH:/app/instance
     environment:
       <<: *env
+    user: "${UID_GID}"
 
   db:
     image: postgres:13
