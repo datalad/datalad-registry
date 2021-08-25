@@ -1,9 +1,16 @@
 #!/bin/bash
 set -eu
 
+: "${DATALAD_REGISTRY_PASSWORD:?DATALAD_REGISTRY_PASSWORD must be set}"
+export DATALAD_REGISTRY_PASSWORD
+export POSTGRES_PASSWORD="$DATALAD_REGISTRY_PASSWORD"
+export RABBITMQ_DEFAULT_PASS="$DATALAD_REGISTRY_PASSWORD"
+
 mkdir -p "${DATALAD_REGISTRY_INSTANCE_PATH:-instance}"
 mkdir -p "${DATALAD_REGISTRY_DB_INSTANCE_PATH:-instance/db}"
+
 export UID_GID="$(id -u):$(id -g)"
+
 docker-compose pull
 docker-compose build
 docker-compose up -d

@@ -45,7 +45,7 @@ def dockerdb(request):
             port=5432,
             database="dlreg",
             username="dlreg",
-            password="postgres",
+            password=os.environ["DATALAD_REGISTRY_PASSWORD"],
         )
     )
 

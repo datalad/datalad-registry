@@ -8,6 +8,9 @@ on:
     branches:
       - master
 
+env:
+  DATALAD_REGISTRY_PASSWORD: foobar123
+
 jobs:
   test:
     runs-on: ubuntu-latest

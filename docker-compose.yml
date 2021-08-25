@@ -10,15 +10,16 @@ services:
     ports:
       - "5000:5000"
     environment: &env
-      CELERY_BROKER_URL: "amqp://user:password@broker:5672"
+      CELERY_BROKER_URL: "amqp://user:$RABBITMQ_DEFAULT_PASS@broker:5672"
       DATALAD_REGISTRY_DATASET_CACHE: /app/instance/cache
       DATALAD_REGISTRY_LOG_LEVEL: DEBUG
+      DATALAD_REGISTRY_PASSWORD:
       FLASK_APP: datalad_registry.factory:create_app
       FLASK_ENV: development
-      RABBITMQ_DEFAULT_PASS: password
+      RABBITMQ_DEFAULT_PASS:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_VHOST: /
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD:
     command: [sh, -c, "flask init-db && flask run --host=0.0.0.0"]
     volumes:
       - $DATALAD_REGISTRY_INSTANCE_PATH:/app/instance
@@ -76,7 +77,7 @@ services:
     environment:
       POSTGRES_DB: dlreg
       POSTGRES_USER: dlreg
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD:
       POSTGRES_INITDB_ARGS: --encoding utf8 --locale C
     user: "${UID_GID}"
     ports:

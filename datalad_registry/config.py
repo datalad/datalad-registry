@@ -32,7 +32,7 @@ class DevelopmentConfig(Config):
         port       = 5432,
         database   = "dlreg",
         username   = "dlreg",
-        password   = os.environ.get("POSTGRES_PASSWORD", "postgres"),
+        password   = os.environ["DATALAD_REGISTRY_PASSWORD"]
     ))
 
 
