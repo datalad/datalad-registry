@@ -88,6 +88,10 @@ def dockerdb(request):
 
 @pytest.fixture(scope="session")
 def _app_instance(dockerdb, tmp_path_factory, cache_dir):
+    if "DATALAD_REGISTRY_INSTANCE_PATH" not in os.environ:
+        os.environ["DATALAD_REGISTRY_INSTANCE_PATH"] = str(
+            tmp_path_factory.mktemp("instance")
+        )
     config = {
         "CELERY_BEAT_SCHEDULE": {},
         "CELERY_TASK_ALWAYS_EAGER": True,
