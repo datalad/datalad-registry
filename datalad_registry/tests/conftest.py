@@ -60,6 +60,7 @@ def dockerdb(request):
         yield dburl
         return
 
+    persist = os.environ.get("DATALAD_REGISTRY_PERSIST_DOCKER_COMPOSE")
     try:
         run(["docker-compose", "up", "-d"], cwd=str(LOCAL_DOCKER_DIR), check=True)
         for _ in range(10):
@@ -81,7 +82,8 @@ def dockerdb(request):
             raise RuntimeError("Database container did not initialize in time")
         yield dburl
     finally:
-        run(["docker-compose", "down", "-v"], cwd=str(LOCAL_DOCKER_DIR), check=True)
+        if persist in (None, "0"):
+            run(["docker-compose", "down", "-v"], cwd=str(LOCAL_DOCKER_DIR), check=True)
 
 
 @pytest.fixture(scope="session")
