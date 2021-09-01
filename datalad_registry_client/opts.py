@@ -76,7 +76,7 @@ def process_args(
             raise ValueError("Could not find URL for {}".format(sibling))
         urls.append((url, url_encode(url)))
     else:
-        for r in repo.get_remotes():
+        for r in repo.get_remotes(with_urls_only=True):
             u = repo.get_remote_url(r)
             assert u is not None
             urls.append((u, url_encode(u)))
