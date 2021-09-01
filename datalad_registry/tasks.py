@@ -1,3 +1,4 @@
+import errno
 import logging
 from pathlib import Path
 import time
@@ -117,7 +118,15 @@ def collect_dataset_uuid(url: str) -> None:
         db.session.add(URL(url=url, ds_id=ds_id, **info))
         try:
             ds_path.rename(cache_dir / ds_id[:3] / url_encode(url))
-        except OSError:
+        except OSError as e:
+            if e.errno == errno.ENOTEMPTY:
+                lgr.debug("Clone of %s already in cache", url)
+            else:
+                lgr.exception(
+                    "Error moving dataset for %s to %s directory in cache",
+                    url,
+                    ds_id[:3],
+                )
             rmtree(ds_path)
     db.session.commit()
 
