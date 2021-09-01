@@ -116,8 +116,9 @@ def collect_dataset_uuid(url: str) -> None:
         ds_id = ds.id
         info = get_info(ds.repo)
         db.session.add(URL(url=url, ds_id=ds_id, **info))
+        abbrev_id = "None" if ds_id is None else ds_id[:3]
         try:
-            ds_path.rename(cache_dir / ds_id[:3] / url_encode(url))
+            ds_path.rename(cache_dir / abbrev_id / url_encode(url))
         except OSError as e:
             if e.errno == errno.ENOTEMPTY:
                 lgr.debug("Clone of %s already in cache", url)
@@ -125,7 +126,7 @@ def collect_dataset_uuid(url: str) -> None:
                 lgr.exception(
                     "Error moving dataset for %s to %s directory in cache",
                     url,
-                    ds_id[:3],
+                    abbrev_id,
                 )
             rmtree(ds_path)
     db.session.commit()
@@ -173,9 +174,12 @@ def collect_dataset_info(
     # I guess they might need to be groupped by ds_id since the same
     # cache location is to be reused - each task should then handle it
     for (ds_id, url) in datasets:
-        ds_path = cache_dir / ds_id[:3] / url_encode(url)
+        abbrev_id = "None" if ds_id is None else ds_id[:3]
+        ds_path = cache_dir / abbrev_id / url_encode(url)
         ds = clone_dataset(url, ds_path)
         info = get_info(ds.repo)
+        if ds_id is None:
+            info["ds_id"] = ds.id
         # TODO: check if ds_id is still the same. If changed -- create a new
         # entry for it?
         db.session.query(URL).filter_by(url=url).update(info)

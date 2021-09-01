@@ -10,7 +10,7 @@ class URL(db.Model):  # type: ignore
     __tablename__ = "urls"
 
     url = db.Column(db.Text, primary_key=True)
-    ds_id = db.Column(db.Text, nullable=False)
+    ds_id = db.Column(db.Text, nullable=True)
     annex_uuid = db.Column(db.Text)
     annex_key_count = db.Column(db.Integer)
     info_ts = db.Column(db.Integer)
