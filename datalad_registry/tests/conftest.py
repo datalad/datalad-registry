@@ -1,7 +1,9 @@
 from collections import namedtuple
 import os
 from pathlib import Path
+import random
 import shutil
+import string
 from subprocess import PIPE, run
 from time import sleep
 
@@ -37,6 +39,11 @@ def dockerdb(request):
         pytest.skip("docker-compose required")
     if os.name != "posix":
         pytest.skip("Docker images require Unix host")
+
+    if "DATALAD_REGISTRY_PASSWORD" not in os.environ:
+        os.environ["DATALAD_REGISTRY_PASSWORD"] = "".join(
+            random.choices(string.printable, k=32)
+        )
 
     dburl = str(
         URL.create(
