@@ -29,10 +29,6 @@ def test_submit_via_local(tmp_path):
 
     assert requests.get(query_url).json()["status"] == "unknown"
 
-    # If sibling is not specified, URL is required.
-    with pytest.raises(ValueError):
-        ds.registry_submit()
-
     assert_in_results(
         ds.registry_submit(url=ds.path),
         action="registry-submit", type="dataset",
@@ -80,6 +76,34 @@ def test_submit_via_sibling(tmp_path):
         path=ds.path, status="ok")
 
     assert requests.get(query_url).json()["status"] != "unknown"
+
+
+@pytest.mark.devserver
+@pytest.mark.slow
+def test_submit_all_siblings(tmp_path):
+    ds_sib = dl.Dataset(tmp_path / "sib").create()
+    ds = dl.clone(ds_sib.path, str(tmp_path / "clone"))
+
+    url2 = "https://www.example.nil/repo.git"
+    ds.config.set("remote.sibling2.url", url2, where="local")
+
+    ds_id = ds.id
+
+    query_urls = [
+        f"{ENDPOINT}/datasets/{ds_id}/urls/{url_encode(u)}"
+        for u in [ds_sib.path, url2]
+    ]
+
+    for qu in query_urls:
+        assert requests.get(qu).json()["status"] == "unknown"
+
+    assert_in_results(
+        ds.registry_submit(),
+        action="registry-submit", type="dataset",
+        path=ds.path, status="ok")
+
+    for qu in query_urls:
+        assert requests.get(qu).json()["status"] != "unknown"
 
 
 @pytest.mark.devserver

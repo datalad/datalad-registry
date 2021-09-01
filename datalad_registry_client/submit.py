@@ -37,36 +37,36 @@ class RegistrySubmit(Interface):
         options = opts.process_args(
             dataset=dataset, sibling=sibling, url=url, endpoint=endpoint)
         ds_id = options["ds_id"]
-        url = options["url"]
-        url_encoded = options['url_encoded']
+        urls = options["urls"]
 
         res_base = get_status_dict(action="registry-submit",
                                    logger=lgr, **options)
 
         base_url = f"{options['endpoint']}/datasets"
 
-        try:
-            r_url = requests.get(
-                f"{base_url}/{ds_id}/urls/{url_encoded}",
-                timeout=1)
-            r_url.raise_for_status()
-        except requests.exceptions.RequestException as exc:
-            yield dict(res_base, status="error",
-                       message=("Check if URL is known failed: %s", exc))
-            return
-        url_info = r_url.json()
-        if url_info.get("status") == "unknown":
-            msg = "Registered URL"
-        else:
-            msg = "Announced update"
+        for url, url_encoded in urls:
+            try:
+                r_url = requests.get(
+                    f"{base_url}/{ds_id}/urls/{url_encoded}",
+                    timeout=1)
+                r_url.raise_for_status()
+            except requests.exceptions.RequestException as exc:
+                yield dict(res_base, status="error",
+                           message=("Check if URL is known failed: %s", exc))
+                return
+            url_info = r_url.json()
+            if url_info.get("status") == "unknown":
+                msg = "Registered URL"
+            else:
+                msg = "Announced update"
 
-        try:
-            r_patch = requests.patch(f"{base_url}/{ds_id}/urls/{url_encoded}",
-                                     timeout=1)
-            r_patch.raise_for_status()
-        except requests.exceptions.RequestException as exc:
-            yield dict(res_base, status="error",
-                       message=("Submitting URL failed: %s", exc))
-            return
-        yield dict(res_base, status="ok",
-                   message=("%s: %s", msg, url))
+            try:
+                r_patch = requests.patch(f"{base_url}/{ds_id}/urls/{url_encoded}",
+                                         timeout=1)
+                r_patch.raise_for_status()
+            except requests.exceptions.RequestException as exc:
+                yield dict(res_base, status="error",
+                           message=("Submitting URL failed: %s", exc))
+                return
+            yield dict(res_base, status="ok",
+                       message=("%s: %s", msg, url))
