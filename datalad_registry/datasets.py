@@ -50,7 +50,7 @@ def urls(url_encoded: str) -> Any:
 
     if request.method == "GET":
         lgr.info("Checking status of registering %s as URL", url)
-        resp: Any = {"url": url}
+        resp: dict = {"url": url}
         if row_known is None:
             status = "unknown"
         else:
