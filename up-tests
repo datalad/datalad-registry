@@ -1,6 +1,8 @@
 #!/bin/bash
 set -eu
 
+echo "$$" > up-tests.pid
+
 ipath=$(mktemp -d "${TMPDIR:-/tmp}"/dl-registry-tests-XXXX)
 : "${DATALAD_REGISTRY_INSTANCE_PATH:=$ipath/instance}"
 : "${DATALAD_REGISTRY_DB_INSTANCE_PATH:=$ipath/db}"

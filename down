@@ -3,12 +3,12 @@ set -eu
 
 if [ develop = "${1:-}" ]
 then
-    if [ ! -e develop.pid ]
+    if [ ! -e up-tests.pid ]
     then
-        echo "Develop mode not in effect"
+        echo "up-tests pidfile not found"
         exit 2
     fi
-    pkill -g "$(< develop.pid)"
+    pkill -g "$(< up-tests.pid)"
     rm develop.pid
 fi
 

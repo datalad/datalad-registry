@@ -41,8 +41,6 @@ fi
 
 if [ develop = "${1:-}" ]
 then
-    ps -o pgid= -p "$$" > develop.pid
-
     : "${DATALAD_REGISTRY_INSTANCE_PATH:=$PWD/instance}"
     export DATALAD_REGISTRY_INSTANCE_PATH
     : "${DATALAD_REGISTRY_DATASET_CACHE:=$DATALAD_REGISTRY_INSTANCE_PATH/cache}"

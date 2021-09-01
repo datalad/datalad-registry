@@ -1,4 +1,5 @@
 **/*.pyc
 **/*~
-.git
 **/__pycache__
+.git
+instance
