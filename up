@@ -1,9 +1,100 @@
 #!/bin/bash
 set -eu
 
-mkdir -p "${DATALAD_REGISTRY_INSTANCE_PATH:-instance}"
-mkdir -p "${DATALAD_REGISTRY_DB_INSTANCE_PATH:-instance/db}"
+await_health () {
+    service="$1"
+    echo "Waiting for $service to come up..."
+    healthy=0
+    for i in $(seq 30)
+    do
+        printf .
+        health="$(docker inspect --format='{{.State.Health.Status}}' "datalad-registry_${service}_1")"
+        if [ "$health" = healthy ]
+        then
+            healthy=1
+            echo
+            break
+        fi
+        sleep 3
+    done
+    test "$healthy" = 1 || exit 1
+}
+
+celery () {
+    python -m celery -A datalad_registry.runcelery.celery "$@"
+}
+
+
+: "${DATALAD_REGISTRY_PASSWORD:?DATALAD_REGISTRY_PASSWORD must be set}"
+export DATALAD_REGISTRY_PASSWORD
+export POSTGRES_PASSWORD="$DATALAD_REGISTRY_PASSWORD"
+export RABBITMQ_DEFAULT_PASS="$DATALAD_REGISTRY_PASSWORD"
+
 export UID_GID="$(id -u):$(id -g)"
-docker-compose pull
-docker-compose build
-docker-compose up -d
+
+bg=0
+if [ "x--bg" = "x${1:-}" ]
+then
+    bg=1
+    shift
+fi
+
+if [ develop = "${1:-}" ]
+then
+    : "${DATALAD_REGISTRY_INSTANCE_PATH:=$PWD/instance}"
+    export DATALAD_REGISTRY_INSTANCE_PATH
+    : "${DATALAD_REGISTRY_DATASET_CACHE:=$DATALAD_REGISTRY_INSTANCE_PATH/cache}"
+    export DATALAD_REGISTRY_DATASET_CACHE
+    : "${DATALAD_REGISTRY_LOG_LEVEL:=DEBUG}"
+    export DATALAD_REGISTRY_LOG_LEVEL
+    export FLASK_APP=datalad_registry.factory:create_app
+    export FLASK_ENV=development
+    export CELERY_BROKER_URL="amqp://user:$RABBITMQ_DEFAULT_PASS@localhost:5672"
+
+    mkdir -p "$DATALAD_REGISTRY_INSTANCE_PATH"
+    mkdir -p "${DATALAD_REGISTRY_DB_INSTANCE_PATH:-instance/db}"
+    docker-compose pull broker db
+    docker-compose up -d broker db
+
+    await_health db
+    # Sometimes Postgres isn't ready to receive connections immediately after
+    # it becomes healthy:
+    sleep 2
+    python -m flask init-db
+
+    await_health broker
+
+    celery worker \
+        --logfile "$DATALAD_REGISTRY_INSTANCE_PATH/worker.log" \
+        --loglevel "$DATALAD_REGISTRY_LOG_LEVEL" &
+    celery beat \
+        --logfile "$DATALAD_REGISTRY_INSTANCE_PATH/beat.log" \
+        --loglevel "$DATALAD_REGISTRY_LOG_LEVEL" \
+        --schedule "$DATALAD_REGISTRY_INSTANCE_PATH"/celerybeat-schedule &
+
+    celery_ok=0
+    for i in $(seq 10)
+    do
+        echo "Checking celery status (try $i)..."
+        if celery status --timeout 1 --json 2>/dev/null | grep -q pong
+        then
+            echo "Celery node found"
+            celery_ok=1
+            break
+        else
+            sleep 5
+        fi
+    done
+    test "$celery_ok" = 1 || exit 1
+
+    if [ "$bg" = 1 ]
+    then python -m flask run &
+    else python -m flask run
+    fi
+else
+    mkdir -p "${DATALAD_REGISTRY_INSTANCE_PATH:-instance}"
+    mkdir -p "${DATALAD_REGISTRY_DB_INSTANCE_PATH:-instance/db}"
+    docker-compose pull
+    docker-compose build
+    docker-compose up -d
+fi

@@ -1,7 +1,9 @@
 from collections import namedtuple
 import os
 from pathlib import Path
+import random
 import shutil
+import string
 from subprocess import PIPE, run
 from time import sleep
 
@@ -38,6 +40,11 @@ def dockerdb(request):
     if os.name != "posix":
         pytest.skip("Docker images require Unix host")
 
+    if "DATALAD_REGISTRY_PASSWORD" not in os.environ:
+        os.environ["DATALAD_REGISTRY_PASSWORD"] = "".join(
+            random.choices(string.printable, k=32)
+        )
+
     dburl = str(
         URL.create(
             drivername="postgresql",
@@ -45,7 +52,7 @@ def dockerdb(request):
             port=5432,
             database="dlreg",
             username="dlreg",
-            password="postgres",
+            password=os.environ["DATALAD_REGISTRY_PASSWORD"],
         )
     )
 
@@ -53,6 +60,7 @@ def dockerdb(request):
         yield dburl
         return
 
+    persist = os.environ.get("DATALAD_REGISTRY_PERSIST_DOCKER_COMPOSE")
     try:
         run(["docker-compose", "up", "-d"], cwd=str(LOCAL_DOCKER_DIR), check=True)
         for _ in range(10):
@@ -74,11 +82,16 @@ def dockerdb(request):
             raise RuntimeError("Database container did not initialize in time")
         yield dburl
     finally:
-        run(["docker-compose", "down", "-v"], cwd=str(LOCAL_DOCKER_DIR), check=True)
+        if persist in (None, "0"):
+            run(["docker-compose", "down", "-v"], cwd=str(LOCAL_DOCKER_DIR), check=True)
 
 
 @pytest.fixture(scope="session")
 def _app_instance(dockerdb, tmp_path_factory, cache_dir):
+    if "DATALAD_REGISTRY_INSTANCE_PATH" not in os.environ:
+        os.environ["DATALAD_REGISTRY_INSTANCE_PATH"] = str(
+            tmp_path_factory.mktemp("instance")
+        )
     config = {
         "CELERY_BEAT_SCHEDULE": {},
         "CELERY_TASK_ALWAYS_EAGER": True,

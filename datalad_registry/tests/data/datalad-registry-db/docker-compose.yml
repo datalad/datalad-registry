@@ -1,11 +1,11 @@
 version: "2.1"
 services:
   db:
-    image: postgres:13
+    image: postgres:latest
     environment:
       POSTGRES_DB: dlreg
       POSTGRES_USER: dlreg
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: $DATALAD_REGISTRY_PASSWORD
       POSTGRES_INITDB_ARGS: --encoding utf8 --locale C
     ports:
       - "5432:5432"
