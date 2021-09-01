@@ -98,33 +98,27 @@ def _extract_annex_info(repo) -> InfoType:
 
 
 @celery.task
-def collect_dataset_uuid(urls: Optional[List[str]] = None) -> None:
+def collect_dataset_uuid(url: str) -> None:
     from flask import current_app
 
     cache_dir = Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
     cache_dir.mkdir(parents=True, exist_ok=True)
 
-    if not urls:
-        lgr.debug("Did not find URLs that needed UUIDs collected")
-        return
+    lgr.info("Collecting UUIDs for URL %s", url)
 
-    lgr.info("Collecting UUIDs for %s URLs", len(urls))
-    lgr.debug("URLs: %s", urls)
-
-    for url in urls:
-        result = db.session.query(URL).filter_by(url=url)
-        if result.first() is not None:
-            result.update({"update_announced": 1})
-        else:
-            ds_path = cache_dir / "UNKNOWN" / url_encode(url)
-            ds = clone_dataset(url, ds_path)
-            ds_id = ds.id
-            info = get_info(ds.repo)
-            db.session.add(URL(url=url, ds_id=ds_id, **info))
-            try:
-                ds_path.rename(cache_dir / ds_id[:3] / url_encode(url))
-            except OSError:
-                rmtree(ds_path)
+    result = db.session.query(URL).filter_by(url=url)
+    if result.first() is not None:
+        result.update({"update_announced": 1})
+    else:
+        ds_path = cache_dir / "UNKNOWN" / url_encode(url)
+        ds = clone_dataset(url, ds_path)
+        ds_id = ds.id
+        info = get_info(ds.repo)
+        db.session.add(URL(url=url, ds_id=ds_id, **info))
+        try:
+            ds_path.rename(cache_dir / ds_id[:3] / url_encode(url))
+        except OSError:
+            rmtree(ds_path)
     db.session.commit()
 
 

@@ -66,7 +66,7 @@ def urls(url_encoded: str) -> Any:
 
     elif request.method == "PATCH":
         if row_known is None:
-            tasks.collect_dataset_uuid.delay([url])
+            tasks.collect_dataset_uuid.delay(url)
         else:
             result.update({"update_announced": 1})
             db.session.commit()
