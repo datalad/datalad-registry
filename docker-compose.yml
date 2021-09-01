@@ -14,6 +14,7 @@ services:
       DATALAD_REGISTRY_DATASET_CACHE: /app/instance/cache
       DATALAD_REGISTRY_LOG_LEVEL: DEBUG
       DATALAD_REGISTRY_PASSWORD:
+      DATALAD_REGISTRY_POSTGRES_HOST: db
       FLASK_APP: datalad_registry.factory:create_app
       FLASK_ENV: development
       RABBITMQ_DEFAULT_PASS:
@@ -73,7 +74,7 @@ services:
     user: "${UID_GID}"
 
   db:
-    image: postgres:13
+    image: postgres:latest
     environment:
       POSTGRES_DB: dlreg
       POSTGRES_USER: dlreg

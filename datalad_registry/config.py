@@ -28,7 +28,7 @@ class DevelopmentConfig(Config):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI=str(URL.create(
         drivername = "postgresql",
-        host       = "db",
+        host       = os.environ.get("DATALAD_REGISTRY_POSTGRES_HOST", "localhost"),
         port       = 5432,
         database   = "dlreg",
         username   = "dlreg",

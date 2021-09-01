@@ -1,0 +1,15 @@
+#!/bin/bash
+set -eu
+
+if [ develop = "${1:-}" ]
+then
+    if [ ! -e develop.pid ]
+    then
+        echo "Develop mode not in effect"
+        exit 2
+    fi
+    pkill -g "$(< develop.pid)"
+    rm develop.pid
+fi
+
+docker-compose down -v

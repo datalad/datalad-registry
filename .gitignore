@@ -1,4 +1,5 @@
 *.egg-info
+*.pid
 *.pyc
 .coverage*
 .dir-locals.el
