@@ -1,3 +1,5 @@
+import os
+import time
 import subprocess as sp
 
 import datalad.api as dl
@@ -84,7 +86,9 @@ def test_submit_all_siblings(tmp_path):
     ds_sib = dl.Dataset(tmp_path / "sib").create()
     ds = dl.clone(ds_sib.path, str(tmp_path / "clone"))
 
-    url2 = "https://www.example.nil/repo.git"
+    pid = os.getpid()
+    ts = time.time()
+    url2 = f"https://www.example.nil/{pid}/{ts}/repo.git"
     ds.config.set("remote.sibling2.url", url2, where="local")
 
     ds_id = ds.id
