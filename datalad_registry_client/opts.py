@@ -67,23 +67,23 @@ def process_args(
         if sibling not in remotes:
             raise ValueError("Unknown sibling: {}".format(sibling))
 
-    urls: List[Tuple[str, str]] = []
+    urls: List[str] = []
     if url:
-        urls.append((url, url_encode(url)))
+        urls.append(url)
     elif sibling:
         url = repo.config.get("remote.{}.url".format(sibling))
         if url is None:
             raise ValueError("Could not find URL for {}".format(sibling))
-        urls.append((url, url_encode(url)))
+        urls.append(url)
     else:
         for r in repo.get_remotes(with_urls_only=True):
             url = repo.get_remote_url(r)
             assert url is not None
-            urls.append((url, url_encode(url)))
+            urls.append(url)
 
     endpoint = endpoint or repo.config.get(
         "datalad_registry.endpoint",
         DEFAULT_ENDPOINT)
     return dict(ds=ds, ds_id=ds_id,
-                sibling=sibling, urls=urls,
+                sibling=sibling, urls=[(url, url_encode(url)) for url in urls],
                 endpoint=endpoint)
