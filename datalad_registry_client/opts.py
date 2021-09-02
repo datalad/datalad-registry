@@ -77,9 +77,9 @@ def process_args(
         urls.append((url, url_encode(url)))
     else:
         for r in repo.get_remotes(with_urls_only=True):
-            u = repo.get_remote_url(r)
-            assert u is not None
-            urls.append((u, url_encode(u)))
+            url = repo.get_remote_url(r)
+            assert url is not None
+            urls.append((url, url_encode(url)))
 
     endpoint = endpoint or repo.config.get(
         "datalad_registry.endpoint",
