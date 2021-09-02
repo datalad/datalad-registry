@@ -1,6 +1,9 @@
+import errno
 import logging
 from pathlib import Path
 import time
+from shutil import rmtree
+from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -15,6 +18,31 @@ from datalad_registry.utils import url_encode
 lgr = logging.getLogger(__name__)
 
 InfoType = Dict[str, Union[str, float]]
+
+def clone_dataset(url: str, ds_path: Path) -> Any:
+    import datalad.api as dl
+
+    ds_path_str = str(ds_path)
+    # TODO (later): Decide how to handle subdatasets.
+    # TODO: support multiple URLs/remotes per dataset
+    # Make remote name to be a hash of url. Check below if among
+    # remotes and add one if missing, then use that remote, not 'origin'
+    if ds_path.exists():
+        ds = dl.Dataset(ds_path)
+        ds_repo = ds.repo
+        ds_repo.fetch(all_=True)
+        ds_repo.call_git(["reset", "--hard", "refs/remotes/origin/HEAD"])
+    else:
+        ds = dl.clone(url, ds_path_str)
+    return ds
+
+def get_info(ds_repo: Any) -> InfoType:
+    info: InfoType = _extract_git_info(ds_repo)
+    info.update(_extract_annex_info(ds_repo))
+    info["info_ts"] = time.time()
+    info["update_announced"] = 0
+    info["git_objects_kb"] = ds_repo.count_objects["size"]
+    return info
 
 # NOTE: A type isn't specified for repo using a top-level DataLad
 # import leads to an asyncio-related error: "RuntimeError: Cannot add
@@ -71,6 +99,40 @@ def _extract_annex_info(repo) -> InfoType:
 
 
 @celery.task
+def collect_dataset_uuid(url: str) -> None:
+    from flask import current_app
+
+    cache_dir = Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    lgr.info("Collecting UUIDs for URL %s", url)
+
+    result = db.session.query(URL).filter_by(url=url)
+    if result.first() is not None:
+        result.update({"update_announced": 1})
+    else:
+        ds_path = cache_dir / "UNKNOWN" / url_encode(url)
+        ds = clone_dataset(url, ds_path)
+        ds_id = ds.id
+        info = get_info(ds.repo)
+        db.session.add(URL(url=url, ds_id=ds_id, **info))
+        abbrev_id = "None" if ds_id is None else ds_id[:3]
+        try:
+            ds_path.rename(cache_dir / abbrev_id / url_encode(url))
+        except OSError as e:
+            if e.errno == errno.ENOTEMPTY:
+                lgr.debug("Clone of %s already in cache", url)
+            else:
+                lgr.exception(
+                    "Error moving dataset for %s to %s directory in cache",
+                    url,
+                    abbrev_id,
+                )
+            rmtree(ds_path)
+    db.session.commit()
+
+
+@celery.task
 def collect_dataset_info(
         datasets: Optional[List[Tuple[str, str]]] = None) -> None:
     """Collect information about `datasets`.
@@ -81,7 +143,7 @@ def collect_dataset_info(
         If not specified, look for registered datasets that have an
         announced update.
     """
-    import datalad.api as dl
+
     from flask import current_app
 
     cache_dir = Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
@@ -112,26 +174,15 @@ def collect_dataset_info(
     # I guess they might need to be groupped by ds_id since the same
     # cache location is to be reused - each task should then handle it
     for (ds_id, url) in datasets:
-        ds_path = cache_dir / ds_id[:3] / url_encode(url)
-        ds_path_str = str(ds_path)
-        # TODO (later): Decide how to handle subdatasets.
-        # TODO: support multiple URLs/remotes per dataset
-        # Make remote name to be a hash of url. Check below if among
-        # remotes and add one if missing, then use that remote, not 'origin'
-        if ds_path.exists():
-            ds = dl.Dataset(ds_path)
-            ds_repo = ds.repo
-            ds_repo.fetch(all_=True)
-            ds_repo.call_git(["reset", "--hard", "refs/remotes/origin/HEAD"])
-        else:
-            ds = dl.clone(url, ds_path_str)
-            ds_repo = ds.repo
-        info: InfoType = _extract_git_info(ds_repo)
-        info.update(_extract_annex_info(ds_repo))
+        abbrev_id = "None" if ds_id is None else ds_id[:3]
+        ds_path = cache_dir / abbrev_id / url_encode(url)
+        ds = clone_dataset(url, ds_path)
+        info = get_info(ds.repo)
+        if ds_id is None:
+            info["ds_id"] = ds.id
+        elif ds_id != ds.id:
+            lgr.warning("A dataset with an ID (%s) got a new one (%s)", ds_id, ds.id)
         # TODO: check if ds_id is still the same. If changed -- create a new
         # entry for it?
-        info["info_ts"] = time.time()
-        info["update_announced"] = 0
-        info["git_objects_kb"] = ds_repo.count_objects["size"]
         db.session.query(URL).filter_by(url=url).update(info)
     db.session.commit()
