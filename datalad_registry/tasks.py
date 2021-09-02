@@ -180,6 +180,8 @@ def collect_dataset_info(
         info = get_info(ds.repo)
         if ds_id is None:
             info["ds_id"] = ds.id
+        elif ds_id != ds.id:
+            lgr.warning("A dataset with an ID (%s) got a new one (%s)", ds_id, ds.id)
         # TODO: check if ds_id is still the same. If changed -- create a new
         # entry for it?
         db.session.query(URL).filter_by(url=url).update(info)
