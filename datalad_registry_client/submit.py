@@ -46,8 +46,8 @@ class RegistrySubmit(Interface):
 
         base_url = f"{options['endpoint']}/datasets"
 
-        for url in urls:
-            url_encoded = url_encode(url)
+        for u in urls:
+            url_encoded = url_encode(u)
             try:
                 r_url = requests.get(
                     f"{base_url}/{ds_id}/urls/{url_encoded}",
@@ -72,4 +72,4 @@ class RegistrySubmit(Interface):
                            message=("Submitting URL failed: %s", exc))
                 return
             yield dict(res_base, status="ok",
-                       message=("%s: %s", msg, url))
+                       message=("%s: %s", msg, u))
