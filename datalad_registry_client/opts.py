@@ -14,7 +14,6 @@ from datalad.support.constraints import EnsureNone
 from datalad.support.constraints import EnsureStr
 from datalad.support.param import Parameter
 
-from datalad_registry.utils import url_encode
 from datalad_registry_client.consts import DEFAULT_ENDPOINT
 
 common_params = dict(
@@ -85,5 +84,5 @@ def process_args(
         "datalad_registry.endpoint",
         DEFAULT_ENDPOINT)
     return dict(ds=ds, ds_id=ds_id,
-                sibling=sibling, urls=[(url, url_encode(url)) for url in urls],
+                sibling=sibling, urls=urls,
                 endpoint=endpoint)

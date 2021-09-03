@@ -12,7 +12,9 @@ from datalad.interface.base import Interface
 from datalad.interface.results import get_status_dict
 from datalad.interface.utils import eval_results
 
+from datalad_registry.utils import url_encode
 from datalad_registry_client import opts
+
 
 lgr = logging.getLogger("datalad.registry.submit")
 
@@ -44,7 +46,8 @@ class RegistrySubmit(Interface):
 
         base_url = f"{options['endpoint']}/datasets"
 
-        for url, url_encoded in urls:
+        for url in urls:
+            url_encoded = url_encode(url)
             try:
                 r_url = requests.get(
                     f"{base_url}/{ds_id}/urls/{url_encoded}",
