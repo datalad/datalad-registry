@@ -1,4 +1,3 @@
-
 import logging
 from typing import Any
 from typing import Dict
@@ -20,7 +19,7 @@ lgr = logging.getLogger("datalad.registry.submit")
 
 @build_doc
 class RegistrySubmit(Interface):
-    """Submit a new URL to a DataLad Registry instance.
+    """Submit a new URL for a dataset to a DataLad Registry instance.
     """
 
     _params_ = opts.common_params

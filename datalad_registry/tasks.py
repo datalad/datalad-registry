@@ -108,27 +108,28 @@ def collect_dataset_uuid(url: str) -> None:
     lgr.info("Collecting UUIDs for URL %s", url)
 
     result = db.session.query(URL).filter_by(url=url)
-    if result.first() is not None:
-        result.update({"update_announced": 1})
-    else:
-        ds_path = cache_dir / "UNKNOWN" / url_encode(url)
-        ds = clone_dataset(url, ds_path)
-        ds_id = ds.id
-        info = get_info(ds.repo)
-        db.session.add(URL(url=url, ds_id=ds_id, **info))
-        abbrev_id = "None" if ds_id is None else ds_id[:3]
-        try:
-            ds_path.rename(cache_dir / abbrev_id / url_encode(url))
-        except OSError as e:
-            if e.errno == errno.ENOTEMPTY:
-                lgr.debug("Clone of %s already in cache", url)
-            else:
-                lgr.exception(
-                    "Error moving dataset for %s to %s directory in cache",
-                    url,
-                    abbrev_id,
-                )
-            rmtree(ds_path)
+    # r = result.first()
+    # assert r is not None
+    # assert r.ds_id is None
+    ds_path = cache_dir / "UNKNOWN" / url_encode(url)
+    ds = clone_dataset(url, ds_path)
+    ds_id = ds.id
+    info = get_info(ds.repo)
+    info["ds_id"] = ds_id
+    result.update(info)
+    abbrev_id = "None" if ds_id is None else ds_id[:3]
+    try:
+        ds_path.rename(cache_dir / abbrev_id / url_encode(url))
+    except OSError as e:
+        if e.errno == errno.ENOTEMPTY:
+            lgr.debug("Clone of %s already in cache", url)
+        else:
+            lgr.exception(
+                "Error moving dataset for %s to %s directory in cache",
+                url,
+                abbrev_id,
+            )
+        rmtree(ds_path)
     db.session.commit()
 
 
