@@ -94,7 +94,7 @@ def test_submit_all_siblings(tmp_path):
     ds_id = ds.id
 
     urls = [ds_sib.path, url2]
-    query_urls = [f"{ENDPOINT}/datasets/{ds_id}/urls/{url_encode(u)}" for u in urls]
+    query_urls = [f"{DEFAULT_ENDPOINT}/datasets/{ds_id}/urls/{url_encode(u)}" for u in urls]
 
     for qu in query_urls:
         assert requests.get(qu).json()["status"] == "unknown"
