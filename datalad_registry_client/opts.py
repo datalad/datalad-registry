@@ -3,7 +3,9 @@
 
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
+from typing import Tuple
 
 from datalad.distribution.dataset import Dataset
 from datalad.distribution.dataset import EnsureDataset
@@ -12,7 +14,6 @@ from datalad.support.constraints import EnsureNone
 from datalad.support.constraints import EnsureStr
 from datalad.support.param import Parameter
 
-from datalad_registry.utils import url_encode
 from datalad_registry_client.consts import DEFAULT_ENDPOINT
 
 common_params = dict(
@@ -65,17 +66,23 @@ def process_args(
         if sibling not in remotes:
             raise ValueError("Unknown sibling: {}".format(sibling))
 
-    if not url:
-        if not sibling:
-            raise ValueError(
-                "Must specify URL to use when sibling isn't given")
+    urls: List[str] = []
+    if url:
+        urls.append(url)
+    elif sibling:
         url = repo.config.get("remote.{}.url".format(sibling))
-        if not url:
+        if url is None:
             raise ValueError("Could not find URL for {}".format(sibling))
+        urls.append(url)
+    else:
+        for r in repo.get_remotes(with_urls_only=True):
+            url = repo.get_remote_url(r)
+            assert url is not None
+            urls.append(url)
 
     endpoint = endpoint or repo.config.get(
         "datalad_registry.endpoint",
         DEFAULT_ENDPOINT)
     return dict(ds=ds, ds_id=ds_id,
-                sibling=sibling, url=url, url_encoded=url_encode(url),
+                sibling=sibling, urls=urls,
                 endpoint=endpoint)

@@ -1,3 +1,5 @@
+import os
+import time
 import subprocess as sp
 
 import datalad.api as dl
@@ -29,14 +31,10 @@ def test_submit_via_local(tmp_path):
 
     assert requests.get(query_url).json()["status"] == "unknown"
 
-    # If sibling is not specified, URL is required.
-    with pytest.raises(ValueError):
-        ds.registry_submit()
-
     assert_in_results(
         ds.registry_submit(url=ds.path),
         action="registry-submit", type="dataset",
-        path=ds.path, status="ok")
+        path=ds.path, url=ds.path, status="ok")
 
     assert requests.get(query_url).json()["status"] != "unknown"
 
@@ -45,7 +43,7 @@ def test_submit_via_local(tmp_path):
     assert_in_results(
         res,
         action="registry-submit", type="dataset",
-        path=ds.path, status="ok")
+        path=ds.path, url=ds.path, status="ok")
 
 
 @pytest.mark.slow
@@ -77,9 +75,38 @@ def test_submit_via_sibling(tmp_path):
     assert_in_results(
         ds.registry_submit(sibling="origin"),
         action="registry-submit", type="dataset",
-        path=ds.path, status="ok")
+        path=ds.path, url=ds_sib.path, status="ok")
 
     assert requests.get(query_url).json()["status"] != "unknown"
+
+
+@pytest.mark.devserver
+@pytest.mark.slow
+def test_submit_all_siblings(tmp_path):
+    ds_sib = dl.Dataset(tmp_path / "sib").create()
+    ds = dl.clone(ds_sib.path, str(tmp_path / "clone"))
+
+    pid = os.getpid()
+    ts = time.time()
+    url2 = f"https://www.example.nil/{pid}/{ts}/repo.git"
+    ds.config.set("remote.sibling2.url", url2, where="local")
+
+    ds_id = ds.id
+
+    urls = [ds_sib.path, url2]
+    query_urls = [f"{DEFAULT_ENDPOINT}/datasets/{ds_id}/urls/{url_encode(u)}" for u in urls]
+
+    for qu in query_urls:
+        assert requests.get(qu).json()["status"] == "unknown"
+
+    for u in urls:
+        assert_in_results(
+            ds.registry_submit(),
+            action="registry-submit", type="dataset",
+            path=ds.path, url=u, status="ok")
+
+    for qu in query_urls:
+        assert requests.get(qu).json()["status"] != "unknown"
 
 
 @pytest.mark.devserver
@@ -92,7 +119,7 @@ def test_submit_explicit_endpoint(tmp_path):
     assert_in_results(
         ds.registry_submit(url=ds.path, endpoint="abc", on_failure="ignore"),
         action="registry-submit", type="dataset",
-        path=ds.path, status="error")
+        path=ds.path, url=ds.path, status="error")
 
     # Valid, explicit.
     url_encoded = url_encode(ds.path)
@@ -101,6 +128,6 @@ def test_submit_explicit_endpoint(tmp_path):
     assert_in_results(
         ds.registry_submit(url=ds.path, endpoint=DEFAULT_ENDPOINT),
         action="registry-submit", type="dataset",
-        path=ds.path, status="ok")
+        path=ds.path, url=ds.path, status="ok")
 
     assert requests.get(query_url).json()["status"] != "unknown"
