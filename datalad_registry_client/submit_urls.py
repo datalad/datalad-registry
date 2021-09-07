@@ -66,6 +66,7 @@ class RegistrySubmitURLs(Interface):
                     yield {
                         **res_base,
                         "url": url,
+                        "url_encoded": url_encoded,
                         "status": "error",
                         "message": ("Check if URL is known failed: %s", exc),
                     }
@@ -82,6 +83,7 @@ class RegistrySubmitURLs(Interface):
                     yield {
                         **res_base,
                         "url": url,
+                        "url_encoded": url_encoded,
                         "status": "error",
                         "message": ("Submitting URL failed: %s", exc),
                     }
@@ -89,6 +91,7 @@ class RegistrySubmitURLs(Interface):
                 yield {
                     **res_base,
                     "url": url,
+                    "url_encoded": url_encoded,
                     "status": "ok",
                     "message": ("%s: %s", msg, url),
                 }
