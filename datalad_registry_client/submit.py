@@ -55,6 +55,7 @@ class RegistrySubmit(Interface):
                 r_url.raise_for_status()
             except requests.exceptions.RequestException as exc:
                 yield dict(res_base, status="error", url=u,
+                           url_encoded=url_encoded,
                            message=("Check if URL is known failed: %s", exc))
                 return
             url_info = r_url.json()
@@ -69,7 +70,8 @@ class RegistrySubmit(Interface):
                 r_patch.raise_for_status()
             except requests.exceptions.RequestException as exc:
                 yield dict(res_base, status="error", url=u,
+                           url_encoded=url_encoded,
                            message=("Submitting URL failed: %s", exc))
                 return
-            yield dict(res_base, status="ok", url=u,
+            yield dict(res_base, status="ok", url=u, url_encoded=url_encoded,
                        message=("%s: %s", msg, u))
