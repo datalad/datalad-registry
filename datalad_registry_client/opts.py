@@ -13,6 +13,7 @@ from datalad.support.constraints import EnsureStr
 from datalad.support.param import Parameter
 
 from datalad_registry.utils import url_encode
+from datalad_registry_client.consts import DEFAULT_ENDPOINT
 
 common_params = dict(
     dataset=Parameter(
@@ -24,9 +25,9 @@ common_params = dict(
     endpoint=Parameter(
         args=("--endpoint",),
         metavar="URL",
-        doc="""DataLad Registry instance to use (no trailing slash).
+        doc=f"""DataLad Registry instance to use (no trailing slash).
         This defaults to the datalad_registry.endpoint option, if set,
-        or http://127.0.0.1:5000/v1 otherwise.""",
+        or {DEFAULT_ENDPOINT} otherwise.""",
         constraints=EnsureStr() | EnsureNone()),
     sibling=Parameter(
         args=("-s", "--sibling",),
@@ -74,7 +75,7 @@ def process_args(
 
     endpoint = endpoint or repo.config.get(
         "datalad_registry.endpoint",
-        "http://127.0.0.1:5000/v1")
+        DEFAULT_ENDPOINT)
     return dict(ds=ds, ds_id=ds_id,
                 sibling=sibling, url=url, url_encoded=url_encode(url),
                 endpoint=endpoint)

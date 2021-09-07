@@ -8,8 +8,7 @@ import requests
 from datalad.tests.utils import assert_in_results
 
 from datalad_registry.utils import url_encode
-
-ENDPOINT = "http://127.0.0.1:5000/v1"
+from datalad_registry_client.consts import DEFAULT_ENDPOINT
 
 
 @pytest.mark.devserver
@@ -17,7 +16,7 @@ ENDPOINT = "http://127.0.0.1:5000/v1"
 def test_submit_urls_via_local(tmp_path):
     path = str(tmp_path)
     url_encoded = url_encode(path)
-    query_url = f"{ENDPOINT}/urls/{url_encoded}"
+    query_url = f"{DEFAULT_ENDPOINT}/urls/{url_encoded}"
 
     assert requests.get(query_url).json()["status"] == "unknown"
 
@@ -44,7 +43,7 @@ def test_submit_multiple_urls():
         f"https://www.example.nil/{pid}/{ts}/repo.git",
         f"http://example.test/{pid}/{ts}/dataset.git",
     ]
-    query_urls = [f"{ENDPOINT}/urls/{url_encode(u)}" for u in urls]
+    query_urls = [f"{DEFAULT_ENDPOINT}/urls/{url_encode(u)}" for u in urls]
 
     for qu in query_urls:
         assert requests.get(qu).json()["status"] == "unknown"
@@ -71,10 +70,10 @@ def test_submit_urls_explicit_endpoint(tmp_path):
 
     # Valid, explicit.
     url_encoded = url_encode(path)
-    query_url = f"{ENDPOINT}/urls/{url_encoded}"
+    query_url = f"{DEFAULT_ENDPOINT}/urls/{url_encoded}"
 
     assert_in_results(
-        dl.registry_submit_urls(urls=[path], endpoint=ENDPOINT),
+        dl.registry_submit_urls(urls=[path], endpoint=DEFAULT_ENDPOINT),
         action="registry-submit-urls",
         url=path,
         status="ok",

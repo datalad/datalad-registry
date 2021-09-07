@@ -6,8 +6,7 @@ import requests
 from datalad.tests.utils import assert_in_results
 
 from datalad_registry.utils import url_encode
-
-ENDPOINT = "http://127.0.0.1:5000/v1"
+from datalad_registry_client.consts import DEFAULT_ENDPOINT
 
 
 @pytest.mark.slow
@@ -26,7 +25,7 @@ def test_submit_via_local(tmp_path):
     ds_id = ds.id
 
     url_encoded = url_encode(ds.path)
-    query_url = f"{ENDPOINT}/datasets/{ds_id}/urls/{url_encoded}"
+    query_url = f"{DEFAULT_ENDPOINT}/datasets/{ds_id}/urls/{url_encoded}"
 
     assert requests.get(query_url).json()["status"] == "unknown"
 
@@ -71,7 +70,7 @@ def test_submit_via_sibling(tmp_path):
     ds_id = ds.id
 
     url_encoded = url_encode(ds_sib.path)
-    query_url = f"{ENDPOINT}/datasets/{ds_id}/urls/{url_encoded}"
+    query_url = f"{DEFAULT_ENDPOINT}/datasets/{ds_id}/urls/{url_encoded}"
 
     assert requests.get(query_url).json()["status"] == "unknown"
 
@@ -97,10 +96,10 @@ def test_submit_explicit_endpoint(tmp_path):
 
     # Valid, explicit.
     url_encoded = url_encode(ds.path)
-    query_url = f"{ENDPOINT}/datasets/{ds_id}/urls/{url_encoded}"
+    query_url = f"{DEFAULT_ENDPOINT}/datasets/{ds_id}/urls/{url_encoded}"
 
     assert_in_results(
-        ds.registry_submit(url=ds.path, endpoint=ENDPOINT),
+        ds.registry_submit(url=ds.path, endpoint=DEFAULT_ENDPOINT),
         action="registry-submit", type="dataset",
         path=ds.path, status="ok")
 

@@ -17,6 +17,7 @@ from datalad.support.constraints import EnsureStr
 from datalad.support.param import Parameter
 
 from datalad_registry.utils import url_encode
+from datalad_registry_client.consts import DEFAULT_ENDPOINT
 
 lgr = logging.getLogger("datalad.registry.submit_urls")
 
@@ -29,9 +30,9 @@ class RegistrySubmitURLs(Interface):
         "endpoint": Parameter(
             args=("--endpoint",),
             metavar="URL",
-            doc="""DataLad Registry instance to use (no trailing slash).
+            doc=f"""DataLad Registry instance to use (no trailing slash).
             This defaults to the datalad_registry.endpoint option, if set,
-            or http://127.0.0.1:5000/v1 otherwise.""",
+            or {DEFAULT_ENDPOINT} otherwise.""",
             constraints=EnsureStr() | EnsureNone(),
         ),
         "urls": Parameter(
@@ -49,7 +50,7 @@ class RegistrySubmitURLs(Interface):
         urls: List[str], endpoint: Optional[str] = None
     ) -> Iterator[Dict[str, Any]]:
         if endpoint is None:
-            endpoint = cfg.get("datalad_registry.endpoint", "http://127.0.0.1:5000/v1")
+            endpoint = cfg.get("datalad_registry.endpoint", DEFAULT_ENDPOINT)
         res_base = get_status_dict(
             action="registry-submit-urls",
             logger=lgr,
