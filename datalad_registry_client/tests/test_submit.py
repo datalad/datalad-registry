@@ -1,11 +1,11 @@
 import os
-import time
 import subprocess as sp
+import time
 
 import datalad.api as dl
+from datalad.tests.utils import assert_in_results
 import pytest
 import requests
-from datalad.tests.utils import assert_in_results
 
 from datalad_registry.utils import url_encode
 from datalad_registry_client.consts import DEFAULT_ENDPOINT
@@ -33,8 +33,12 @@ def test_submit_via_local(tmp_path):
 
     assert_in_results(
         ds.registry_submit(url=ds.path),
-        action="registry-submit", type="dataset",
-        path=ds.path, url=ds.path, status="ok")
+        action="registry-submit",
+        type="dataset",
+        path=ds.path,
+        url=ds.path,
+        status="ok",
+    )
 
     assert requests.get(query_url).json()["status"] != "unknown"
 
@@ -42,8 +46,12 @@ def test_submit_via_local(tmp_path):
     res = ds.registry_submit(url=ds.path)
     assert_in_results(
         res,
-        action="registry-submit", type="dataset",
-        path=ds.path, url=ds.path, status="ok")
+        action="registry-submit",
+        type="dataset",
+        path=ds.path,
+        url=ds.path,
+        status="ok",
+    )
 
 
 @pytest.mark.slow
@@ -74,8 +82,12 @@ def test_submit_via_sibling(tmp_path):
 
     assert_in_results(
         ds.registry_submit(sibling="origin"),
-        action="registry-submit", type="dataset",
-        path=ds.path, url=ds_sib.path, status="ok")
+        action="registry-submit",
+        type="dataset",
+        path=ds.path,
+        url=ds_sib.path,
+        status="ok",
+    )
 
     assert requests.get(query_url).json()["status"] != "unknown"
 
@@ -94,7 +106,9 @@ def test_submit_all_siblings(tmp_path):
     ds_id = ds.id
 
     urls = [ds_sib.path, url2]
-    query_urls = [f"{DEFAULT_ENDPOINT}/datasets/{ds_id}/urls/{url_encode(u)}" for u in urls]
+    query_urls = [
+        f"{DEFAULT_ENDPOINT}/datasets/{ds_id}/urls/{url_encode(u)}" for u in urls
+    ]
 
     for qu in query_urls:
         assert requests.get(qu).json()["status"] == "unknown"
@@ -102,8 +116,12 @@ def test_submit_all_siblings(tmp_path):
     for u in urls:
         assert_in_results(
             ds.registry_submit(),
-            action="registry-submit", type="dataset",
-            path=ds.path, url=u, status="ok")
+            action="registry-submit",
+            type="dataset",
+            path=ds.path,
+            url=u,
+            status="ok",
+        )
 
     for qu in query_urls:
         assert requests.get(qu).json()["status"] != "unknown"
@@ -118,8 +136,12 @@ def test_submit_explicit_endpoint(tmp_path):
     # Invalid.
     assert_in_results(
         ds.registry_submit(url=ds.path, endpoint="abc", on_failure="ignore"),
-        action="registry-submit", type="dataset",
-        path=ds.path, url=ds.path, status="error")
+        action="registry-submit",
+        type="dataset",
+        path=ds.path,
+        url=ds.path,
+        status="error",
+    )
 
     # Valid, explicit.
     url_encoded = url_encode(ds.path)
@@ -127,7 +149,11 @@ def test_submit_explicit_endpoint(tmp_path):
 
     assert_in_results(
         ds.registry_submit(url=ds.path, endpoint=DEFAULT_ENDPOINT),
-        action="registry-submit", type="dataset",
-        path=ds.path, url=ds.path, status="ok")
+        action="registry-submit",
+        type="dataset",
+        path=ds.path,
+        url=ds.path,
+        status="ok",
+    )
 
     assert requests.get(query_url).json()["status"] != "unknown"

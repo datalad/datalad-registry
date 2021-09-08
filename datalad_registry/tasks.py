@@ -1,23 +1,18 @@
 import errno
 import logging
 from pathlib import Path
-import time
 from shutil import rmtree
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
-from typing import Union
+import time
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from datalad_registry import celery
-from datalad_registry.models import db
-from datalad_registry.models import URL
+from datalad_registry.models import URL, db
 from datalad_registry.utils import url_encode
 
 lgr = logging.getLogger(__name__)
 
 InfoType = Dict[str, Union[str, float]]
+
 
 def clone_dataset(url: str, ds_path: Path) -> Any:
     import datalad.api as dl
@@ -36,6 +31,7 @@ def clone_dataset(url: str, ds_path: Path) -> Any:
         ds = dl.clone(url, ds_path_str)
     return ds
 
+
 def get_info(ds_repo: Any) -> InfoType:
     info: InfoType = _extract_git_info(ds_repo)
     info.update(_extract_annex_info(ds_repo))
@@ -43,6 +39,7 @@ def get_info(ds_repo: Any) -> InfoType:
     info["update_announced"] = 0
     info["git_objects_kb"] = ds_repo.count_objects["size"]
     return info
+
 
 # NOTE: A type isn't specified for repo using a top-level DataLad
 # import leads to an asyncio-related error: "RuntimeError: Cannot add
@@ -58,8 +55,9 @@ def _extract_info_call_git(repo, commands: Dict[str, List[str]]) -> InfoType:
         try:
             out = repo.call_git(command)
         except CommandError as exc:
-            lgr.warning("Command %s in %s had non-zero exit code:\n%s",
-                        command, repo, exc)
+            lgr.warning(
+                "Command %s in %s had non-zero exit code:\n%s", command, repo, exc
+            )
             continue
         info[name] = out.strip()
     return info
@@ -68,14 +66,23 @@ def _extract_info_call_git(repo, commands: Dict[str, List[str]]) -> InfoType:
 def _extract_git_info(repo) -> InfoType:
     return _extract_info_call_git(
         repo,
-        {"head": ["rev-parse", "--verify", "HEAD"],
-         "head_describe": ["describe", "--tags"],
-         "branches": ["for-each-ref", "--sort=-creatordate",
-                      "--format=%(objectname) %(refname:lstrip=3)",
-                      "refs/remotes/origin/"],
-         "tags": ["for-each-ref", "--sort=-creatordate",
-                  "--format=%(objectname) %(refname:lstrip=2)",
-                  "refs/tags/"]})
+        {
+            "head": ["rev-parse", "--verify", "HEAD"],
+            "head_describe": ["describe", "--tags"],
+            "branches": [
+                "for-each-ref",
+                "--sort=-creatordate",
+                "--format=%(objectname) %(refname:lstrip=3)",
+                "refs/remotes/origin/",
+            ],
+            "tags": [
+                "for-each-ref",
+                "--sort=-creatordate",
+                "--format=%(objectname) %(refname:lstrip=2)",
+                "refs/tags/",
+            ],
+        },
+    )
 
 
 def _extract_annex_info(repo) -> InfoType:
@@ -85,11 +92,9 @@ def _extract_annex_info(repo) -> InfoType:
     try:
         records = list(repo.call_annex_records(["info"], "origin"))
     except CommandError as exc:
-        lgr.warning("Running `annex info` in %s had non-zero exit code:\n%s",
-                    repo, exc)
+        lgr.warning("Running `annex info` in %s had non-zero exit code:\n%s", repo, exc)
     except AttributeError:
-        lgr.debug("Skipping annex info collection for non-annex repo: %s",
-                  repo)
+        lgr.debug("Skipping annex info collection for non-annex repo: %s", repo)
     else:
         assert len(records) == 1, "bug: unexpected `annex info` output"
         res = records[0]
@@ -134,8 +139,7 @@ def collect_dataset_uuid(url: str) -> None:
 
 
 @celery.task
-def collect_dataset_info(
-        datasets: Optional[List[Tuple[str, str]]] = None) -> None:
+def collect_dataset_info(datasets: Optional[List[Tuple[str, str]]] = None) -> None:
     """Collect information about `datasets`.
 
     Parameters
@@ -155,15 +159,17 @@ def collect_dataset_info(
         # this one is done on celery's beat/cron
         # TODO: might "collide" between announced update (datasets is provided)
         # and cron.  How can we lock/protect?
-        # see https://github.com/datalad/datalad-registry/issues/34 which might be
-        # manifestation of absent protection/support for concurrency
-        datasets = [(r.ds_id, r.url)
-                    for r in ses.query(URL).filter_by(update_announced=1)
-                    # TODO: get all, group by id, send individual tasks
-                    # Q: could multiple instances of this task be running
-                    # at the same time????
-                    # TODO: if no updates, still do some randomly
-                    .limit(3)]
+        # see https://github.com/datalad/datalad-registry/issues/34 which might
+        # be manifestation of absent protection/support for concurrency
+        datasets = [
+            (r.ds_id, r.url)
+            for r in ses.query(URL).filter_by(update_announced=1)
+            # TODO: get all, group by id, send individual tasks
+            # Q: could multiple instances of this task be running
+            # at the same time????
+            # TODO: if no updates, still do some randomly
+            .limit(3)
+        ]
     if not datasets:
         lgr.debug("Did not find URLs that needed information collected")
         return
@@ -171,8 +177,8 @@ def collect_dataset_info(
     lgr.info("Collecting information for %s URLs", len(datasets))
     lgr.debug("Datasets: %s", datasets)
 
-    # TODO: this should be done by celery! it is silly to do it sequentially here
-    # I guess they might need to be groupped by ds_id since the same
+    # TODO: this should be done by celery! it is silly to do it sequentially
+    # here.  I guess they might need to be groupped by ds_id since the same
     # cache location is to be reused - each task should then handle it
     for (ds_id, url) in datasets:
         abbrev_id = "None" if ds_id is None else ds_id[:3]

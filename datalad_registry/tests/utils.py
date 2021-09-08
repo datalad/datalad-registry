@@ -1,8 +1,7 @@
 from pathlib import Path
 from random import Random
 import subprocess as sp
-from typing import Dict
-from typing import List
+from typing import Dict, List
 import uuid
 
 from datalad.distribution.dataset import Dataset
@@ -40,9 +39,9 @@ def init_repo(path: str) -> None:
 
 
 def create_and_register_repos(
-        client: FlaskClient, path: Path, n: int) -> List[Dict[str, str]]:
-    """Create `n` empty repos under `path` and register URL with `client`.
-    """
+    client: FlaskClient, path: Path, n: int
+) -> List[Dict[str, str]]:
+    """Create `n` empty repos under `path` and register URL with `client`."""
     records = []
     for idx in range(n):
         ds_id = make_ds_id()
@@ -62,8 +61,7 @@ def create_and_register_repos(
 
 
 def register_dataset(ds: Dataset, url: str, client: FlaskClient) -> None:
-    """Register `url` for dataset `ds` with `client`.
-    """
+    """Register `url` for dataset `ds` with `client`."""
     ds_id = ds.id
     url_encoded = url_encode(url)
     client.patch(f"/v1/datasets/{ds_id}/urls/{url_encoded}")

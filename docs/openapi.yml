@@ -79,7 +79,6 @@ paths:
                   "ds_id": "6eeadb86-84be-11e6-b24c-002590f97d84",
                   "urls": ["https://datasets.datalad.org/labs/haxby/raiders/.git"]
                 }
-      responses:
         "202":
           description: URL submitted
           headers:

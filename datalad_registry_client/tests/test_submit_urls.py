@@ -1,11 +1,10 @@
 import os
 import time
-import subprocess as sp
 
 import datalad.api as dl
+from datalad.tests.utils import assert_in_results
 import pytest
 import requests
-from datalad.tests.utils import assert_in_results
 
 from datalad_registry.utils import url_encode
 from datalad_registry_client.consts import DEFAULT_ENDPOINT

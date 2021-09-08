@@ -4,8 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from datalad_registry.tests.utils import create_and_register_repos
-from datalad_registry.tests.utils import register_dataset
+from datalad_registry.tests.utils import create_and_register_repos, register_dataset
 
 
 def test_overview_pager(client, tmp_path):
@@ -34,6 +33,7 @@ def test_overview_pager(client, tmp_path):
 @pytest.mark.slow
 def test_overview_sort(client, tmp_path):
     import datalad.api as dl
+
     from datalad_registry import tasks
 
     for name in ["ds1", "ds2", "ds3"]:
@@ -53,7 +53,7 @@ def test_overview_sort(client, tmp_path):
         time.sleep(0.01)
 
     def assert_ds_order(order, output):
-        match = re.finditer(b'/(ds[123])</td>', output)
+        match = re.finditer(b"/(ds[123])</td>", output)
         assert match, "regexp unexpectedly didn't match"
         assert [x.group(1) for x in match] == order
 
@@ -85,6 +85,7 @@ def test_overview_sort(client, tmp_path):
 @pytest.mark.slow
 def test_overview_filter(client, tmp_path):
     import datalad.api as dl
+
     from datalad_registry import tasks
 
     for name in ["foo", "foobar", "baz"]:

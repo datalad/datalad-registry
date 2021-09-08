@@ -24,8 +24,7 @@ def test_register_url(client, ds_id, tmp_path):
     url_encoded = url_encode(url)
 
     def get_status():
-        response = client.get(
-            f"/v1/datasets/{ds_id}/urls/{url_encoded}")
+        response = client.get(f"/v1/datasets/{ds_id}/urls/{url_encoded}")
         return response.get_json()["status"]
 
     assert get_status() == "unknown"

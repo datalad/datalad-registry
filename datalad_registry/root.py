@@ -2,9 +2,7 @@
 """
 import logging
 
-from flask import Blueprint
-from flask import redirect
-from flask import url_for
+from flask import Blueprint, redirect, url_for
 from werkzeug.wrappers import Response
 
 lgr = logging.getLogger(__name__)
