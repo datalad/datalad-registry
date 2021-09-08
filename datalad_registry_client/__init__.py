@@ -1,3 +1,5 @@
+import sys
+
 command_suite = (
     "Interact with DataLad registry",
     [
@@ -15,3 +17,10 @@ command_suite = (
         ),
     ],
 )
+
+if sys.version_info[:2] < (3, 8):
+    from importlib_metadata import version
+else:
+    from importlib.metadata import version
+
+__version__ = version("datalad-registry")
