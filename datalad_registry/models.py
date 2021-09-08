@@ -9,7 +9,8 @@ class URL(db.Model):  # type: ignore
 
     __tablename__ = "urls"
 
-    url = db.Column(db.Text, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    url = db.Column(db.Text, nullable=False, unique=True)
     ds_id = db.Column(db.Text, nullable=True)
     annex_uuid = db.Column(db.Text)
     annex_key_count = db.Column(db.Integer)
