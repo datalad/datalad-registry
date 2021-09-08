@@ -47,6 +47,9 @@ def url(ds_id: str, url_encoded: str) -> Any:
     # were unregistered, leading to PATCH requests trying to register the URLs
     # again by adding a row to the database, causing an error.
     if row_known is not None and row_known.ds_id != ds_id:
+        # TODO: figure out/provide logic/responses for datasets/urls which get
+        # their .id changed, or yet to be processed (i.e. `not
+        # row_known.processed`)
         return jsonify(message="UUID does not match value registered for URL"), 400
 
     if request.method == "GET":
