@@ -36,7 +36,7 @@ def get_info(ds_repo: Any) -> InfoType:
     info: InfoType = _extract_git_info(ds_repo)
     info.update(_extract_annex_info(ds_repo))
     info["info_ts"] = time.time()
-    info["update_announced"] = 0
+    info["update_announced"] = False
     info["git_objects_kb"] = ds_repo.count_objects["size"]
     return info
 
@@ -165,7 +165,7 @@ def collect_dataset_info(datasets: Optional[List[Tuple[str, str]]] = None) -> No
         # be manifestation of absent protection/support for concurrency
         datasets = [
             (r.ds_id, r.url)
-            for r in ses.query(URL).filter_by(update_announced=1)
+            for r in ses.query(URL).filter_by(update_announced=True)
             # TODO: get all, group by id, send individual tasks
             # Q: could multiple instances of this task be running
             # at the same time????

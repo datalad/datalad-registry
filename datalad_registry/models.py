@@ -15,7 +15,7 @@ class URL(db.Model):  # type: ignore
     annex_uuid = db.Column(db.Text)
     annex_key_count = db.Column(db.Integer)
     info_ts = db.Column(db.Integer)
-    update_announced = db.Column(db.Integer)
+    update_announced = db.Column(db.Boolean, default=False, nullable=False)
     head = db.Column(db.Text)
     head_describe = db.Column(db.Text)
     branches = db.Column(db.Text)
