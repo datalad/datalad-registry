@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
-from datalad_registry.tests.utils import create_and_register_repos
-from datalad_registry.tests.utils import init_repo
+from datalad_registry.tests.utils import create_and_register_repos, init_repo
 from datalad_registry.utils import url_encode
 
 

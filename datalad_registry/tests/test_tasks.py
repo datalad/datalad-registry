@@ -126,7 +126,8 @@ def test_collect_dataset_info_announced_update(app_instance, tmp_path):
         assert res.annex_key_count == 2
 
         info = app_instance.client.get(
-            f"/v1/datasets/{ds.id}/urls/{url_encoded}").get_json()["info"]
+            f"/v1/datasets/{ds.id}/urls/{url_encoded}"
+        ).get_json()["info"]
         assert info["head"] == head
         assert info["head_describe"] == "v2"
         assert info["annex_key_count"] == 2

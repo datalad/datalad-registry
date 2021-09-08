@@ -1,20 +1,13 @@
 import logging
-from typing import Any
-from typing import Dict
-from typing import Optional
-from typing import Iterator
-from typing import List
+from typing import Any, Dict, Iterator, List, Optional
 
-import requests
 from datalad import cfg
-from datalad.distribution.dataset import Dataset
-from datalad.interface.base import build_doc
-from datalad.interface.base import Interface
+from datalad.interface.base import Interface, build_doc
 from datalad.interface.results import get_status_dict
 from datalad.interface.utils import eval_results
-from datalad.support.constraints import EnsureNone
-from datalad.support.constraints import EnsureStr
+from datalad.support.constraints import EnsureNone, EnsureStr
 from datalad.support.param import Parameter
+import requests
 
 from datalad_registry.utils import url_encode
 from datalad_registry_client.consts import DEFAULT_ENDPOINT

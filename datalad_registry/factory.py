@@ -1,23 +1,15 @@
 import logging
 import os
 from pathlib import Path
-from typing import Any
-from typing import Dict
-from typing import Optional
-from typing import Union
+from typing import Any, Dict, Optional, Union
 
 from celery.app.base import Celery
 from celery.schedules import crontab
 from flask import Flask
 from flask.logging import default_handler
 
-from datalad_registry import celery
-from datalad_registry import datasets
-from datalad_registry import dataset_urls
-from datalad_registry import overview
-from datalad_registry import root
-from datalad_registry.models import db
-from datalad_registry.models import init_db_command
+from datalad_registry import celery, dataset_urls, datasets, overview, root
+from datalad_registry.models import db, init_db_command
 
 lgr = logging.getLogger(__name__)
 
@@ -34,10 +26,13 @@ def setup_celery(app: Flask, celery: Celery) -> Celery:
     if cache_dir:
         celery.conf.beat_schedule["collect_dataset_info"] = {
             "task": "datalad_registry.tasks.collect_dataset_info",
-            "schedule": crontab(minute="*/5")}
+            "schedule": crontab(minute="*/5"),
+        }
     else:
-        lgr.debug("DATALAD_REGISTRY_DATASET_CACHE isn't configured. "
-                  "Not registering periodic tasks that depend on it")
+        lgr.debug(
+            "DATALAD_REGISTRY_DATASET_CACHE isn't configured. "
+            "Not registering periodic tasks that depend on it"
+        )
 
     celery.config_from_object(app.config, namespace="CELERY")
 
@@ -52,8 +47,8 @@ def setup_celery(app: Flask, celery: Celery) -> Celery:
 
 def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
     app = Flask(
-        __name__,
-        instance_path=os.environ.get("DATALAD_REGISTRY_INSTANCE_PATH"))
+        __name__, instance_path=os.environ.get("DATALAD_REGISTRY_INSTANCE_PATH")
+    )
     instance_path = Path(app.instance_path)
     app.config.from_mapping(SQLALCHEMY_TRACK_MODIFICATIONS=False)
 
