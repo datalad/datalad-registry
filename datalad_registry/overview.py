@@ -56,7 +56,7 @@ def overview():  # No type hints due to mypy#7187.
 
             ts = info.info_ts
             if ts is not None:
-                row["last_update"] = ts.strftime("%Y-%m-%dT%H:%M%z")
+                row["last_update"] = ts.strftime("%Y-%m-%dT%H:%M:%S%z")
             else:
                 row["last_update"] = None
             rows.append(row)
