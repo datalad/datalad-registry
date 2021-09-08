@@ -20,6 +20,8 @@ class URL(db.Model):  # type: ignore
     branches = db.Column(db.Text)
     tags = db.Column(db.Text)
     git_objects_kb = db.Column(db.BigInteger)
+    #: Whether initial data has been collected for this URL
+    processed = db.Column(db.Boolean, default=False, nullable=False)
 
     def __repr__(self) -> str:
         return f"<URL(url={self.url!r}, ds_id={self.ds_id!r})>"

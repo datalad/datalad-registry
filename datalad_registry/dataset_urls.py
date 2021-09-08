@@ -36,17 +36,26 @@ def url(ds_id: str, url_encoded: str) -> Any:
     except InvalidURL:
         return jsonify(message="Invalid encoded URL"), 400
 
-    result = db.session.query(URL).filter_by(url=url, ds_id=ds_id)
+    result = db.session.query(URL).filter_by(url=url)
     # even here could lead to sqlite locking issue, I guess if
     # collect_dataset_info is in progress:
     # https://github.com/datalad/datalad-registry/issues/34
     row_known = result.first()
+
+    # We can't replace this check by adding `ds_id=ds_id` to the filter query,
+    # as then entries without ds_id set would not be returned, as though they
+    # were unregistered, leading to PATCH requests trying to register the URLs
+    # again by adding a row to the database, causing an error.
+    if row_known is not None and row_known.ds_id != ds_id:
+        return jsonify(message="UUID does not match value registered for URL"), 400
 
     if request.method == "GET":
         lgr.info("Checking status of registering %s as URL of %s", url, ds_id)
         resp: dict = {"ds_id": ds_id, "url": url}
         if row_known is None:
             status = "unknown"
+        elif not row_known.processed:
+            status = "unprocessed"
         else:
             status = "known"
             resp["info"] = {
@@ -62,7 +71,7 @@ def url(ds_id: str, url_encoded: str) -> Any:
             db.session.add(URL(ds_id=ds_id, url=url))
             db.session.commit()
             tasks.collect_dataset_info.delay([(ds_id, url)])
-        else:
+        elif row_known.processed:
             result.update({"update_announced": 1})
             db.session.commit()
         return "", 202

@@ -115,12 +115,14 @@ def collect_dataset_uuid(url: str) -> None:
     result = db.session.query(URL).filter_by(url=url)
     # r = result.first()
     # assert r is not None
+    # assert not r.processed
     # assert r.ds_id is None
     ds_path = cache_dir / "UNKNOWN" / url_encode(url)
     ds = clone_dataset(url, ds_path)
     ds_id = ds.id
     info = get_info(ds.repo)
     info["ds_id"] = ds_id
+    info["processed"] = True
     result.update(info)
     abbrev_id = "None" if ds_id is None else ds_id[:3]
     try:
@@ -189,6 +191,7 @@ def collect_dataset_info(datasets: Optional[List[Tuple[str, str]]] = None) -> No
             info["ds_id"] = ds.id
         elif ds_id != ds.id:
             lgr.warning("A dataset with an ID (%s) got a new one (%s)", ds_id, ds.id)
+        info["processed"] = True
         # TODO: check if ds_id is still the same. If changed -- create a new
         # entry for it?
         db.session.query(URL).filter_by(url=url).update(info)

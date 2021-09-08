@@ -47,6 +47,8 @@ def urls(url_encoded: str) -> Any:
         resp: dict = {"url": url}
         if row_known is None:
             status = "unknown"
+        elif not row_known.processed:
+            status = "unprocessed"
         else:
             status = "known"
             resp["ds_id"] = row_known.ds_id
@@ -63,7 +65,7 @@ def urls(url_encoded: str) -> Any:
             db.session.add(URL(url=url))
             db.session.commit()
             tasks.collect_dataset_uuid.delay(url)
-        else:
+        elif row_known.processed:
             result.update({"update_announced": 1})
             db.session.commit()
         return "", 202
