@@ -27,6 +27,8 @@ jobs:
         sudo apt-get install eatmydata
         sudo eatmydata apt-get install git-annex-standalone
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
     - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:

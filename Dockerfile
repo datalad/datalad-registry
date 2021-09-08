@@ -20,6 +20,7 @@ RUN apt-get update && \
 RUN git config --system user.name "dl-registry" && \
     git config --system user.email "dl-registry@example.com"
 
+COPY .git .git/
 COPY datalad_registry datalad_registry/
 COPY pyproject.toml pyproject.toml
 COPY setup.cfg setup.cfg
