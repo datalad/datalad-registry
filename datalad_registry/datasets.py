@@ -66,6 +66,6 @@ def urls(url_encoded: str) -> Any:
             db.session.commit()
             tasks.collect_dataset_uuid.delay(url)
         elif row_known.processed:
-            result.update({"update_announced": 1})
+            result.update({"update_announced": True})
             db.session.commit()
         return "", 202

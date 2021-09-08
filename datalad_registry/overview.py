@@ -2,7 +2,6 @@
 """
 
 import logging
-import time
 
 from flask import Blueprint, render_template, request
 
@@ -56,8 +55,8 @@ def overview():  # No type hints due to mypy#7187.
                 row[col] = getattr(info, col)
 
             ts = info.info_ts
-            if ts:
-                row["last_update"] = time.strftime("%Y-%m-%dT%H:%M%z", time.gmtime(ts))
+            if ts is not None:
+                row["last_update"] = ts.strftime("%Y-%m-%dT%H:%M:%S%z")
             else:
                 row["last_update"] = None
             rows.append(row)

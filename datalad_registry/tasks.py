@@ -1,8 +1,8 @@
+from datetime import datetime, timezone
 import errno
 import logging
 from pathlib import Path
 from shutil import rmtree
-import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from datalad_registry import celery
@@ -11,7 +11,7 @@ from datalad_registry.utils import url_encode
 
 lgr = logging.getLogger(__name__)
 
-InfoType = Dict[str, Union[str, float]]
+InfoType = Dict[str, Union[str, float, datetime]]
 
 
 def clone_dataset(url: str, ds_path: Path) -> Any:
@@ -35,8 +35,8 @@ def clone_dataset(url: str, ds_path: Path) -> Any:
 def get_info(ds_repo: Any) -> InfoType:
     info: InfoType = _extract_git_info(ds_repo)
     info.update(_extract_annex_info(ds_repo))
-    info["info_ts"] = time.time()
-    info["update_announced"] = 0
+    info["info_ts"] = datetime.now(timezone.utc)
+    info["update_announced"] = False
     info["git_objects_kb"] = ds_repo.count_objects["size"]
     return info
 
@@ -165,7 +165,7 @@ def collect_dataset_info(datasets: Optional[List[Tuple[str, str]]] = None) -> No
         # be manifestation of absent protection/support for concurrency
         datasets = [
             (r.ds_id, r.url)
-            for r in ses.query(URL).filter_by(update_announced=1)
+            for r in ses.query(URL).filter_by(update_announced=True)
             # TODO: get all, group by id, send individual tasks
             # Q: could multiple instances of this task be running
             # at the same time????
