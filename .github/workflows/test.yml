@@ -37,7 +37,7 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install wheel
-        pip install codecov
+        pip install coverage
         pip install mypy types-requests
         pip install .[tests]
     - name: Set up dev server
@@ -50,4 +50,4 @@ jobs:
     - name: mypy check
       run: mypy datalad_registry datalad_registry_client
     - name: Upload coverage to codecov
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v2
