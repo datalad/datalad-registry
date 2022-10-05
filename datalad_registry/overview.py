@@ -40,7 +40,7 @@ def overview():  # No type hints due to mypy#7187.
         r = r.order_by(getattr(getattr(URL, col), sort_method)())
         num_urls = r.count()
         page = request.args.get("page", 1, type=int)
-        r = r.paginate(page, _PAGE_NITEMS, False)
+        r = r.paginate(page=page, per_page=_PAGE_NITEMS, error_out=False)
         rows = []
         for info in r.items:
             row = {}
