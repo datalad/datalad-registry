@@ -99,6 +99,9 @@ def _app_instance(dockerdb, tmp_path_factory, cache_dir):
         "SQLALCHEMY_DATABASE_URI": dockerdb,
         "TESTING": True,
     }
+    # crude way to add timeout for connections which might be hanging
+    import socket
+    socket.setdefaulttimeout(2)  # seconds
     app = create_app(config)
     with app.test_client() as client:
         yield AppInstance(app, db, client)
