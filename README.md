@@ -8,7 +8,7 @@ DataLad registry -- work in progress
 ### Development setup
 
 Here are steps for setting up a development environment either 1)
-using a virtual environment for everything but the celery broker or 2)
+using a virtual environment for everything but the Celery broker, or 2)
 using containers for both the Flask and Celery components.  Note that
 these steps are not required to execute the pytest-based test suite.
 
@@ -50,7 +50,7 @@ The server instance can be configured via the following environment variables
 when running the `up` or `up-tests` scripts:
 
 - `DATALAD_REGISTRY_PASSWORD` — *(required)* the password to use for the
-  PostgreSQL database and RabbitMQ instance
+  PostgreSQL database and RabbitMQ instance.
 
 - `DATALAD_REGISTRY_INSTANCE_PATH` — The directory in which to store the
   server's data; defaults to `$PWD/instance`.  When running Flask inside a

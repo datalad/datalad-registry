@@ -2,7 +2,7 @@ import os
 import time
 
 import datalad.api as dl
-from datalad.tests.utils import assert_in_results
+from datalad.tests.utils_pytest import assert_in_results
 import pytest
 import requests
 

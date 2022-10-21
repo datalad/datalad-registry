@@ -30,10 +30,12 @@ export DATALAD_REGISTRY_PASSWORD
 export POSTGRES_PASSWORD="$DATALAD_REGISTRY_PASSWORD"
 export RABBITMQ_DEFAULT_PASS="$DATALAD_REGISTRY_PASSWORD"
 
-export UID_GID="$(id -u):$(id -g)"
+_UID=$(id -u)
+_GID=$(id -g)
+export UID_GID="$_UID:$_GID"
 
 bg=0
-if [ "x--bg" = "x${1:-}" ]
+if [ "--bg" = "${1:-}" ]
 then
     bg=1
     shift
