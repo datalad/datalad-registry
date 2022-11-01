@@ -44,7 +44,10 @@ def test_collect_dataset_info(app_instance, client, tmp_path):
         # now, test a direct fetch by giving the URL explicitly.
         repo.call_git(["commit", "--allow-empty", "-mc4"])
         repo.tag("v3", message="Version 3")
-        tasks.collect_dataset_info(datasets=[(ds.id, url)])
+        # Use `.run()` instead of calling the task so as to avoid creating
+        # another app context with its own database session, which would lead
+        # to `ses` becoming out of sync with the database.
+        tasks.collect_dataset_info.run(datasets=[(ds.id, url)])
         res = ses.query(URL).filter_by(url=url).one()
         assert res.head == repo.get_hexsha()
         assert res.head_describe == "v3"
@@ -118,7 +121,7 @@ def test_collect_dataset_info_announced_update(app_instance, client, tmp_path):
 
         url_encoded = url_encode(url)
         client.patch(f"/v1/datasets/{ds.id}/urls/{url_encoded}")
-        tasks.collect_dataset_info()
+        tasks.collect_dataset_info.run()
         res = ses.query(URL).filter_by(url=url).one()
         head = repo.get_hexsha()
         assert res.head == head
