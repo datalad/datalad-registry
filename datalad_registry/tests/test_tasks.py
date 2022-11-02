@@ -13,7 +13,7 @@ def test_collect_dataset_info_empty(app_instance):
 
 
 @pytest.mark.slow
-def test_collect_dataset_info(app_instance, tmp_path):
+def test_collect_dataset_info(app_instance, client, tmp_path):
     import datalad.api as dl
 
     ds = dl.Dataset(tmp_path / "ds").create()
@@ -26,7 +26,7 @@ def test_collect_dataset_info(app_instance, tmp_path):
     repo.tag("v2", message="Version 2")
 
     url = "file:///" + ds.path
-    register_dataset(ds, url, app_instance.client)
+    register_dataset(ds, url, client)
 
     with app_instance.app.app_context():
         ses = app_instance.db.session
@@ -44,20 +44,23 @@ def test_collect_dataset_info(app_instance, tmp_path):
         # now, test a direct fetch by giving the URL explicitly.
         repo.call_git(["commit", "--allow-empty", "-mc4"])
         repo.tag("v3", message="Version 3")
-        tasks.collect_dataset_info(datasets=[(ds.id, url)])
+        # Use `.run()` instead of calling the task so as to avoid creating
+        # another app context with its own database session, which would lead
+        # to `ses` becoming out of sync with the database.
+        tasks.collect_dataset_info.run(datasets=[(ds.id, url)])
         res = ses.query(URL).filter_by(url=url).one()
         assert res.head == repo.get_hexsha()
         assert res.head_describe == "v3"
 
 
 @pytest.mark.slow
-def test_collect_dataset_info_just_init(app_instance, tmp_path):
+def test_collect_dataset_info_just_init(app_instance, client, tmp_path):
     import datalad.api as dl
 
     ds = dl.Dataset(tmp_path / "ds").create()
     repo = ds.repo
     url = "file:///" + ds.path
-    register_dataset(ds, url, app_instance.client)
+    register_dataset(ds, url, client)
 
     with app_instance.app.app_context():
         ses = app_instance.db.session
@@ -72,13 +75,13 @@ def test_collect_dataset_info_just_init(app_instance, tmp_path):
 
 
 @pytest.mark.slow
-def test_collect_dataset_info_no_annex(app_instance, tmp_path):
+def test_collect_dataset_info_no_annex(app_instance, client, tmp_path):
     import datalad.api as dl
 
     ds = dl.Dataset(tmp_path / "ds").create(annex=False)
     repo = ds.repo
     url = "file:///" + ds.path
-    register_dataset(ds, url, app_instance.client)
+    register_dataset(ds, url, client)
 
     with app_instance.app.app_context():
         ses = app_instance.db.session
@@ -90,7 +93,7 @@ def test_collect_dataset_info_no_annex(app_instance, tmp_path):
 
 
 @pytest.mark.slow
-def test_collect_dataset_info_announced_update(app_instance, tmp_path):
+def test_collect_dataset_info_announced_update(app_instance, client, tmp_path):
     import datalad.api as dl
 
     ds = dl.Dataset(tmp_path / "ds").create()
@@ -101,7 +104,7 @@ def test_collect_dataset_info_announced_update(app_instance, tmp_path):
     repo.tag("v1")
 
     url = "file:///" + ds.path
-    register_dataset(ds, url, app_instance.client)
+    register_dataset(ds, url, client)
 
     with app_instance.app.app_context():
         ses = app_instance.db.session
@@ -117,17 +120,15 @@ def test_collect_dataset_info_announced_update(app_instance, tmp_path):
         repo.tag("v2", message="Version 2")
 
         url_encoded = url_encode(url)
-        app_instance.client.patch(f"/v1/datasets/{ds.id}/urls/{url_encoded}")
-        tasks.collect_dataset_info()
+        client.patch(f"/v1/datasets/{ds.id}/urls/{url_encoded}")
+        tasks.collect_dataset_info.run()
         res = ses.query(URL).filter_by(url=url).one()
         head = repo.get_hexsha()
         assert res.head == head
         assert res.head_describe == "v2"
         assert res.annex_key_count == 2
 
-        info = app_instance.client.get(
-            f"/v1/datasets/{ds.id}/urls/{url_encoded}"
-        ).get_json()["info"]
+        info = client.get(f"/v1/datasets/{ds.id}/urls/{url_encoded}").get_json()["info"]
         assert info["head"] == head
         assert info["head_describe"] == "v2"
         assert info["annex_key_count"] == 2

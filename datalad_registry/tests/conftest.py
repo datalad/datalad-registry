@@ -14,7 +14,7 @@ from datalad_registry.factory import create_app
 from datalad_registry.models import db
 from datalad_registry.tests.utils import make_ds_id
 
-AppInstance = namedtuple("AppInstance", ["app", "db", "client"])
+AppInstance = namedtuple("AppInstance", ["app", "db"])
 
 
 @pytest.fixture
@@ -101,10 +101,10 @@ def _app_instance(dockerdb, tmp_path_factory, cache_dir):
     }
     # crude way to add timeout for connections which might be hanging
     import socket
+
     socket.setdefaulttimeout(2)  # seconds
     app = create_app(config)
-    with app.test_client() as client:
-        yield AppInstance(app, db, client)
+    yield AppInstance(app, db)
 
 
 @pytest.fixture
@@ -131,4 +131,4 @@ def client(app_instance):
     If you need to access to the application or database, use the
     `app_instance` fixture instead.
     """
-    yield app_instance.client
+    yield app_instance.app.test_client()

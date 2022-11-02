@@ -63,7 +63,7 @@ def test_submit_invalid_siblings(tmp_path):
         ds.registry_submit(sibling="foo")
 
     # So does a sibling without a URL.
-    ds.config.set("remote.no_url.fetch", "blah", where="local")
+    ds.config.set("remote.no_url.fetch", "blah", scope="local")
     with pytest.raises(ValueError):
         ds.registry_submit(sibling="no_url")
 
@@ -101,7 +101,7 @@ def test_submit_all_siblings(tmp_path):
     pid = os.getpid()
     ts = time.time()
     url2 = f"https://www.example.nil/{pid}/{ts}/repo.git"
-    ds.config.set("remote.sibling2.url", url2, where="local")
+    ds.config.set("remote.sibling2.url", url2, scope="local")
 
     ds_id = ds.id
 
