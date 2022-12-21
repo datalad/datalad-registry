@@ -1,4 +1,4 @@
-FROM neurodebian:latest
+FROM --platform=amd64 neurodebian:latest
 WORKDIR /app
 
 ENV DEBIAN_FRONTEND=noninteractive
