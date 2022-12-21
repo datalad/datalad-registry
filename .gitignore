@@ -10,3 +10,6 @@ build/
 dist/
 htmlcov/
 instance/
+.idea/
+.python-version
+*.swp
