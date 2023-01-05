@@ -20,7 +20,7 @@ services:
       RABBITMQ_DEFAULT_PASS:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_VHOST: /
-      POSTGRES_PASSWORD:
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
     command: [sh, -c, "flask init-db && flask run --host=0.0.0.0"]
     volumes:
       - $DATALAD_REGISTRY_INSTANCE_PATH:/app/instance
@@ -78,7 +78,7 @@ services:
     environment:
       POSTGRES_DB: dlreg
       POSTGRES_USER: dlreg
-      POSTGRES_PASSWORD:
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
       POSTGRES_INITDB_ARGS: --encoding utf8 --locale C
     user: "${UID_GID}"
     ports:
