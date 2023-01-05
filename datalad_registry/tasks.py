@@ -90,7 +90,7 @@ def _extract_annex_info(repo) -> InfoType:
 
     info = {}
     try:
-        records = list(repo.call_annex_records(["info"], "origin"))
+        records = repo.call_annex_records(["info"], "origin")
     except CommandError as exc:
         lgr.warning("Running `annex info` in %s had non-zero exit code:\n%s", repo, exc)
     except AttributeError:
