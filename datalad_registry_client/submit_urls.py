@@ -2,9 +2,8 @@ import logging
 from typing import Any, Dict, Iterator, List, Optional
 
 from datalad import cfg
-from datalad.interface.base import Interface, build_doc
+from datalad.interface.base import Interface, build_doc, eval_results
 from datalad.interface.results import get_status_dict
-from datalad.interface.utils import eval_results
 from datalad.support.constraints import EnsureNone, EnsureStr
 from datalad.support.param import Parameter
 import requests

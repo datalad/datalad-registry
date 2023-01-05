@@ -1,18 +1,14 @@
 #!/bin/bash
 set -eu
 
-# it seems that newer docker-compose has other idea on how to name the containers
-docker_compose_major_v=$(docker-compose --version | sed -e 's,.* v\([0-9]\)\..*,\1,g')
 
 await_health () {
     service="$1"
     echo "Waiting for $service to come up..."
     healthy=0
-    if [ "$docker_compose_major_v" = 1 ]; then
-        service_name="datalad-registry_${service}_1"
-    else
-        service_name="dataladdatalad-registry-${service}-1"
-    fi
+    # docker compose seems to use current directory name to define
+    # service name
+    service_name=$(basename "$PWD" | sed -e 's,\.,,g')-${service}-1
     for i in $(seq 30)
     do
         printf .
