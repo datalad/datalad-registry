@@ -14,6 +14,8 @@ class URL(db.Model):  # type: ignore
     ds_id = db.Column(db.Text, nullable=True)
     annex_uuid = db.Column(db.Text)
     annex_key_count = db.Column(db.Integer)
+    annexed_files_in_wt_count = db.Column(db.Integer)
+    annexed_files_in_wt_size = db.Column(db.Text)
     info_ts = db.Column(db.DateTime(timezone=True))
     update_announced = db.Column(db.Boolean, default=False, nullable=False)
     head = db.Column(db.Text)

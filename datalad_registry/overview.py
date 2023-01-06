@@ -50,6 +50,8 @@ def overview():  # No type hints due to mypy#7187.
                 "annex_key_count",
                 "head",
                 "head_describe",
+                'annexed_files_in_wt_count',
+                'annexed_files_in_wt_size',
                 "git_objects_kb",
             ]:
                 row[col] = getattr(info, col)
