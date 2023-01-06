@@ -41,20 +41,23 @@ def overview():  # No type hints due to mypy#7187.
         num_urls = r.count()
         page = request.args.get("page", 1, type=int)
         r = r.paginate(page=page, per_page=_PAGE_NITEMS, error_out=False)
+
+        # Define columns of the
+        cols = [
+            "ds_id",
+            "url",
+            "annex_key_count",
+            "head",
+            "head_describe",
+            'annexed_files_in_wt_count',
+            'annexed_files_in_wt_size',
+            "git_objects_kb",
+        ]
+
+        # Generate rows
         rows = []
         for item in r.items:
-            row = {}
-            for col in [
-                "ds_id",
-                "url",
-                "annex_key_count",
-                "head",
-                "head_describe",
-                'annexed_files_in_wt_count',
-                'annexed_files_in_wt_size',
-                "git_objects_kb",
-            ]:
-                row[col] = getattr(item, col)
+            row = {col: getattr(item, col) for col in cols}
 
             ts = item.info_ts
             if ts is not None:
@@ -62,6 +65,7 @@ def overview():  # No type hints due to mypy#7187.
             else:
                 row["last_update"] = None
             rows.append(row)
+
         return render_template(
             "overview.html",
             rows=rows,
