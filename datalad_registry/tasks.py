@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
 import errno
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 from shutil import rmtree
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -90,16 +90,29 @@ def _extract_annex_info(repo) -> InfoType:
 
     info = {}
     try:
-        records = repo.call_annex_records(["info"], "origin")
+        origin_records = repo.call_annex_records(["info"], "origin")
+        working_tree_records = repo.call_annex_records(["info", "--bytes"])
     except CommandError as exc:
         lgr.warning("Running `annex info` in %s had non-zero exit code:\n%s", repo, exc)
     except AttributeError:
         lgr.debug("Skipping annex info collection for non-annex repo: %s", repo)
     else:
-        assert len(records) == 1, "bug: unexpected `annex info` output"
-        res = records[0]
-        info["annex_uuid"] = res["uuid"]
-        info["annex_key_count"] = int(res["remote annex keys"])
+        assert len(origin_records) == 1, "bug: unexpected `annex info` output"
+        assert len(working_tree_records) == 1, "bug: unexpected `annex info` output"
+
+        origin_record = origin_records[0]
+        working_tree_record = working_tree_records[0]
+
+        info["annex_uuid"] = origin_record["uuid"]
+        info["annex_key_count"] = int(origin_record["remote annex keys"])
+
+        info['annexed_files_in_wt_count'] = working_tree_record[
+            'annexed files in working tree'
+        ]
+        info['annexed_files_in_wt_size'] = working_tree_record[
+            'size of annexed files in working tree'
+        ]
+
     return info
 
 

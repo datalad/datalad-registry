@@ -38,6 +38,8 @@ href="{{ url_for('.overview', sort=sort_by, filter=url_filter,
             <th>Dataset</th>
             <th>Commit</th>
             <th><a {{ sort_href('keys-desc', 'keys-asc') }}>Annex keys</a></th>
+            <th>Annexed files in working tree</th>
+            <th>Size of Annexed files in working tree (bytes)</th>
             <th><a {{ sort_href('update-desc', 'update-asc') }}>Last update</a></th>
             <th>.git/objects Size (KiB)</th>
           </tr>
@@ -49,6 +51,8 @@ href="{{ url_for('.overview', sort=sort_by, filter=url_filter,
               else r["head"]|truncate(9, False, "")
               if r["head"] }}</td>
             <td>{{ r["annex_key_count"] if r["annex_key_count"] is not none }}</td>
+            <td>{{ r["annexed_files_in_wt_count"] }}</td>
+            <td>{{ r["annexed_files_in_wt_size"] }}</td>
             <td>{{ r["last_update"] if r["last_update"] }}</td>
             <td>{{ r["git_objects_kb"] if r["git_objects_kb"] is not none }}</td>
           </tr>
