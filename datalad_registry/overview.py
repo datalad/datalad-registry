@@ -42,7 +42,7 @@ def overview():  # No type hints due to mypy#7187.
         page = request.args.get("page", 1, type=int)
         r = r.paginate(page=page, per_page=_PAGE_NITEMS, error_out=False)
 
-        # Define columns of the
+        # Define columns of the table
         cols = [
             "ds_id",
             "url",
