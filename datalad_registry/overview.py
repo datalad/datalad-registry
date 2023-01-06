@@ -42,7 +42,7 @@ def overview():  # No type hints due to mypy#7187.
         page = request.args.get("page", 1, type=int)
         r = r.paginate(page=page, per_page=_PAGE_NITEMS, error_out=False)
         rows = []
-        for info in r.items:
+        for item in r.items:
             row = {}
             for col in [
                 "ds_id",
@@ -54,9 +54,9 @@ def overview():  # No type hints due to mypy#7187.
                 'annexed_files_in_wt_size',
                 "git_objects_kb",
             ]:
-                row[col] = getattr(info, col)
+                row[col] = getattr(item, col)
 
-            ts = info.info_ts
+            ts = item.info_ts
             if ts is not None:
                 row["last_update"] = ts.strftime("%Y-%m-%dT%H:%M:%S%z")
             else:
