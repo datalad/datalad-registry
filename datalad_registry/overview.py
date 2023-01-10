@@ -20,6 +20,18 @@ _SORT_ATTRS = {
     "url-desc": ("url", "desc"),
 }
 
+# Columns of the table displayed on the overview page
+_COLS = [
+    "ds_id",
+    "url",
+    "annex_key_count",
+    "head",
+    "head_describe",
+    'annexed_files_in_wt_count',
+    'annexed_files_in_wt_size',
+    "git_objects_kb",
+]
+
 
 @bp.route("/")
 def overview():  # No type hints due to mypy#7187.
@@ -42,22 +54,10 @@ def overview():  # No type hints due to mypy#7187.
         page = request.args.get("page", 1, type=int)
         r = r.paginate(page=page, per_page=_PAGE_NITEMS, error_out=False)
 
-        # Define columns of the table
-        cols = [
-            "ds_id",
-            "url",
-            "annex_key_count",
-            "head",
-            "head_describe",
-            'annexed_files_in_wt_count',
-            'annexed_files_in_wt_size',
-            "git_objects_kb",
-        ]
-
         # Generate rows
         rows = []
         for item in r.items:
-            row = {col: getattr(item, col) for col in cols}
+            row = {col: getattr(item, col) for col in _COLS}
 
             ts = item.info_ts
             if ts is not None:
