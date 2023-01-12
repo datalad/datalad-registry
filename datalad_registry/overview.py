@@ -27,8 +27,8 @@ _COLS = [
     "annex_key_count",
     "head",
     "head_describe",
-    'annexed_files_in_wt_count',
-    'annexed_files_in_wt_size',
+    "annexed_files_in_wt_count",
+    "annexed_files_in_wt_size",
     "git_objects_kb",
 ]
 

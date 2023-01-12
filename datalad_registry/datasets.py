@@ -22,9 +22,11 @@ def datasets():  # No type hints due to mypy#7187.
         lgr.info("Getting list of known datasets")
         r = db.session.query(URL.ds_id).group_by(URL.ds_id)
         r = r.order_by(URL.ds_id.asc())
-        r = r.paginate(page=request.args.get("page", 1, type=int),
-                       per_page=_PAGE_NITEMS,
-                       error_out=False)
+        r = r.paginate(
+            page=request.args.get("page", 1, type=int),
+            per_page=_PAGE_NITEMS,
+            error_out=False,
+        )
         # TODO: Eventually switch over to using _external=True so that
         # caller doesn't need to construct URL?
         pg_n = url_for(".datasets", page=r.next_num) if r.has_next else None
