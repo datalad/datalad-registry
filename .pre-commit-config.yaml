@@ -29,4 +29,4 @@ repos:
           - flake8-unused-arguments
 
 default_language_version:
-    python: python3.9
+    python: python3.11
