@@ -74,8 +74,8 @@ def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
 
     if app.config["ENV"] == "production" and not test_config:
         raise RuntimeError("Not ready yet")
-    else:
-        config_obj = "datalad_registry.config.DevelopmentConfig"
+
+    config_obj = "datalad_registry.config.DevelopmentConfig"
     app.config.from_object(config_obj)
 
     app.config.from_envvar("DATALAD_REGISTRY_CONFIG", silent=True)
