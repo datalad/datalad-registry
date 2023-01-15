@@ -71,10 +71,17 @@ def url(ds_id: str, url_encoded: str) -> Any:
         return jsonify(resp)
     elif request.method == "PATCH":
         if row_known is None:
+            # todo: This is problematic for there is no guarantee that the dataset
+            #       at the url given in the request actually has a dataset id that is
+            #       ds_id given in the request. In fact, there is no guarantee that the
+            #       url given at the request is indeed the url of a dataset at all.
             db.session.add(URL(ds_id=ds_id, url=url))
             db.session.commit()
             tasks.collect_dataset_info.delay([(ds_id, url)])
         elif row_known.processed:
+            # todo: Is the intended statement
+            #       row_known.update({"update_announced": True})
+            #       ?
             result.update({"update_announced": True})
             db.session.commit()
         return "", 202
