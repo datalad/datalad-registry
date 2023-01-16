@@ -16,6 +16,8 @@ lgr = logging.getLogger(__name__)
 InfoType = Dict[str, Union[str, float, datetime]]
 
 
+# todo: The value of url is encoded in ds_path, so we have passed it twice to this func.
+#       Find a way to remove this redundancy.
 def clone_dataset(url: str, ds_path: Path) -> Any:
     import datalad.api as dl
 
@@ -123,6 +125,8 @@ def _extract_annex_info(repo) -> InfoType:
 def collect_dataset_uuid(url: str) -> None:
     from flask import current_app
 
+    # todo: This can possibly done in the setup of the app
+    #       not as part of an individual task.
     cache_dir = Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
     cache_dir.mkdir(parents=True, exist_ok=True)
 
@@ -180,11 +184,15 @@ def collect_dataset_info(
 
     from flask import current_app
 
+    # todo: This can possibly done in the setup of the app
+    #       not as part of an individual task.
     cache_dir = Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
     cache_dir.mkdir(parents=True, exist_ok=True)
 
     ses = db.session
     if datasets is None:
+        # todo: If this case is intended to be done in celery's beat/corn,
+        #       then this case should be organized as an independent task.
         # this one is done on celery's beat/cron
         # TODO: might "collide" between announced update (datasets is provided)
         # and cron.  How can we lock/protect?
@@ -218,6 +226,10 @@ def collect_dataset_info(
             info["ds_id"] = ds.id
         elif ds_id != ds.id:
             lgr.warning("A dataset with an ID (%s) got a new one (%s)", ds_id, ds.id)
+            # todo: The value of ds_id must be incorrect. Handle it.
+            #       Possibly doiing the following
+            #       info["ds_id"] = ds.id
+            #       rename the cache directory
         info["processed"] = True
         # TODO: check if ds_id is still the same. If changed -- create a new
         # entry for it?
