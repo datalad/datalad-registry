@@ -159,6 +159,8 @@ def collect_dataset_uuid(url: str) -> None:
                 abbrev_id,
             )
         rmtree(ds_path)
+    # todo: marking of problematic code ends
+
     db.session.commit()
 
 
