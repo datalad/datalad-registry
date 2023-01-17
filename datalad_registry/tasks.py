@@ -168,6 +168,9 @@ def collect_dataset_uuid(url: str) -> None:
     db.session.commit()
 
 
+# todo: It is not very clear why the UUID of a dataset  has to be provided.
+#       By having this piece of information provided by the user, we are exposed to the
+#       risk of the user providing a wrong UUID.
 @celery.task
 @validate_arguments
 def collect_dataset_info(
