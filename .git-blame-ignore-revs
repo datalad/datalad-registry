@@ -1,0 +1,4 @@
+# .git-blame-ignore-revs
+
+# Migrate code style to Black
+2a35cd5844a0cd2e9e1e1fb4d4dc0e429a434caf

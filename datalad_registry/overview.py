@@ -20,6 +20,18 @@ _SORT_ATTRS = {
     "url-desc": ("url", "desc"),
 }
 
+# Columns of the table displayed on the overview page
+_COLS = [
+    "ds_id",
+    "url",
+    "annex_key_count",
+    "head",
+    "head_describe",
+    "annexed_files_in_wt_count",
+    "annexed_files_in_wt_size",
+    "git_objects_kb",
+]
+
 
 @bp.route("/")
 def overview():  # No type hints due to mypy#7187.
@@ -41,27 +53,19 @@ def overview():  # No type hints due to mypy#7187.
         num_urls = r.count()
         page = request.args.get("page", 1, type=int)
         r = r.paginate(page=page, per_page=_PAGE_NITEMS, error_out=False)
-        rows = []
-        for info in r.items:
-            row = {}
-            for col in [
-                "ds_id",
-                "url",
-                "annex_key_count",
-                "head",
-                "head_describe",
-                'annexed_files_in_wt_count',
-                'annexed_files_in_wt_size',
-                "git_objects_kb",
-            ]:
-                row[col] = getattr(info, col)
 
-            ts = info.info_ts
+        # Generate rows
+        rows = []
+        for item in r.items:
+            row = {col: getattr(item, col) for col in _COLS}
+
+            ts = item.info_ts
             if ts is not None:
                 row["last_update"] = ts.strftime("%Y-%m-%dT%H:%M:%S%z")
             else:
                 row["last_update"] = None
             rows.append(row)
+
         return render_template(
             "overview.html",
             rows=rows,

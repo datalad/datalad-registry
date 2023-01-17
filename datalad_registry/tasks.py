@@ -1,6 +1,6 @@
+from datetime import datetime, timezone
 import errno
 import logging
-from datetime import datetime, timezone
 from pathlib import Path
 from shutil import rmtree
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -106,11 +106,11 @@ def _extract_annex_info(repo) -> InfoType:
         info["annex_uuid"] = origin_record["uuid"]
         info["annex_key_count"] = int(origin_record["remote annex keys"])
 
-        info['annexed_files_in_wt_count'] = working_tree_record[
-            'annexed files in working tree'
+        info["annexed_files_in_wt_count"] = working_tree_record[
+            "annexed files in working tree"
         ]
-        info['annexed_files_in_wt_size'] = int(
-            working_tree_record['size of annexed files in working tree']
+        info["annexed_files_in_wt_size"] = int(
+            working_tree_record["size of annexed files in working tree"]
         )
 
     return info
