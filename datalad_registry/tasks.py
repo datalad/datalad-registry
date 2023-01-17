@@ -227,7 +227,7 @@ def collect_dataset_info(
         elif ds_id != ds.id:
             lgr.warning("A dataset with an ID (%s) got a new one (%s)", ds_id, ds.id)
             # todo: The value of ds_id must be incorrect. Handle it.
-            #       Possibly doiing the following
+            #       Possibly doing the following
             #       info["ds_id"] = ds.id
             #       rename the cache directory
         info["processed"] = True
