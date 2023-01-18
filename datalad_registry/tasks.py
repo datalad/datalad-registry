@@ -137,9 +137,15 @@ def collect_dataset_uuid(url: str) -> None:
     info["ds_id"] = ds_id
     info["processed"] = True
     result.update(info)
+
+    # Ensure the existence of the containing directory of
+    # the destination of the cloned dataset
     abbrev_id = "None" if ds_id is None else ds_id[:3]
+    cache_dir_level1 = cache_dir / abbrev_id
+    cache_dir_level1.mkdir(parents=True, exist_ok=True)
+
     try:
-        ds_path.rename(cache_dir / abbrev_id / url_encode(url))
+        ds_path.rename(cache_dir_level1 / url_encode(url))
     except OSError as e:
         if e.errno == errno.ENOTEMPTY:
             lgr.debug("Clone of %s already in cache", url)
