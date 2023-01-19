@@ -7,9 +7,12 @@ from celery.app.base import Celery
 from celery.schedules import crontab
 from flask import Flask
 from flask.logging import default_handler
+from kombu.serialization import register
 
 from datalad_registry import celery, dataset_urls, datasets, overview, root
 from datalad_registry.models import db, init_db_command
+
+from .utils.pydantic_json import pydantic_model_dumps, pydantic_model_loads
 
 lgr = logging.getLogger(__name__)
 
@@ -35,6 +38,23 @@ def setup_celery(app: Flask, celery: Celery) -> Celery:
         )
 
     celery.config_from_object(app.config, namespace="CELERY")
+
+    # Register JSON encoding and decoding functions with additional support of
+    # Pydantic models as a serializer
+    register(
+        "pydantic_json",
+        pydantic_model_dumps,
+        pydantic_model_loads,
+        content_type="application/x-pydantic-json",
+        content_encoding="utf-8",
+    )
+
+    # Set the Celery app to use the JSON serializer with support for Pydantic models
+    celery.conf.update(
+        accept_content=["pydantic_json"],
+        task_serializer="pydantic_json",
+        result_serializer="pydantic_json",
+    )
 
     class ContextTask(celery.Task):  # type: ignore
         def __call__(self, *args, **kwargs):
