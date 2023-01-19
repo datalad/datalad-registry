@@ -8,7 +8,7 @@ from datalad.support.constraints import EnsureNone, EnsureStr
 from datalad.support.param import Parameter
 import requests
 
-from datalad_registry.utils import url_encode
+from datalad_registry.utils.url_encoder import url_encode
 from datalad_registry_client.consts import DEFAULT_ENDPOINT
 
 lgr = logging.getLogger("datalad.registry.submit_urls")
