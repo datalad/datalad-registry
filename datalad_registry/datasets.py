@@ -8,7 +8,7 @@ from flask import Blueprint, jsonify, request, url_for
 
 from datalad_registry import tasks
 from datalad_registry.models import URL, db
-from datalad_registry.utils import InvalidURL, url_decode
+from datalad_registry.utils.url_encoder import InvalidURL, url_decode
 
 lgr = logging.getLogger(__name__)
 bp = Blueprint("datasets", __name__, url_prefix="/v1/")

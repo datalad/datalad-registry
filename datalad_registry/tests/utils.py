@@ -7,7 +7,7 @@ import uuid
 from datalad.distribution.dataset import Dataset
 from flask.testing import FlaskClient
 
-from datalad_registry.utils import url_encode
+from datalad_registry.utils.url_encoder import url_encode
 
 random = Random()
 random.seed("datalad-registry")

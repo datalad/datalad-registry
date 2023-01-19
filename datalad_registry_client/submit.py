@@ -6,7 +6,7 @@ from datalad.interface.base import Interface, build_doc, eval_results
 from datalad.interface.results import get_status_dict
 import requests
 
-from datalad_registry.utils import url_encode
+from datalad_registry.utils.url_encoder import url_encode
 from datalad_registry_client import opts
 
 lgr = logging.getLogger("datalad.registry.submit")
