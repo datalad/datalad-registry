@@ -9,7 +9,7 @@ from pydantic import StrictStr, validate_arguments
 
 from datalad_registry import celery
 from datalad_registry.models import URL, db
-from datalad_registry.utils import url_encode
+from datalad_registry.utils.url_encoder import url_encode
 
 lgr = logging.getLogger(__name__)
 

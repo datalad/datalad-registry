@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from datalad_registry.tests.utils import create_and_register_repos, init_repo
-from datalad_registry.utils import url_encode
+from datalad_registry.utils.url_encoder import url_encode
 
 
 def test_datasets(client, tmp_path):

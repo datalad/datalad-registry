@@ -6,7 +6,7 @@ from datalad.tests.utils_pytest import assert_in_results
 import pytest
 import requests
 
-from datalad_registry.utils import url_encode
+from datalad_registry.utils.url_encoder import url_encode
 from datalad_registry_client.consts import DEFAULT_ENDPOINT
 
 

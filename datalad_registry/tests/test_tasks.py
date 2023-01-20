@@ -3,7 +3,7 @@ import pytest
 from datalad_registry import tasks
 from datalad_registry.models import URL
 from datalad_registry.tests.utils import register_dataset
-from datalad_registry.utils import url_encode
+from datalad_registry.utils.url_encoder import url_encode
 
 
 @pytest.mark.slow
