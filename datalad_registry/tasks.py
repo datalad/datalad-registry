@@ -5,6 +5,8 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from pydantic import StrictStr, validate_arguments
+
 from datalad_registry import celery
 from datalad_registry.models import URL, db
 from datalad_registry.utils import url_encode
@@ -117,6 +119,7 @@ def _extract_annex_info(repo) -> InfoType:
 
 
 @celery.task
+@validate_arguments
 def collect_dataset_uuid(url: str) -> None:
     from flask import current_app
 
@@ -160,7 +163,10 @@ def collect_dataset_uuid(url: str) -> None:
 
 
 @celery.task
-def collect_dataset_info(datasets: Optional[List[Tuple[str, str]]] = None) -> None:
+@validate_arguments
+def collect_dataset_info(
+    datasets: Optional[List[Tuple[StrictStr, StrictStr]]] = None
+) -> None:
     """Collect information about `datasets`.
 
     Parameters
