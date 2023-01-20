@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import List, Optional
 
 from pydantic import BaseModel, validate_arguments
@@ -95,3 +96,15 @@ def test_pydantic_model_types(test_input, expected_output, process_func):
         process_func(pydantic_model_loads(pydantic_model_dumps(test_input)))
         == expected_output
     )
+
+
+# Test for handling unsupported types
+@dataclass
+class DataclassUser:
+    id: int
+    name = "Jane Doe"
+
+
+def test_unsupported_types():
+    with pytest.raises(TypeError):
+        pydantic_model_dumps(DataclassUser(id=1))
