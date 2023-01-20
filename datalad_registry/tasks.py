@@ -5,7 +5,7 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from pydantic import validate_arguments
+from pydantic import StrictStr, validate_arguments
 
 from datalad_registry import celery
 from datalad_registry.models import URL, db
@@ -164,7 +164,9 @@ def collect_dataset_uuid(url: str) -> None:
 
 @celery.task
 @validate_arguments
-def collect_dataset_info(datasets: Optional[List[Tuple[str, str]]] = None) -> None:
+def collect_dataset_info(
+    datasets: Optional[List[Tuple[StrictStr, StrictStr]]] = None
+) -> None:
     """Collect information about `datasets`.
 
     Parameters
