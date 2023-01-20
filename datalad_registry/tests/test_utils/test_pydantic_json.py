@@ -9,6 +9,7 @@ from datalad_registry.utils.pydantic_json import (
     pydantic_model_loads,
 )
 
+# ==== Test for handling standard types =======================================
 d = {"a": 1, "b": 2}
 lst = [1, 2, 3]
 t = (1, 2, 3)
@@ -36,6 +37,7 @@ def test_standard_types(test_input, expected_output):
     assert pydantic_model_loads(pydantic_model_dumps(test_input)) == expected_output
 
 
+# ==== Test for handling pydantic model types =================================
 class User(BaseModel):
     id: int
     name = "Jane Doe"
@@ -98,7 +100,7 @@ def test_pydantic_model_types(test_input, expected_output, process_func):
     )
 
 
-# Test for handling unsupported types
+# ==== Test for handling unsupported types ====================================
 @dataclass
 class DataclassUser:
     id: int
