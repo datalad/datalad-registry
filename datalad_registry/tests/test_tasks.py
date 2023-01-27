@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 from datalad_registry import tasks
@@ -39,18 +41,23 @@ def test_collect_dataset_info(app_instance, client, tmp_path):
         assert branches == set(repo.get_branches()) | {"HEAD"}
         tags = set(ln.split()[1] for ln in res.tags.splitlines())
         assert tags == set(repo.get_tags(output="name"))
+        ses.close()
 
         # collect_dataset_info() doesn't yet look at info_ts.  For
         # now, test a direct fetch by giving the URL explicitly.
         repo.call_git(["commit", "--allow-empty", "-mc4"])
         repo.tag("v3", message="Version 3")
-        # Use `.run()` instead of calling the task so as to avoid creating
-        # another app context with its own database session, which would lead
-        # to `ses` becoming out of sync with the database.
-        tasks.collect_dataset_info.run(datasets=[(ds.id, url)])
+
+        tasks.collect_dataset_info.delay(datasets=[(ds.id, url)])
+        time.sleep(1)  # Allow the task to run in the Celery worker
+
+        ses = app_instance.db.session
         res = ses.query(URL).filter_by(url=url).one()
+
         assert res.head == repo.get_hexsha()
         assert res.head_describe == "v3"
+
+        ses.close()
 
 
 @pytest.mark.slow
@@ -107,13 +114,16 @@ def test_collect_dataset_info_announced_update(app_instance, client, tmp_path):
     register_dataset(ds, url, client)
 
     with app_instance.app.app_context():
+        tasks.collect_dataset_info.delay()
+        time.sleep(1)  # Allow the task to run in the Celery worker
+
         ses = app_instance.db.session
-        tasks.collect_dataset_info()
         res = ses.query(URL).filter_by(url=url).one()
         assert res.head == repo.get_hexsha()
         assert res.head_describe == "v1"
         assert res.annex_uuid == repo.uuid
         assert res.annex_key_count == 1
+        ses.close()
 
         (ds.pathobj / "bar").write_text("bar")
         ds.save()
@@ -121,12 +131,17 @@ def test_collect_dataset_info_announced_update(app_instance, client, tmp_path):
 
         url_encoded = url_encode(url)
         client.patch(f"/v1/datasets/{ds.id}/urls/{url_encoded}")
-        tasks.collect_dataset_info.run()
+
+        tasks.collect_dataset_info.delay()
+        time.sleep(1)  # Allow the task to run in the Celery worker
+
+        ses = app_instance.db.session
         res = ses.query(URL).filter_by(url=url).one()
         head = repo.get_hexsha()
         assert res.head == head
         assert res.head_describe == "v2"
         assert res.annex_key_count == 2
+        ses.close()
 
         info = client.get(f"/v1/datasets/{ds.id}/urls/{url_encoded}").get_json()["info"]
         assert info["head"] == head

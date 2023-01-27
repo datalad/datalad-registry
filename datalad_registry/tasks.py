@@ -5,8 +5,8 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from pydantic import StrictStr, validate_arguments
 from celery import group
+from pydantic import StrictStr, validate_arguments
 
 from datalad_registry import celery
 from datalad_registry.models import URL, db
@@ -210,6 +210,8 @@ def collect_dataset_info(
             # TODO: if no updates, still do some randomly
             .limit(3)
         ]
+    ses.close()
+
     if not datasets:
         lgr.debug("Did not find URLs that needed information collected")
         return
@@ -257,6 +259,7 @@ def update_url_info(ds_id: str, url: str) -> None:
     # TODO: check if ds_id is still the same. If changed -- create a new
     # entry for it?
 
-    db.session.query(URL).filter_by(url=url).update(info)
-
-    db.session.commit()
+    session = db.session
+    session.query(URL).filter_by(url=url).update(info)
+    session.commit()
+    session.close()
