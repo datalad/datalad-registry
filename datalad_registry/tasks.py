@@ -210,7 +210,6 @@ def collect_dataset_info(
             # TODO: if no updates, still do some randomly
             .limit(3)
         ]
-    ses.close()
 
     if not datasets:
         lgr.debug("Did not find URLs that needed information collected")
@@ -262,4 +261,3 @@ def update_url_info(ds_id: str, url: str) -> None:
     session = db.session
     session.query(URL).filter_by(url=url).update(info)
     session.commit()
-    session.close()
