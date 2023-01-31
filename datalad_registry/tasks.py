@@ -5,6 +5,7 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from celery import group
 from pydantic import StrictStr, validate_arguments
 
 from datalad_registry import celery
@@ -16,6 +17,8 @@ lgr = logging.getLogger(__name__)
 InfoType = Dict[str, Union[str, float, datetime]]
 
 
+# todo: The value of url is encoded in ds_path, so we have passed it twice to this func.
+#       Find a way to remove this redundancy.
 def clone_dataset(url: str, ds_path: Path) -> Any:
     import datalad.api as dl
 
@@ -123,6 +126,8 @@ def _extract_annex_info(repo) -> InfoType:
 def collect_dataset_uuid(url: str) -> None:
     from flask import current_app
 
+    # todo: This can possibly done in the setup of the app
+    #       not as part of an individual task.
     cache_dir = Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
     cache_dir.mkdir(parents=True, exist_ok=True)
 
@@ -141,9 +146,15 @@ def collect_dataset_uuid(url: str) -> None:
     info["processed"] = True
     result.update(info)
 
+    # todo: This definition of abbrev_id and the target of the rename is problematic.
+    #       For example, if overtime one single url store two different datasets
+    #       each has an UUID that starts with the same 3 characters, then you have
+    #       a problem of handling the wrong dataset.
+
+    abbrev_id = "None" if ds_id is None else ds_id[:3]
+
     # Ensure the existence of the containing directory of
     # the destination of the cloned dataset
-    abbrev_id = "None" if ds_id is None else ds_id[:3]
     cache_dir_level1 = cache_dir / abbrev_id
     cache_dir_level1.mkdir(parents=True, exist_ok=True)
 
@@ -159,9 +170,14 @@ def collect_dataset_uuid(url: str) -> None:
                 abbrev_id,
             )
         rmtree(ds_path)
+    # todo: marking of problematic code ends
+
     db.session.commit()
 
 
+# todo: It is not very clear why the UUID of a dataset  has to be provided.
+#       By having this piece of information provided by the user, we are exposed to the
+#       risk of the user providing a wrong UUID.
 @celery.task
 @validate_arguments
 def collect_dataset_info(
@@ -176,13 +192,10 @@ def collect_dataset_info(
         announced update.
     """
 
-    from flask import current_app
-
-    cache_dir = Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
-    cache_dir.mkdir(parents=True, exist_ok=True)
-
     ses = db.session
     if datasets is None:
+        # todo: If this case is intended to be done in celery's beat/corn,
+        #       then this case should be organized as an independent task.
         # this one is done on celery's beat/cron
         # TODO: might "collide" between announced update (datasets is provided)
         # and cron.  How can we lock/protect?
@@ -197,6 +210,7 @@ def collect_dataset_info(
             # TODO: if no updates, still do some randomly
             .limit(3)
         ]
+
     if not datasets:
         lgr.debug("Did not find URLs that needed information collected")
         return
@@ -204,20 +218,46 @@ def collect_dataset_info(
     lgr.info("Collecting information for %s URLs", len(datasets))
     lgr.debug("Datasets: %s", datasets)
 
-    # TODO: this should be done by celery! it is silly to do it sequentially
-    # here.  I guess they might need to be groupped by ds_id since the same
-    # cache location is to be reused - each task should then handle it
-    for (ds_id, url) in datasets:
-        abbrev_id = "None" if ds_id is None else ds_id[:3]
-        ds_path = cache_dir / abbrev_id / url_encode(url)
-        ds = clone_dataset(url, ds_path)
-        info = get_info(ds.repo)
-        if ds_id is None:
-            info["ds_id"] = ds.id
-        elif ds_id != ds.id:
-            lgr.warning("A dataset with an ID (%s) got a new one (%s)", ds_id, ds.id)
-        info["processed"] = True
-        # TODO: check if ds_id is still the same. If changed -- create a new
-        # entry for it?
-        db.session.query(URL).filter_by(url=url).update(info)
-    db.session.commit()
+    # Update the information about the urls in the database in parallel
+    group(update_url_info.s(ds_id, url) for (ds_id, url) in set(datasets))()
+
+
+@celery.task
+def update_url_info(ds_id: str, url: str) -> None:
+    """
+    Update the information about a URL of a dataset in the database
+
+    :param ds_id: The given UUID of the dataset
+    :param url: The URL of a copy/clone of a dataset
+    """
+    from flask import current_app
+
+    # todo: This can possibly done in the setup of the app
+    #       not as part of an individual task.
+    cache_dir = Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+    cache_dir.mkdir(parents=True, exist_ok=True)  # This seems to be safe in parallel
+
+    # todo: This definition of abbrev_id and the target of the rename is problematic.
+    #       For example, if overtime one single url store two different datasets
+    #       each has an UUID that starts with the same 3 characters, then you have
+    #       a problem of handling the wrong dataset.
+    abbrev_id = "None" if ds_id is None else ds_id[:3]
+    ds_path = cache_dir / abbrev_id / url_encode(url)
+    ds = clone_dataset(url, ds_path)
+    info = get_info(ds.repo)
+    if ds_id is None:
+        info["ds_id"] = ds.id
+    elif ds_id != ds.id:
+        lgr.warning("A dataset with an ID (%s) got a new one (%s)", ds_id, ds.id)
+        # todo: The value of ds_id must be incorrect. Handle it.
+        #       Possibly doing the following
+        #       info["ds_id"] = ds.id
+        #       rename the cache directory
+
+    info["processed"] = True
+    # TODO: check if ds_id is still the same. If changed -- create a new
+    # entry for it?
+
+    session = db.session
+    session.query(URL).filter_by(url=url).update(info)
+    session.commit()

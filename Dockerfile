@@ -1,7 +1,14 @@
 FROM --platform=amd64 neurodebian:latest
 WORKDIR /app
 
+# TODO: Consider setting this env variable only for the RUN command
+#       Setting it using ENV will persist its value when the container runs from the
+#       resulting image which can have unexpected side effects
+#       See https://docs.docker.com/engine/reference/builder/#env for more details
 ENV DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies
+# TODO: Consider removing the eatmydata dependency. It may not be needed.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends eatmydata && \
     eatmydata apt-get install -y --no-install-recommends gnupg locales && \
@@ -17,13 +24,20 @@ RUN apt-get update && \
       && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Set user info for git (needed for datalad operations)
 RUN git config --system user.name "dl-registry" && \
     git config --system user.email "dl-registry@example.com"
 
+#  === Move the app code into the container ===
+# todo: This is needed possibly because the current installation of the app requires
+#       git repo references. If Poetry is used for this project, this may not be needed.
 COPY .git .git/
+
 COPY datalad_registry datalad_registry/
 COPY pyproject.toml pyproject.toml
 COPY setup.cfg setup.cfg
 COPY setup.py setup.py
+#  === Move the app code into the container ends ===
 
+# Install the app in the container
 RUN pip3 install wheel && pip3 install . && mkdir -p instance
