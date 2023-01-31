@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 from datalad_registry import tasks
@@ -49,7 +47,6 @@ def test_collect_dataset_info(app_instance, client, tmp_path):
         repo.tag("v3", message="Version 3")
 
         tasks.collect_dataset_info.delay(datasets=[(ds.id, url)])
-        time.sleep(1)  # Allow the task to run in the Celery worker
 
         ses = app_instance.db.session
         res = ses.query(URL).filter_by(url=url).one()
@@ -115,7 +112,6 @@ def test_collect_dataset_info_announced_update(app_instance, client, tmp_path):
 
     with app_instance.app.app_context():
         tasks.collect_dataset_info.delay()
-        time.sleep(1)  # Allow the task to run in the Celery worker
 
         ses = app_instance.db.session
         res = ses.query(URL).filter_by(url=url).one()
@@ -133,7 +129,6 @@ def test_collect_dataset_info_announced_update(app_instance, client, tmp_path):
         client.patch(f"/v1/datasets/{ds.id}/urls/{url_encoded}")
 
         tasks.collect_dataset_info.delay()
-        time.sleep(1)  # Allow the task to run in the Celery worker
 
         ses = app_instance.db.session
         res = ses.query(URL).filter_by(url=url).one()
