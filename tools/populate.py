@@ -1,6 +1,8 @@
 # Warning: This script populates the running datalad-registry instance with selected
 #          datasets from https://github.com/datalad/datalad-usage-dashboard/.
 
+from typing import Optional
+
 from pydantic import BaseModel, HttpUrl, StrictBool, StrictInt, StrictStr
 
 from datalad_registry.utils import StrEnum
@@ -20,7 +22,6 @@ class Repo(BaseModel):
     Pydantic model for representing a git repo found in datalad-usage-dashboard
     """
 
-    id: StrictInt
     name: StrictStr
     url: HttpUrl
     status: Status
@@ -32,6 +33,7 @@ class GitHubRepo(Repo):
     datalad-usage-dashboard
     """
 
+    id: Optional[StrictInt]
     stars: StrictInt
     dataset: StrictBool
     run: StrictBool
@@ -44,7 +46,7 @@ class OSFRepo(Repo):
     datalad-usage-dashboard
     """
 
-    pass
+    id: StrictStr
 
 
 class DashboardCollection(BaseModel):
