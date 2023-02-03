@@ -15,6 +15,17 @@ class Status(StrEnum):
     gone = "gone"
 
 
+class Repo(BaseModel):
+    """
+    Pydantic model for representing a git repo found in datalad-usage-dashboard
+    """
+
+    id: StrictInt
+    name: StrictStr
+    url: HttpUrl
+    status: Status
+
+
 class GitHubRepo(BaseModel):
     """
     Pydantic model for representing GitHub repository information found in
