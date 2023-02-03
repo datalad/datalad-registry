@@ -38,6 +38,15 @@ class GitHubRepo(Repo):
     container_run: StrictBool
 
 
+class OSFRepo(Repo):
+    """
+    Pydantic model for representing OSF repository information found in
+    datalad-usage-dashboard
+    """
+
+    pass
+
+
 # Establish a Pydantic model for representing dataset information obtain from
 # the datalad-usage-dashboard repository
 
