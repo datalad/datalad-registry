@@ -69,9 +69,11 @@ resp = requests.get(DASHBOARD_COLLECTION_URL)
 resp.raise_for_status()
 dashboard_collection = DashboardCollection.parse_raw(resp.text)
 
-# Obtain active GitHub repos
-active_github_repos = [
-    repo for repo in dashboard_collection.github if repo.status is Status.active
+# Obtain active GitHub datasets from the listing in datalad-usage-dashboard
+active_github_datasets = [
+    repo
+    for repo in dashboard_collection.github
+    if repo.status is Status.active and repo.dataset
 ]
 
 # Submit dataset urls to the datalad-registry instance at once or sequentially
