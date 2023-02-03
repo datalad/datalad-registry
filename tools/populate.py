@@ -4,8 +4,13 @@
 from typing import Optional
 
 from pydantic import BaseModel, HttpUrl, StrictBool, StrictInt, StrictStr
+import requests
 
 from datalad_registry.utils import StrEnum
+
+DASHBOARD_COLLECTION_URL = (
+    "https://github.com/datalad/datalad-usage-dashboard/raw/master/datalad-repos.json"
+)
 
 
 class Status(StrEnum):
@@ -59,9 +64,9 @@ class DashboardCollection(BaseModel):
     osf: list[OSFRepo]
 
 
-# Establish a Pydantic model for representing dataset information obtain from
-# the datalad-usage-dashboard repository
-
-# Fetch dataset information from the datalad-usage-dashboard repository
+# Fetch git repo information from the datalad-usage-dashboard
+resp = requests.get(DASHBOARD_COLLECTION_URL)
+resp.raise_for_status()
+dashboard_collection = DashboardCollection.parse_raw(resp.text)
 
 # Submit dataset urls to the datalad-registry instance at once or sequentially
