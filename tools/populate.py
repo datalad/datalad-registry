@@ -26,20 +26,16 @@ class Repo(BaseModel):
     status: Status
 
 
-class GitHubRepo(BaseModel):
+class GitHubRepo(Repo):
     """
     Pydantic model for representing GitHub repository information found in
     datalad-usage-dashboard
     """
 
-    id: StrictInt
-    name: StrictStr
-    url: HttpUrl
     stars: StrictInt
     dataset: StrictBool
     run: StrictBool
     container_run: StrictBool
-    status: Status
 
 
 # Establish a Pydantic model for representing dataset information obtain from
