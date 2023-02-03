@@ -76,4 +76,7 @@ active_github_datasets = [
     if repo.status is Status.active and repo.dataset
 ]
 
+# Build clone URLs for active GitHub datasets
+active_github_dataset_urls = [ds.url + ".git" for ds in active_github_datasets]
+
 # Submit dataset urls to the datalad-registry instance at once or sequentially
