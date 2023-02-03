@@ -47,6 +47,16 @@ class OSFRepo(Repo):
     pass
 
 
+class DashboardCollection(BaseModel):
+    """
+    Pydantic model for representing a collection of git repos found in
+    datalad-usage-dashboard
+    """
+
+    github: list[GitHubRepo]
+    osf: list[OSFRepo]
+
+
 # Establish a Pydantic model for representing dataset information obtain from
 # the datalad-usage-dashboard repository
 
