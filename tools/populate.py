@@ -18,7 +18,7 @@ class Status(StrEnum):
 class GitHubRepo(BaseModel):
     """
     Pydantic model for representing GitHub repository information found in
-    the datalad-usage-dashboard repository
+    datalad-usage-dashboard
     """
 
     id: StrictInt
