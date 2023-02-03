@@ -1,12 +1,16 @@
 # Warning: This script populates the running datalad-registry instance with selected
 #          datasets from https://github.com/datalad/datalad-usage-dashboard/.
 
+# Note: Currently, this script can only populate the datalad-registry instance with
+#       active datasets on GitHub listed in datalad-usage-dashboard.
+
 from typing import Optional
 
 from pydantic import BaseModel, HttpUrl, StrictBool, StrictInt, StrictStr
 import requests
 
 from datalad_registry.utils import StrEnum
+from datalad_registry_client.submit_urls import RegistrySubmitURLs
 
 DASHBOARD_COLLECTION_URL = (
     "https://github.com/datalad/datalad-usage-dashboard/raw/master/datalad-repos.json"
@@ -79,4 +83,9 @@ active_github_datasets = [
 # Build clone URLs for active GitHub datasets
 active_github_dataset_urls = [ds.url + ".git" for ds in active_github_datasets]
 
-# Submit dataset urls to the datalad-registry instance at once or sequentially
+# Submit URLs of active datasets to the datalad-registry
+start: Optional[int] = None  # Modify this to adjust the list of URLs to submit
+stop: Optional[int] = None  # Modify this to adjust the list of URLs to submit
+s = slice(start, stop)
+registry_submit_urls = RegistrySubmitURLs()
+registry_submit_urls(active_github_dataset_urls[s])
