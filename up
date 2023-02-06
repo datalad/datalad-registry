@@ -70,14 +70,18 @@ then
 
     await_health broker
 
+    # Start a Celery worker to run in the background
     celery worker \
         --logfile "$DATALAD_REGISTRY_INSTANCE_PATH/worker.log" \
         --loglevel "$DATALAD_REGISTRY_LOG_LEVEL" &
+
+    # Start a Celery beat periodic task scheduler instance to run in the background
     celery beat \
         --logfile "$DATALAD_REGISTRY_INSTANCE_PATH/beat.log" \
         --loglevel "$DATALAD_REGISTRY_LOG_LEVEL" \
         --schedule "$DATALAD_REGISTRY_INSTANCE_PATH"/celerybeat-schedule &
 
+    # Wait for Celery the worker to come online
     celery_ok=0
     for i in $(seq 10)
     do
