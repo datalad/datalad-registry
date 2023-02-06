@@ -26,6 +26,8 @@ def _setup_logging(level: Union[int, str]) -> None:
 
 
 def setup_celery(app: Flask, celery: Celery) -> Celery:
+
+    # Config the beat periodic task scheduler
     celery.conf.beat_schedule = {}
     cache_dir = app.config.get("DATALAD_REGISTRY_DATASET_CACHE")
     if cache_dir:
@@ -39,6 +41,7 @@ def setup_celery(app: Flask, celery: Celery) -> Celery:
             "Not registering periodic tasks that depend on it"
         )
 
+    # Load configurations from the Flask app to configure Celery
     celery.config_from_object(app.config, namespace="CELERY")
 
     # Register JSON encoding and decoding functions with additional support of
