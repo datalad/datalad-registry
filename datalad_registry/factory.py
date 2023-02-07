@@ -14,6 +14,8 @@ from datalad_registry.models import db, init_db_command
 
 from .utils.pydantic_json import pydantic_model_dumps, pydantic_model_loads
 
+FLASK_APP_NAME = "datalad_registry"
+
 lgr = logging.getLogger(__name__)
 
 
@@ -67,7 +69,7 @@ def setup_celery(app: Flask, celery: Celery) -> Celery:
 
 def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
     app = Flask(
-        __name__, instance_path=os.environ.get("DATALAD_REGISTRY_INSTANCE_PATH")
+        FLASK_APP_NAME, instance_path=os.environ.get("DATALAD_REGISTRY_INSTANCE_PATH")
     )
     instance_path = Path(app.instance_path)
     app.config.from_mapping(SQLALCHEMY_TRACK_MODIFICATIONS=False)
