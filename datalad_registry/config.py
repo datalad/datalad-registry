@@ -21,7 +21,7 @@ def _log_level() -> Union[str, int]:
 
 class Config(object):
     CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "amqp://localhost:5672")
-    CELERY_result_backend = os.environ["CELERY_RESULT_BACKEND"]
+    CELERY_result_backend = os.environ["CELERY_RESULT_BACKEND_URL"]
     DATALAD_REGISTRY_DATASET_CACHE = os.environ.get("DATALAD_REGISTRY_DATASET_CACHE")
     DATALAD_REGISTRY_LOG_LEVEL = _log_level()
 
