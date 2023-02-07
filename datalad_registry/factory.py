@@ -42,7 +42,7 @@ def setup_celery(app: Flask, celery: Celery) -> Celery:
         )
 
     # Load configurations from the Flask app to configure Celery
-    celery.config_from_object(app.config, namespace="CELERY")
+    celery.conf.update(app.config["CELERY_CONFIG"])
 
     # Register JSON encoding and decoding functions with additional support of
     # Pydantic models as a serializer
