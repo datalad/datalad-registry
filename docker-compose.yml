@@ -39,6 +39,12 @@ services:
       timeout: 3s
       retries: 30
 
+  # Result backend for Celery
+  backend:
+    image: redis:7
+    ports:
+      - "127.0.0.1:6379:6379"  # Only expose to localhost (the "Protected mode" is off by default)
+
   worker:
     build: .
     depends_on:
