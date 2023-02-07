@@ -55,12 +55,17 @@ then
     export DATALAD_REGISTRY_LOG_LEVEL
     export FLASK_APP=datalad_registry.factory:create_app
     export FLASK_ENV=development
+
+    # Celery related environment variables
     export CELERY_BROKER_URL="amqp://user:$RABBITMQ_DEFAULT_PASS@localhost:5672"
+    export CELERY_RESULT_BACKEND="redis://localhost:6379"
 
     mkdir -p "$DATALAD_REGISTRY_INSTANCE_PATH"
     mkdir -p "${DATALAD_REGISTRY_DB_INSTANCE_PATH:-instance/db}"
-    docker-compose pull broker db
-    docker-compose up -d broker db
+
+    # Bring up Celery broker, result backend, and the database
+    docker-compose pull broker backend db
+    docker-compose up -d broker backend db
 
     await_health db
     # Sometimes Postgres isn't ready to receive connections immediately after
