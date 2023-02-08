@@ -30,7 +30,7 @@ services:
     environment:
       <<: *env
     ports:
-      - "5672:5672"
+      - "127.0.0.1:5672:5672"  # AMQP
     expose:
       - "5672"
     healthcheck:
