@@ -17,9 +17,8 @@ services:
       DATALAD_REGISTRY_POSTGRES_HOST: db
       FLASK_APP: datalad_registry.factory:create_app
       FLASK_ENV: development
-      RABBITMQ_DEFAULT_PASS:
-      RABBITMQ_DEFAULT_USER: user
-      RABBITMQ_DEFAULT_VHOST: /
+      RABBITMQ_DEFAULT_USER: "user"
+      RABBITMQ_DEFAULT_PASS: "$RABBITMQ_DEFAULT_PASS"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
     command: [sh, -c, "flask init-db && flask run --host=0.0.0.0"]
     volumes:
@@ -28,9 +27,10 @@ services:
   broker:
     image: rabbitmq:3-alpine
     environment:
-      <<: *env
+      RABBITMQ_DEFAULT_USER: "user"
+      RABBITMQ_DEFAULT_PASS: "$RABBITMQ_DEFAULT_PASS"
     ports:
-      - "5672:5672"
+      - "127.0.0.1:5672:5672"  # AMQP
     expose:
       - "5672"
     healthcheck:
