@@ -3,9 +3,11 @@ import errno
 import logging
 from pathlib import Path
 from shutil import rmtree
+import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from celery import group
+from datalad.support.exceptions import IncompleteResultsError
 from pydantic import StrictStr, validate_arguments
 
 from datalad_registry import celery
@@ -33,7 +35,27 @@ def clone_dataset(url: str, ds_path: Path) -> Any:
         ds_repo.fetch(all_=True)
         ds_repo.call_git(["reset", "--hard", "refs/remotes/origin/HEAD"])
     else:
-        ds = dl.clone(url, ds_path_str)
+        max_incomplete_results_errs = 5
+        incomplete_results_err_count = 0
+
+        # Seconds to wait before retrying in case of IncompleteResultsError
+        retry_lapse = 1
+
+        # Clone the dataset @ url into ds_path
+        while True:
+            try:
+                ds = dl.clone(url, ds_path_str)
+            except IncompleteResultsError:
+                lgr.warning(f"Incomplete results error in cloning {url}. Trying again.")
+
+                incomplete_results_err_count += 1
+                if incomplete_results_err_count > max_incomplete_results_errs:
+                    raise
+                else:
+                    time.sleep(retry_lapse)
+            else:
+                break
+
     return ds
 
 
