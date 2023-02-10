@@ -3,7 +3,6 @@ import errno
 import logging
 from pathlib import Path
 from shutil import rmtree
-import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from celery import group
@@ -38,9 +37,6 @@ def clone_dataset(url: str, ds_path: Path) -> Any:
         max_incomplete_results_errs = 5
         incomplete_results_err_count = 0
 
-        # Seconds to wait before retrying in case of IncompleteResultsError
-        retry_lapse = 1
-
         # Clone the dataset @ url into ds_path
         while True:
             try:
@@ -51,8 +47,6 @@ def clone_dataset(url: str, ds_path: Path) -> Any:
                 incomplete_results_err_count += 1
                 if incomplete_results_err_count > max_incomplete_results_errs:
                     raise
-                else:
-                    time.sleep(retry_lapse)
             else:
                 break
 
