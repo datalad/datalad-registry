@@ -41,11 +41,20 @@ def clone_dataset(url: str, ds_path: Path) -> Any:
         while True:
             try:
                 ds = dl.clone(url, ds_path_str)
-            except IncompleteResultsError:
-                lgr.warning(f"Incomplete results error in cloning {url}. Trying again.")
+            except Exception as e:
+                # If failed cloning attempt created a directory, remove it
+                if ds_path.exists():
+                    rmtree(ds_path)
 
-                incomplete_results_err_count += 1
-                if incomplete_results_err_count > max_incomplete_results_errs:
+                if isinstance(e, IncompleteResultsError):
+                    lgr.warning(
+                        f"IncompleteResultsError in cloning {url}. Trying again."
+                    )
+
+                    incomplete_results_err_count += 1
+                    if incomplete_results_err_count > max_incomplete_results_errs:
+                        raise
+                else:
                     raise
             else:
                 break
