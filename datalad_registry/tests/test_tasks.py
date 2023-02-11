@@ -1,9 +1,57 @@
+from datalad import api as dl
+from datalad.support.exceptions import IncompleteResultsError
 import pytest
 
 from datalad_registry import tasks
 from datalad_registry.models import URL
 from datalad_registry.tests.utils import register_dataset
 from datalad_registry.utils.url_encoder import url_encode
+
+
+class TestCloneDataset:
+    def test_incomplete_results_error_resolved(self, monkeypatch, tmp_path):
+        def mock_clone_run_result():
+            for result in [IncompleteResultsError(), IncompleteResultsError(), 42]:
+                yield result
+
+        result_iter = mock_clone_run_result()
+
+        def mock_clone(*args, **kwargs):  # noqa: U100 (unused arguments)
+            result = next(result_iter)
+            if isinstance(result, IncompleteResultsError):
+                raise result
+            else:
+                return result
+
+        monkeypatch.setattr(dl, "clone", mock_clone)
+
+        non_existent_path = tmp_path / "foo"
+
+        ret = tasks.clone_dataset("https://example.com", non_existent_path)
+
+        assert ret == 42
+
+    def test_incomplete_results_error_unresolved(self, monkeypatch, tmp_path):
+        def mock_clone(*args, **kwargs):  # noqa: U100 (unused arguments)
+            raise IncompleteResultsError(msg="Only half full")
+
+        monkeypatch.setattr(dl, "clone", mock_clone)
+
+        non_existent_path = tmp_path / "foo"
+
+        with pytest.raises(IncompleteResultsError, match="Only half full"):
+            tasks.clone_dataset("https://example.com", non_existent_path)
+
+    def test_other_error(self, monkeypatch, tmp_path):
+        def mock_clone(*args, **kwargs):  # noqa: U100 (unused arguments)
+            raise RuntimeError("mocked error")
+
+        monkeypatch.setattr(dl, "clone", mock_clone)
+
+        non_existent_path = tmp_path / "foo"
+
+        with pytest.raises(RuntimeError, match="mocked error"):
+            tasks.clone_dataset("https://example.com", non_existent_path)
 
 
 @pytest.mark.slow
