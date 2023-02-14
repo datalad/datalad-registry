@@ -1,4 +1,4 @@
-FROM --platform=amd64 neurodebian:latest
+FROM --platform=linux/amd64 neurodebian:latest
 WORKDIR /app
 
 # TODO: Consider setting this env variable only for the RUN command
