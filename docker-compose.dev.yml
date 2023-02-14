@@ -10,16 +10,26 @@ services:
     ports:
       - "5000:5000"
     environment: &env
-      CELERY_BROKER_URL: "amqp://user:$RABBITMQ_DEFAULT_PASS@broker:5672"
-      DATALAD_REGISTRY_DATASET_CACHE: /app/instance/cache
-      DATALAD_REGISTRY_LOG_LEVEL: DEBUG
-      DATALAD_REGISTRY_PASSWORD:
-      DATALAD_REGISTRY_POSTGRES_HOST: db
-      FLASK_APP: datalad_registry.factory:create_app
-      FLASK_ENV: development
+      DATALAD_REGISTRY_PASSWORD: "$DATALAD_REGISTRY_PASSWORD"
+      DATALAD_REGISTRY_INSTANCE_PATH: "/app/instance"
+      DATALAD_REGISTRY_DATASET_CACHE: "/app/instance/cache"
+      DATALAD_REGISTRY_DB_INSTANCE_PATH: "/app/instance/cache/db"
+      DATALAD_REGISTRY_LOG_LEVEL: "DEBUG"
+
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+
       RABBITMQ_DEFAULT_USER: "user"
       RABBITMQ_DEFAULT_PASS: "$RABBITMQ_DEFAULT_PASS"
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+
+      FLASK_APP: "datalad_registry.factory:create_app"
+      FLASK_ENV: "development"
+
+
+      CELERY_BROKER_URL: "amqp://user:$RABBITMQ_DEFAULT_PASS@broker:5672"
+      CELERY_RESULT_BACKEND_URL: "redis://backend:6379"
+
+      DATALAD_REGISTRY_POSTGRES_HOST: db
+
     command: [sh, -c, "flask init-db && flask run --host=0.0.0.0"]
     volumes:
       - $DATALAD_REGISTRY_INSTANCE_PATH:/app/instance
