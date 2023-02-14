@@ -1,0 +1,97 @@
+version: "2.1"  # Compose file format v3 does not support health checks
+services:
+  web:
+    build: .
+    depends_on:
+      broker:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment: &env
+      CELERY_BROKER_URL: "amqp://user:$RABBITMQ_DEFAULT_PASS@broker:5672"
+      DATALAD_REGISTRY_DATASET_CACHE: /app/instance/cache
+      DATALAD_REGISTRY_LOG_LEVEL: DEBUG
+      DATALAD_REGISTRY_PASSWORD:
+      DATALAD_REGISTRY_POSTGRES_HOST: db
+      FLASK_APP: datalad_registry.factory:create_app
+      FLASK_ENV: development
+      RABBITMQ_DEFAULT_USER: "user"
+      RABBITMQ_DEFAULT_PASS: "$RABBITMQ_DEFAULT_PASS"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    command: [sh, -c, "flask init-db && flask run --host=0.0.0.0"]
+    volumes:
+      - $DATALAD_REGISTRY_INSTANCE_PATH:/app/instance
+
+  broker:
+    image: rabbitmq:3-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: "user"
+      RABBITMQ_DEFAULT_PASS: "$RABBITMQ_DEFAULT_PASS"
+    ports:
+      - "127.0.0.1:5672:5672"  # AMQP
+    expose:
+      - "5672"
+    healthcheck:
+      test: ["CMD", "nc", "-nvz", "127.0.0.1", "5672"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  # Result backend for Celery
+  backend:
+    image: redis:7
+    ports:
+      - "127.0.0.1:6379:6379"  # Only expose to localhost (the "Protected mode" is off by default)
+
+  worker:
+    build: .
+    depends_on:
+      broker:
+        condition: service_healthy
+    command: [celery, -A, datalad_registry.runcelery.celery, worker, --loglevel, DEBUG, --pool, prefork]
+    volumes:
+      - $DATALAD_REGISTRY_INSTANCE_PATH:/app/instance
+    environment:
+      <<: *env
+    user: "${UID_GID}"
+    healthcheck:
+      test: ["CMD-SHELL", "celery status --timeout 1 --json | grep -q pong"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  scheduler:
+    build: .
+    depends_on:
+      broker:
+        condition: service_healthy
+    command: [
+      celery, -A, datalad_registry.runcelery.celery,
+      beat,
+      --loglevel, DEBUG,
+      -s, /app/instance/celerybeat-schedule
+    ]
+    volumes:
+      - $DATALAD_REGISTRY_INSTANCE_PATH:/app/instance
+    environment:
+      <<: *env
+    user: "${UID_GID}"
+
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: dlreg
+      POSTGRES_USER: dlreg
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_INITDB_ARGS: --encoding utf8 --locale C
+    ports:
+      - 5432:5432
+    volumes:
+      - $DATALAD_REGISTRY_DB_INSTANCE_PATH:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "dlreg"]
+      interval: 7s
+      timeout: 3s
+      retries: 5
