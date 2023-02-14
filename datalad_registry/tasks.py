@@ -6,6 +6,7 @@ from shutil import rmtree
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from celery import group
+from datalad.support.exceptions import IncompleteResultsError
 from pydantic import StrictStr, validate_arguments
 
 from datalad_registry import celery
@@ -33,7 +34,31 @@ def clone_dataset(url: str, ds_path: Path) -> Any:
         ds_repo.fetch(all_=True)
         ds_repo.call_git(["reset", "--hard", "refs/remotes/origin/HEAD"])
     else:
-        ds = dl.clone(url, ds_path_str)
+        max_incomplete_results_errs = 5
+        incomplete_results_err_count = 0
+
+        # Clone the dataset @ url into ds_path
+        while True:
+            try:
+                ds = dl.clone(url, ds_path_str)
+            except Exception as e:
+                # If failed cloning attempt created a directory, remove it
+                if ds_path.exists():
+                    rmtree(ds_path)
+
+                if isinstance(e, IncompleteResultsError):
+                    lgr.warning(
+                        f"IncompleteResultsError in cloning {url}. Trying again."
+                    )
+
+                    incomplete_results_err_count += 1
+                    if incomplete_results_err_count > max_incomplete_results_errs:
+                        raise
+                else:
+                    raise
+            else:
+                break
+
     return ds
 
 
