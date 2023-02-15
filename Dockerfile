@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 neurodebian:latest
+FROM --platform=linux/arm64/v8 debian:11
 WORKDIR /app
 
 # Install dependencies
@@ -11,7 +11,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
       build-essential \
       datalad \
       git \
-      git-annex-standalone \
+      git-annex \
       libpq-dev \
       python3-dev \
       python3-pip \
