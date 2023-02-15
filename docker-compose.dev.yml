@@ -59,6 +59,8 @@ services:
     depends_on:
       broker:
         condition: service_healthy
+      db:
+        condition: service_healthy
     command: [celery, -A, datalad_registry.runcelery.celery, worker, --loglevel, DEBUG, --pool, prefork]
     volumes:
       - instance-data:/app/instance
