@@ -31,7 +31,7 @@ services:
 
     command: [sh, -c, "flask init-db && flask run --host=0.0.0.0"]
     volumes:
-      - $DATALAD_REGISTRY_INSTANCE_PATH:/app/instance
+      - instance-data:/app/instance
 
   broker:
     image: rabbitmq:3-alpine
@@ -61,7 +61,7 @@ services:
         condition: service_healthy
     command: [celery, -A, datalad_registry.runcelery.celery, worker, --loglevel, DEBUG, --pool, prefork]
     volumes:
-      - $DATALAD_REGISTRY_INSTANCE_PATH:/app/instance
+      - instance-data:/app/instance
     environment:
       <<: *env
     user: "${UID_GID}"
@@ -83,7 +83,7 @@ services:
       -s, /app/instance/celerybeat-schedule
     ]
     volumes:
-      - $DATALAD_REGISTRY_INSTANCE_PATH:/app/instance
+      - instance-data:/app/instance
     environment:
       <<: *env
     user: "${UID_GID}"
@@ -98,9 +98,14 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - $DATALAD_REGISTRY_DB_INSTANCE_PATH:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "dlreg"]
       interval: 7s
       timeout: 3s
       retries: 5
+
+
+volumes:
+  db-data:
+  instance-data:
