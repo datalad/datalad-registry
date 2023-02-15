@@ -33,27 +33,6 @@ services:
     volumes:
       - instance-data:/app/instance
 
-  broker:
-    image: rabbitmq:3-alpine
-    environment:
-      RABBITMQ_DEFAULT_USER: "user"
-      RABBITMQ_DEFAULT_PASS: "$RABBITMQ_DEFAULT_PASS"
-    ports:
-      - "127.0.0.1:5672:5672"  # AMQP
-    expose:
-      - "5672"
-    healthcheck:
-      test: ["CMD", "nc", "-nvz", "127.0.0.1", "5672"]
-      interval: 1s
-      timeout: 3s
-      retries: 30
-
-  # Result backend for Celery
-  backend:
-    image: redis:7
-    ports:
-      - "127.0.0.1:6379:6379"  # Only expose to localhost (the "Protected mode" is off by default)
-
   worker:
     build: .
     depends_on:
@@ -87,6 +66,27 @@ services:
       - instance-data:/app/instance
     environment:
       <<: *env
+
+  broker:
+    image: rabbitmq:3-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: "user"
+      RABBITMQ_DEFAULT_PASS: "$RABBITMQ_DEFAULT_PASS"
+    ports:
+      - "127.0.0.1:5672:5672"  # AMQP
+    expose:
+      - "5672"
+    healthcheck:
+      test: ["CMD", "nc", "-nvz", "127.0.0.1", "5672"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  # Result backend for Celery
+  backend:
+    image: redis:7
+    ports:
+      - "127.0.0.1:6379:6379"  # Only expose to localhost (the "Protected mode" is off by default)
 
   db:
     image: postgres:latest
