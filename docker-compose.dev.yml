@@ -64,7 +64,6 @@ services:
       - instance-data:/app/instance
     environment:
       <<: *env
-    user: "${UID_GID}"
     healthcheck:
       test: ["CMD-SHELL", "celery status --timeout 1 --json | grep -q pong"]
       interval: 5s
@@ -86,7 +85,6 @@ services:
       - instance-data:/app/instance
     environment:
       <<: *env
-    user: "${UID_GID}"
 
   db:
     image: postgres:latest
