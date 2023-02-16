@@ -72,6 +72,8 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: "user"
       RABBITMQ_DEFAULT_PASS: "$RABBITMQ_DEFAULT_PASS"
+    expose:
+      - "5672"
     healthcheck:
       test: ["CMD", "nc", "-nvz", "127.0.0.1", "5672"]
       interval: 1s
@@ -81,6 +83,8 @@ services:
   # Result backend for Celery
   backend:
     image: redis:7
+    expose:
+      - "6379"
 
   db:
     image: postgres:latest
@@ -89,6 +93,8 @@ services:
       POSTGRES_USER: dlreg
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
       POSTGRES_INITDB_ARGS: --encoding utf8 --locale C
+    expose:
+        - "5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
