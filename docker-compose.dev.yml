@@ -74,8 +74,6 @@ services:
       RABBITMQ_DEFAULT_PASS: "$RABBITMQ_DEFAULT_PASS"
     ports:
       - "127.0.0.1:5672:5672"  # AMQP
-    expose:
-      - "5672"
     healthcheck:
       test: ["CMD", "nc", "-nvz", "127.0.0.1", "5672"]
       interval: 1s
