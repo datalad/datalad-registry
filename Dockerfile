@@ -1,4 +1,4 @@
-FROM --platform=linux/arm64/v8 debian:11
+FROM debian:11
 WORKDIR /app
 
 # Install dependencies
