@@ -1,4 +1,4 @@
-FROM debian:11
+FROM docker.io/debian:11
 WORKDIR /app
 
 # Install dependencies

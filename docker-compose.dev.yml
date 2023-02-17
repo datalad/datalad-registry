@@ -68,7 +68,7 @@ services:
       <<: *env
 
   broker:
-    image: rabbitmq:3-alpine
+    image: docker.io/rabbitmq:3-alpine
     environment:
       RABBITMQ_DEFAULT_USER: "user"
       RABBITMQ_DEFAULT_PASS: "$RABBITMQ_DEFAULT_PASS"
@@ -82,12 +82,12 @@ services:
 
   # Result backend for Celery
   backend:
-    image: redis:7
+    image: docker.io/redis:7
     expose:
       - "6379"
 
   db:
-    image: postgres:latest
+    image: docker.io/postgres:latest
     environment:
       POSTGRES_DB: dlreg
       POSTGRES_USER: dlreg
