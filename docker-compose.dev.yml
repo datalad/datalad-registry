@@ -44,7 +44,7 @@ services:
     environment:
       <<: *env
     healthcheck:
-      test: ["CMD-SHELL", "celery status --timeout 1 --json | grep -q pong"]
+      test: ["CMD-SHELL", "celery -A datalad_registry.runcelery.celery status --timeout 1 --json | grep -q pong"]
       interval: 5s
       timeout: 3s
       retries: 10
