@@ -1,28 +1,22 @@
-FROM --platform=amd64 neurodebian:latest
+FROM docker.io/debian:11
 WORKDIR /app
-
-# TODO: Consider setting this env variable only for the RUN command
-#       Setting it using ENV will persist its value when the container runs from the
-#       resulting image which can have unexpected side effects
-#       See https://docs.docker.com/engine/reference/builder/#env for more details
-ENV DEBIAN_FRONTEND=noninteractive
 
 # Install dependencies
 # TODO: Consider removing the eatmydata dependency. It may not be needed.
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends eatmydata && \
-    eatmydata apt-get install -y --no-install-recommends gnupg locales && \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends eatmydata && \
+    DEBIAN_FRONTEND=noninteractive eatmydata apt-get install -y --no-install-recommends gnupg locales && \
     echo "en_US.UTF-8 UTF-8" >>/etc/locale.gen && locale-gen && \
-    eatmydata apt-get install -y --no-install-recommends \
+    DEBIAN_FRONTEND=noninteractive eatmydata apt-get install -y --no-install-recommends \
       build-essential \
       datalad \
       git \
-      git-annex-standalone \
+      git-annex \
       libpq-dev \
       python3-dev \
       python3-pip \
       && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    DEBIAN_FRONTEND=noninteractive apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Set user info for git (needed for datalad operations)
 RUN git config --system user.name "dl-registry" && \
