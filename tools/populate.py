@@ -96,3 +96,7 @@ def populate(start: Optional[int], stop: Optional[int]) -> None:
     s = slice(start, stop)
     registry_submit_urls = RegistrySubmitURLs()
     registry_submit_urls(active_github_dataset_urls[s])
+
+
+if __name__ == "__main__":
+    populate()
