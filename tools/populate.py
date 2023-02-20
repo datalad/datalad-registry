@@ -70,8 +70,15 @@ class DashboardCollection(BaseModel):
 
 
 @click.command()
-@click.option("--start", type=int, default=None)
-@click.option("--stop", type=int, default=None)
+@click.option(
+    "--start", type=int, default=None, help="The index of the first dataset to populate"
+)
+@click.option(
+    "--stop",
+    type=int,
+    default=None,
+    help="One past the index of the last dataset to populate",
+)
 def populate(start: Optional[int], stop: Optional[int]) -> None:
     """
     Populate the running datalad-registry instance with selected datasets from
