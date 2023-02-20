@@ -6,6 +6,7 @@
 
 from typing import Optional
 
+import click
 from pydantic import BaseModel, HttpUrl, StrictBool, StrictInt, StrictStr
 import requests
 
@@ -68,6 +69,9 @@ class DashboardCollection(BaseModel):
     osf: list[OSFRepo]
 
 
+@click.command()
+@click.option("--start", type=int, default=None)
+@click.option("--stop", type=int, default=None)
 def populate(start: Optional[int], stop: Optional[int]) -> None:
     """
     Populate the running datalad-registry instance with selected datasets from
