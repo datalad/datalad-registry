@@ -99,10 +99,19 @@ def populate(start: Optional[int], stop: Optional[int]) -> None:
     # Build clone URLs for active GitHub datasets
     active_github_dataset_urls = [ds.url + ".git" for ds in active_github_datasets]
 
-    # Submit URLs of active datasets to the datalad-registry
+    # Select URLs of active GitHub datasets to submit
     s = slice(start, stop)
+    selected_dataset_urls = active_github_dataset_urls[s]
+
+    click.echo(
+        f"Submitting {len(selected_dataset_urls)} of the total "
+        f"{len(active_github_dataset_urls)} active GitHub datasets "
+        f"to the datalad-registry."
+    )
+
+    # Submit selected URLs of active GitHub datasets to the datalad-registry
     registry_submit_urls = RegistrySubmitURLs()
-    registry_submit_urls(active_github_dataset_urls[s])
+    registry_submit_urls(selected_dataset_urls)
 
 
 if __name__ == "__main__":
