@@ -68,24 +68,27 @@ class DashboardCollection(BaseModel):
     osf: list[OSFRepo]
 
 
-# Fetch git repo information from the datalad-usage-dashboard
-resp = requests.get(DASHBOARD_COLLECTION_URL)
-resp.raise_for_status()
-dashboard_collection = DashboardCollection.parse_raw(resp.text)
+def populate(start: Optional[int], stop: Optional[int]) -> None:
+    """
+    Populate the running datalad-registry instance with selected datasets from
+    the datalad-usage-dashboard
+    """
+    # Fetch git repo information from the datalad-usage-dashboard
+    resp = requests.get(DASHBOARD_COLLECTION_URL)
+    resp.raise_for_status()
+    dashboard_collection = DashboardCollection.parse_raw(resp.text)
 
-# Obtain active GitHub datasets from the listing in datalad-usage-dashboard
-active_github_datasets = [
-    repo
-    for repo in dashboard_collection.github
-    if repo.status is Status.active and repo.dataset
-]
+    # Obtain active GitHub datasets from the listing in datalad-usage-dashboard
+    active_github_datasets = [
+        repo
+        for repo in dashboard_collection.github
+        if repo.status is Status.active and repo.dataset
+    ]
 
-# Build clone URLs for active GitHub datasets
-active_github_dataset_urls = [ds.url + ".git" for ds in active_github_datasets]
+    # Build clone URLs for active GitHub datasets
+    active_github_dataset_urls = [ds.url + ".git" for ds in active_github_datasets]
 
-# Submit URLs of active datasets to the datalad-registry
-start: Optional[int] = None  # Modify this to adjust the list of URLs to submit
-stop: Optional[int] = None  # Modify this to adjust the list of URLs to submit
-s = slice(start, stop)
-registry_submit_urls = RegistrySubmitURLs()
-registry_submit_urls(active_github_dataset_urls[s])
+    # Submit URLs of active datasets to the datalad-registry
+    s = slice(start, stop)
+    registry_submit_urls = RegistrySubmitURLs()
+    registry_submit_urls(active_github_dataset_urls[s])
