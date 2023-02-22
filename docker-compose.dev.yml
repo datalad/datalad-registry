@@ -29,7 +29,7 @@ services:
 
     command: [sh, -c, "flask init-db && flask run --host=0.0.0.0"]
     volumes:
-      - instance-data:/app/instance
+      - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
 
   worker:
     build: .
@@ -40,7 +40,7 @@ services:
         condition: service_healthy
     command: [celery, -A, datalad_registry.runcelery.celery, worker, --loglevel, DEBUG, --pool, prefork]
     volumes:
-      - instance-data:/app/instance
+      - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
     environment:
       <<: *env
     healthcheck:
@@ -61,7 +61,7 @@ services:
       -s, /app/instance/celerybeat-schedule
     ]
     volumes:
-      - instance-data:/app/instance
+      - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
     environment:
       <<: *env
 
@@ -105,7 +105,3 @@ services:
       interval: 7s
       timeout: 3s
       retries: 5
-
-
-volumes:
-  instance-data:
