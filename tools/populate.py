@@ -98,7 +98,7 @@ def populate(start: Optional[int], stop: Optional[int]) -> None:
 
     # Build clone URLs for active GitHub datasets
     active_github_dataset_urls = list(
-        {ds.url + ".git" for ds in active_github_datasets}
+        {ds.url + ".git": None for ds in active_github_datasets}
     )
 
     # Select URLs of active GitHub datasets to submit
