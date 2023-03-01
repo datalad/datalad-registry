@@ -33,7 +33,7 @@ _COLS = [
 ]
 
 
-@bp.route("/")
+@bp.get("/")
 def overview():  # No type hints due to mypy#7187.
     r = db.session.query(URL)
     url_filter = request.args.get("filter", None, type=str)
