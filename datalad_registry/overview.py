@@ -36,19 +36,23 @@ _COLS = [
 @bp.get("/")
 def overview():  # No type hints due to mypy#7187.
     r = db.session.query(URL)
+
+    # Apply filter if provided
     url_filter = request.args.get("filter", None, type=str)
     if url_filter:
         lgr.debug("Filter URLs by '%s'", url_filter)
         r = r.filter(URL.url.contains(url_filter, autoescape=True))
 
+    # Sort
     r = r.group_by(URL)
     sort_by = request.args.get("sort", "update-desc", type=str)
     if sort_by not in _SORT_ATTRS:
         lgr.debug("Ignoring unknown sort parameter: %s", sort_by)
         sort_by = "update-desc"
     col, sort_method = _SORT_ATTRS[sort_by]
-
     r = r.order_by(getattr(getattr(URL, col), sort_method)())
+
+    # Paginate
     num_urls = r.count()
     page = request.args.get("page", 1, type=int)
     r = r.paginate(page=page, per_page=_PAGE_NITEMS, error_out=False)
