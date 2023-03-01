@@ -66,7 +66,7 @@ def urls(url_encoded: str) -> Any:
         resp["status"] = status
         return jsonify(resp)
 
-    elif request.method == "PATCH":
+    else:
         if row_known is None:
             db.session.add(URL(url=url))
             db.session.commit()
