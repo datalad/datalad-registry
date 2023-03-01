@@ -19,13 +19,13 @@ bp = Blueprint("dataset_urls", __name__, url_prefix="/v1/datasets/")
 # See mypy#7187 for why Any is used for return value.
 
 
-@bp.route("<uuid:ds_id>/urls")
+@bp.get("<uuid:ds_id>/urls")
 def urls(ds_id: str) -> Any:
     ds_id = str(ds_id)
-    if request.method == "GET":
-        lgr.info("Reporting which URLs are registered for %s", ds_id)
-        urls = [r.url for r in db.session.query(URL).filter_by(ds_id=ds_id)]
-        return jsonify(ds_id=ds_id, urls=urls)
+
+    lgr.info("Reporting which URLs are registered for %s", ds_id)
+    urls = [r.url for r in db.session.query(URL).filter_by(ds_id=ds_id)]
+    return jsonify(ds_id=ds_id, urls=urls)
 
 
 @bp.route("<uuid:ds_id>/urls/<string:url_encoded>", methods=["GET", "PATCH"])
@@ -69,7 +69,7 @@ def url(ds_id: str, url_encoded: str) -> Any:
         lgr.debug("Status for %s: %s", url, status)
         resp["status"] = status
         return jsonify(resp)
-    elif request.method == "PATCH":
+    else:
         if row_known is None:
             # todo: This is problematic for there is no guarantee that the dataset
             #       at the url given in the request actually has a dataset id that is
