@@ -16,7 +16,7 @@ bp = Blueprint("datasets", __name__, url_prefix="/v1/")
 _PAGE_NITEMS = 100  # TODO: Should eventually be configurable by app.
 
 
-@bp.route("datasets")
+@bp.get("datasets")
 def datasets():  # No type hints due to mypy#7187.
     """
     Return the list of known datasets in JSON
