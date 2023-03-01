@@ -45,7 +45,7 @@ href="{{ url_for('.overview', sort=sort_by, filter=url_filter,
           </tr>
           {%- for r in rows -%}
           <tr>
-            <td>{{ r["url"] }}</td>
+            <td><a href="{{ r["url"] }}">{{ r["url"] }}</a></td>
             <td class="mono">{{ r["ds_id"] }}</td>
             <td class="mono">{{ r["head_describe"] if r["head_describe"]
               else r["head"]|truncate(9, False, "")
