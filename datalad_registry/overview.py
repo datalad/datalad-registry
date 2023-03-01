@@ -35,6 +35,8 @@ _COLS = [
 
 @bp.get("/")
 def overview():  # No type hints due to mypy#7187.
+    default_sort_scheme = "update-desc"
+
     r = db.session.query(URL)
 
     # Apply filter if provided
@@ -45,10 +47,10 @@ def overview():  # No type hints due to mypy#7187.
 
     # Sort
     r = r.group_by(URL)
-    sort_by = request.args.get("sort", "update-desc", type=str)
+    sort_by = request.args.get("sort", default_sort_scheme, type=str)
     if sort_by not in _SORT_ATTRS:
         lgr.debug("Ignoring unknown sort parameter: %s", sort_by)
-        sort_by = "update-desc"
+        sort_by = default_sort_scheme
     col, sort_method = _SORT_ATTRS[sort_by]
     r = r.order_by(getattr(getattr(URL, col), sort_method)())
 
