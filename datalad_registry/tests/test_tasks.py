@@ -119,7 +119,7 @@ def test_collect_dataset_info_just_init(app_instance, client, tmp_path):
         res = ses.query(URL).filter_by(url=url).one()
         assert res.ds_id == ds.id
         assert res.head == repo.get_hexsha()
-        assert res.head_describe is None
+        assert res.head_describe is not None
         assert res.annex_uuid == repo.uuid
         branches = set(ln.split()[1] for ln in res.branches.splitlines())
         assert branches == set(repo.get_branches()) | {"HEAD"}

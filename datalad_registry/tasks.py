@@ -98,7 +98,7 @@ def _extract_git_info(repo) -> InfoType:
         repo,
         {
             "head": ["rev-parse", "--verify", "HEAD"],
-            "head_describe": ["describe", "--tags"],
+            "head_describe": ["describe", "--tags", "--always"],
             "branches": [
                 "for-each-ref",
                 "--sort=-creatordate",
