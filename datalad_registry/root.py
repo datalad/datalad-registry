@@ -9,6 +9,6 @@ lgr = logging.getLogger(__name__)
 bp = Blueprint("root", __name__, url_prefix="")
 
 
-@bp.route("/")
+@bp.get("/")
 def root() -> Response:
     return redirect(url_for("overview.overview"))
