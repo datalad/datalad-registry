@@ -53,7 +53,7 @@ def test_overview_sort(client, tmp_path):
         time.sleep(0.01)
 
     def assert_ds_order(order, output):
-        match = re.finditer(b"/(ds[123])</td>", output)
+        match = re.finditer(b"/(ds[123])</a></td>", output)
         assert match, "regexp unexpectedly didn't match"
         assert [x.group(1) for x in match] == order
 
