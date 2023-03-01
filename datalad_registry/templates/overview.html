@@ -28,37 +28,52 @@ href="{{ url_for('.overview', sort=sort_by, filter=url_filter,
                  />
           <input type="hidden" name="sort" value="{{ sort_by }}"/>
           <input type='submit' value='Filter URLs'/>
-          {% if url_filter -%}
-          <a href="{{ url_for('.overview', sort=sort_by) }}"> remove filter</a>
-          {%- endif %}
+            {% if url_filter -%}
+                <a href="{{ url_for('.overview', sort=sort_by) }}"> remove filter</a>
+            {%- endif %}
         </form>
-        <table class="list">
-          <tr>
-            <th><a {{ sort_href('url-desc', 'url-asc') }}>URL</a></th>
-            <th>Dataset</th>
-              <th>Commit</th>
-              <th><a {{ sort_href('keys-desc', 'keys-asc') }}>Annex keys</a></th>
-              <th>Annexed files in working tree</th>
-              <th>Size of Annexed files in working tree (bytes)</th>
-              <th><a {{ sort_href('update-desc', 'update-asc') }}>Last update</a></th>
-              <th>.git/objects Size (KiB)</th>
-          </tr>
-            {%- for r in rows -%}
-                <tr>
-                    <td><a href="{{ r["url"] }}">{{ r["url"] }}</a></td>
-                    <td class="mono">{{ r["ds_id"] if r["ds_id"] is not none }}</td>
-                    <td class="mono">
+
+          <table class="list">
+              <tr>
+                  <th><a {{ sort_href('url-desc', 'url-asc') }}>URL</a></th>
+                  <th>Dataset</th>
+                  <th>Commit</th>
+                  <th><a {{ sort_href('keys-desc', 'keys-asc') }}>Annex keys</a></th>
+                  <th>
+                      <a {{ sort_href('annexed_files_in_wt_count-desc', 'annexed_files_in_wt_count-asc') }}>
+                          Annexed files in working tree
+                      </a>
+                  </th>
+                  <th>
+                      <a {{ sort_href('annexed_files_in_wt_size-desc', 'annexed_files_in_wt_size-asc') }}>
+                          Size of Annexed files in working tree (bytes)
+                      </a>
+                  </th>
+                  <th>
+                      <a {{ sort_href('update-desc', 'update-asc') }}>Last update</a>
+                  </th>
+                  <th>
+                      <a {{ sort_href('git_objects_kb-desc', 'git_objects_kb-asc') }}>
+                          .git/objects Size (KiB)
+                      </a>
+                  </th>
+              </tr>
+              {%- for r in rows -%}
+                  <tr>
+                      <td><a href="{{ r["url"] }}">{{ r["url"] }}</a></td>
+                      <td class="mono">{{ r["ds_id"] if r["ds_id"] is not none }}</td>
+                      <td class="mono">
                         {{ r["head_describe"] if r["head_describe"] is not none
                         else (r["head"]|truncate(9, False, "") if r["head"] is not none) }}
-                    </td>
-                    <td>{{ r["annex_key_count"] if r["annex_key_count"] is not none }}</td>
-                    <td>{{ r["annexed_files_in_wt_count"] if r["annexed_files_in_wt_count"] is not none }}</td>
-                    <td>{{ r["annexed_files_in_wt_size"] if r["annexed_files_in_wt_size"] is not none }}</td>
-                    <td>{{ r["last_update"] if r["last_update"] }}</td>
-                    <td>{{ r["git_objects_kb"] if r["git_objects_kb"] is not none }}</td>
-                </tr>
-            {%- endfor -%}
-        </table>
+                      </td>
+                      <td>{{ r["annex_key_count"] if r["annex_key_count"] is not none }}</td>
+                      <td>{{ r["annexed_files_in_wt_count"] if r["annexed_files_in_wt_count"] is not none }}</td>
+                      <td>{{ r["annexed_files_in_wt_size"] if r["annexed_files_in_wt_size"] is not none }}</td>
+                      <td>{{ r["last_update"] if r["last_update"] }}</td>
+                      <td>{{ r["git_objects_kb"] if r["git_objects_kb"] is not none }}</td>
+                  </tr>
+              {%- endfor -%}
+          </table>
           <table class="pager">
               <tr>
                   <td colspan="2">page {{ page }} ({{ num_urls }} URLs total)</td>
