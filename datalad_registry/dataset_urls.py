@@ -69,7 +69,7 @@ def url(ds_id: str, url_encoded: str) -> Any:
         lgr.debug("Status for %s: %s", url, status)
         resp["status"] = status
         return jsonify(resp)
-    elif request.method == "PATCH":
+    else:
         if row_known is None:
             # todo: This is problematic for there is no guarantee that the dataset
             #       at the url given in the request actually has a dataset id that is
