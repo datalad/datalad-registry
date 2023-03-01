@@ -19,7 +19,7 @@ bp = Blueprint("dataset_urls", __name__, url_prefix="/v1/datasets/")
 # See mypy#7187 for why Any is used for return value.
 
 
-@bp.route("<uuid:ds_id>/urls")
+@bp.get("<uuid:ds_id>/urls")
 def urls(ds_id: str) -> Any:
     ds_id = str(ds_id)
 
