@@ -18,6 +18,12 @@ _SORT_ATTRS = {
     "update-desc": ("info_ts", "desc"),
     "url-asc": ("url", "asc"),
     "url-desc": ("url", "desc"),
+    "annexed_files_in_wt_count-asc": ("annexed_files_in_wt_count", "asc"),
+    "annexed_files_in_wt_count-desc": ("annexed_files_in_wt_count", "desc"),
+    "annexed_files_in_wt_size-asc": ("annexed_files_in_wt_size", "asc"),
+    "annexed_files_in_wt_size-desc": ("annexed_files_in_wt_size", "desc"),
+    "git_objects_kb-asc": ("git_objects_kb", "asc"),
+    "git_objects_kb-desc": ("git_objects_kb", "desc"),
 }
 
 # Columns of the table displayed on the overview page
