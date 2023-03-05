@@ -25,7 +25,7 @@ class URL(db.Model):  # type: ignore
     #: Whether initial data has been collected for this URL
     processed = db.Column(db.Boolean, default=False, nullable=False)
 
-    meta_data = db.relationship("URLMetadata", backref="url")
+    metadata_ = db.relationship("URLMetadata", backref="url")
 
     def __repr__(self) -> str:
         return f"<URL(url={self.url!r}, ds_id={self.ds_id!r})>"
