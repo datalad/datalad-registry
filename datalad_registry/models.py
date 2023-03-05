@@ -42,6 +42,8 @@ class URLMetadata(db.Model):  # type: ignore
     dataset_describe = db.Column(db.String(60), nullable=False)
 
     dataset_version = db.Column(db.String(60), nullable=False)
+
+    # Extractor and extraction parameters
     extractor_name = db.Column(db.String(100), nullable=False)
     extractor_version = db.Column(db.String(60), nullable=False)
     extraction_parameter = db.Column(db.JSON, nullable=False)
