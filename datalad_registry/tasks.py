@@ -292,7 +292,7 @@ def update_url_info(ds_id: str, url: str) -> None:
 
 
 @celery.task
-def extract_meta(url_id: int, dataset_path: Union[Path, str], extractor: str) -> bool:
+def extract_meta(url_id: int, dataset_path: str, extractor: str) -> bool:
     """
     Extract dataset level metadata from a dataset
 
