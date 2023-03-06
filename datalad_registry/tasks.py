@@ -6,12 +6,15 @@ from shutil import rmtree
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from celery import group
+from datalad import api as dl
 from datalad.support.exceptions import IncompleteResultsError
-from pydantic import StrictStr, validate_arguments
+from pydantic import StrictStr, parse_obj_as, validate_arguments
 
 from datalad_registry import celery
-from datalad_registry.models import URL, db
+from datalad_registry.models import URL, URLMetadata, db
 from datalad_registry.utils.url_encoder import url_encode
+
+from .com_models import MetaExtractResult
 
 lgr = logging.getLogger(__name__)
 
@@ -286,3 +289,64 @@ def update_url_info(ds_id: str, url: str) -> None:
     session = db.session
     session.query(URL).filter_by(url=url).update(info)
     session.commit()
+
+
+@celery.task
+def extract_meta(url_id: int, dataset_path: Union[Path, str], extractor: str) -> bool:
+    """
+    Extract dataset level metadata from a dataset
+
+    :param url_id: The ID (primary key) of the URL of the dataset in the database
+    :param dataset_path: The path to the dataset in the local cache
+    :param extractor: The name of the extractor to use
+    :return: True if the extractor has produced metadata and the metadata has been
+             recorded to the database; False otherwise.
+    """
+    url = db.session.execute(db.select(URL).where(URL.id == url_id)).scalar_one()
+
+    results = parse_obj_as(
+        list[MetaExtractResult],
+        dl.meta_extract(
+            extractor,
+            dataset=dataset_path,
+            result_renderer="disabled",
+            on_failure="stop",
+        ),
+    )
+
+    if len(results) == 0:
+        lgr.debug(
+            "Extractor %s did not produce any metadata for %s", extractor, url.url
+        )
+        return False
+
+    produced_valid_result = False
+    for res in results:
+        if res.status != "ok":
+            lgr.debug(
+                "A result of extractor %s for %s is not 'ok'."
+                "It will not be recorded to the database",
+                extractor,
+                url.url,
+            )
+        else:
+            # Record the metadata to the database
+            metadata_record = res.metadata_record
+            url_metadata = URLMetadata(
+                dataset_describe=url.head_describe,
+                dataset_version=metadata_record.dataset_version,
+                extractor_name=metadata_record.extractor_name,
+                extractor_version=metadata_record.extractor_version,
+                extraction_parameter=metadata_record.extraction_parameter,
+                extracted_metadata=metadata_record.extracted_metadata,
+                url=url,
+            )
+            db.session.add(url_metadata)
+
+            produced_valid_result = True
+
+    if produced_valid_result:
+        db.session.commit()
+        return True
+    else:
+        return False
