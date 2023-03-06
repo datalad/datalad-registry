@@ -186,8 +186,9 @@ def collect_dataset_uuid(url: str) -> None:
     cache_dir_level1 = cache_dir / abbrev_id
     cache_dir_level1.mkdir(parents=True, exist_ok=True)
 
+    destination_path = cache_dir_level1 / url_encode(url)
     try:
-        ds_path.rename(cache_dir_level1 / url_encode(url))
+        ds_path.rename(destination_path)
     except OSError as e:
         if e.errno == errno.ENOTEMPTY:
             lgr.debug("Clone of %s already in cache", url)
@@ -198,6 +199,15 @@ def collect_dataset_uuid(url: str) -> None:
                 abbrev_id,
             )
         rmtree(ds_path)
+    else:
+        # This is a temporary measure to invoke the extraction of metadata directly
+        # here. Later this invocation should be done through a dedicated queue to avoid
+        # race condition of accessing the local clone of the dataset.
+        extract_meta.delay(
+            url_id=result.one().id,
+            dataset_path=str(destination_path),
+            extractor="metalad_core",
+        )
     # todo: marking of problematic code ends
 
     db.session.commit()
