@@ -60,8 +60,10 @@ def overview():  # No type hints due to mypy#7187.
     col, sort_method = _SORT_ATTRS[sort_by]
     r = r.order_by(getattr(getattr(URL, col), sort_method)())
 
-    # Paginate
+    # Get total number of URLs to be displayed through pagination
     num_urls = r.count()
+
+    # Paginate
     page = request.args.get("page", 1, type=int)
     r = r.paginate(page=page, per_page=_PAGE_NITEMS, error_out=False)
 
