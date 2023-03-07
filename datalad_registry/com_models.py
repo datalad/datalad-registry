@@ -6,11 +6,11 @@ from pydantic import BaseModel, StrictStr
 
 
 class MetadataRecord(BaseModel):
-    dataset_version: str
+    dataset_version: StrictStr
 
     # Extractor and extraction parameters
-    extractor_name: str
-    extractor_version: str
+    extractor_name: StrictStr
+    extractor_version: StrictStr
     extraction_parameter: dict
 
     extracted_metadata: dict
@@ -18,7 +18,7 @@ class MetadataRecord(BaseModel):
 
 class MetaExtractResult(BaseModel):
     action: Literal["meta_extract"]
-    status: str
+    status: StrictStr
     metadata_record: MetadataRecord
 
 
