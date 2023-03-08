@@ -311,6 +311,11 @@ def extract_meta(url_id: int, dataset_path: str, extractor: str) -> bool:
     :param extractor: The name of the extractor to use
     :return: True if the extractor has produced metadata and the metadata has been
              recorded to the database; False otherwise.
+    .. note:: The caller of this function is responsible for ensuring the arguments for
+              url_id and dataset_path are valid, i.e. there is indeed a URL with the
+              specified ID, and there is indeed a dataset at the specified path.
+              An appropriate exception will be raised if the caller failed in
+              fulfilling this responsibility.
     """
     url = db.session.execute(db.select(URL).where(URL.id == url_id)).scalar_one()
 
