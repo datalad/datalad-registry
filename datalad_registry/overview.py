@@ -36,6 +36,7 @@ _COLS = [
     "annexed_files_in_wt_count",
     "annexed_files_in_wt_size",
     "git_objects_kb",
+    "metadata_",
 ]
 
 
