@@ -12,6 +12,7 @@ from pydantic import StrictStr, parse_obj_as, validate_arguments
 
 from datalad_registry import celery
 from datalad_registry.models import URL, URLMetadata, db
+from datalad_registry.utils import StrEnum
 from datalad_registry.utils.url_encoder import url_encode
 
 from .com_models import MetaExtractResult
@@ -19,6 +20,12 @@ from .com_models import MetaExtractResult
 lgr = logging.getLogger(__name__)
 
 InfoType = Dict[str, Union[str, float, datetime]]
+
+
+class ExtractMetaStatus(StrEnum):
+    SUCCEEDED = "succeeded"
+    ABORTED = "aborted"
+    SKIPPED = "skipped"
 
 
 # todo: The value of url is encoded in ds_path, so we have passed it twice to this func.
@@ -310,19 +317,23 @@ _EXTRACTOR_REQUIRED_FILES = {
 
 
 @celery.task
-def extract_meta(url_id: int, dataset_path: str, extractor: str) -> bool:
+def extract_meta(url_id: int, dataset_path: str, extractor: str) -> ExtractMetaStatus:
     """
     Extract dataset level metadata from a dataset
 
     :param url_id: The ID (primary key) of the URL of the dataset in the database
     :param dataset_path: The path to the dataset in the local cache
     :param extractor: The name of the extractor to use
-    :return: True if the extraction has produced valid metadata.
+    :return: ExtractMetaStatus.SUCCEEDED if the extraction has produced valid metadata.
                  In this case, the metadata has been recorded to the database
                  upon return.
-             False if the extraction has been skipped due to some required files
-                 not being present in the dataset. For example, `.studyminimeta.yaml`
-                 is not present in the dataset for running the studyminimeta extractor.
+             ExtractMetaStatus.ABORTED if the extraction has been aborted due to some
+                 required files not being present in the dataset. For example,
+                 `.studyminimeta.yaml` is not present in the dataset for running
+                 the studyminimeta extractor.
+            ExtractMetaStatus.SKIPPED if the extraction has been skipped if the
+                metadata to be extracted is already present in the database,
+                as identified by the extractor name, URL, and dataset version.
     :raise: RuntimeError if the extraction has produced no valid metadata.
 
     .. note:: The caller of this function is responsible for ensuring the arguments for
@@ -341,8 +352,8 @@ def extract_meta(url_id: int, dataset_path: str, extractor: str) -> bool:
             dataset_path / f for f in _EXTRACTOR_REQUIRED_FILES[extractor]
         ):
             if not required_file_path.is_file():
-                # A required file is missing. Skip the extraction
-                return False
+                # A required file is missing. Abort the extraction
+                return ExtractMetaStatus.ABORTED
 
     results = parse_obj_as(
         list[MetaExtractResult],
@@ -389,7 +400,7 @@ def extract_meta(url_id: int, dataset_path: str, extractor: str) -> bool:
 
     if produced_valid_result:
         db.session.commit()
-        return True
+        return ExtractMetaStatus.SUCCEEDED
     else:
         raise RuntimeError(
             f"Extractor {extractor} did not produce any valid metadata for {url.url}"
