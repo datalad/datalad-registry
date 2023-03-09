@@ -345,12 +345,12 @@ def extract_meta(url_id: int, dataset_path: str, extractor: str) -> ExtractMetaS
     """
     url = db.session.execute(db.select(URL).where(URL.id == url_id)).scalar_one()
 
-    dataset_path = Path(dataset_path)
+    ds_path = Path(dataset_path)
 
     # Check for missing of required files
     if extractor in _EXTRACTOR_REQUIRED_FILES:
         for required_file_path in (
-            dataset_path / f for f in _EXTRACTOR_REQUIRED_FILES[extractor]
+            ds_path / f for f in _EXTRACTOR_REQUIRED_FILES[extractor]
         ):
             if not required_file_path.is_file():
                 # A required file is missing. Abort the extraction
@@ -361,7 +361,7 @@ def extract_meta(url_id: int, dataset_path: str, extractor: str) -> ExtractMetaS
         if extractor == data.extractor_name:
             # Get the current version of the dataset as it exists in the local cache
             ds_version = require_dataset(
-                dataset_path, check_installed=True
+                ds_path, check_installed=True
             ).repo.get_hexsha()
 
             if ds_version == data.dataset_version:
@@ -377,7 +377,7 @@ def extract_meta(url_id: int, dataset_path: str, extractor: str) -> ExtractMetaS
         list[MetaExtractResult],
         dl.meta_extract(
             extractor,
-            dataset=dataset_path,
+            dataset=ds_path,
             result_renderer="disabled",
             on_failure="stop",
         ),
