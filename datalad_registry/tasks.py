@@ -301,6 +301,14 @@ def update_url_info(ds_id: str, url: str) -> None:
     session.commit()
 
 
+# Map of extractors to their respective required files
+#     The required files are specified relative to the root of the dataset
+_EXTRACTOR_REQUIRED_FILES = {
+    "metalad_studyminimeta": [".studyminimeta.yaml"],
+    "datacite_gin": ["datacite.yml"],
+}
+
+
 @celery.task
 def extract_meta(url_id: int, dataset_path: str, extractor: str) -> bool:
     """
@@ -324,6 +332,17 @@ def extract_meta(url_id: int, dataset_path: str, extractor: str) -> bool:
               fulfilling this responsibility.
     """
     url = db.session.execute(db.select(URL).where(URL.id == url_id)).scalar_one()
+
+    dataset_path = Path(dataset_path)
+
+    # Check for missing of required files
+    if extractor in _EXTRACTOR_REQUIRED_FILES:
+        for required_file_path in (
+            dataset_path / f for f in _EXTRACTOR_REQUIRED_FILES[extractor]
+        ):
+            if not required_file_path.is_file():
+                # A required file is missing. Skip the extraction
+                return False
 
     results = parse_obj_as(
         list[MetaExtractResult],
