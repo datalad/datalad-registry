@@ -331,7 +331,7 @@ def extract_meta(url_id: int, dataset_path: str, extractor: str) -> ExtractMetaS
                  required files not being present in the dataset. For example,
                  `.studyminimeta.yaml` is not present in the dataset for running
                  the studyminimeta extractor.
-            ExtractMetaStatus.SKIPPED if the extraction has been skipped if the
+            ExtractMetaStatus.SKIPPED if the extraction has been skipped because the
                 metadata to be extracted is already present in the database,
                 as identified by the extractor name, URL, and dataset version.
     :raise: RuntimeError if the extraction has produced no valid metadata.
