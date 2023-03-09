@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from celery import group
 from datalad import api as dl
+from datalad.distribution.dataset import require_dataset
 from datalad.support.exceptions import IncompleteResultsError
 from pydantic import StrictStr, parse_obj_as, validate_arguments
 
@@ -354,6 +355,23 @@ def extract_meta(url_id: int, dataset_path: str, extractor: str) -> ExtractMetaS
             if not required_file_path.is_file():
                 # A required file is missing. Abort the extraction
                 return ExtractMetaStatus.ABORTED
+
+    # Check if the metadata to be extracted is already present in the database
+    for data in url.metadata_:
+        if extractor == data.extractor_name:
+            # Get the current version of the dataset as it exists in the local cache
+            ds_version = require_dataset(
+                dataset_path, check_installed=True
+            ).repo.get_hexsha()
+
+            if ds_version == data.dataset_version:
+                # The metadata to be extracted is already present in the database
+                return ExtractMetaStatus.SKIPPED
+            else:
+                # metadata can be extracted for a new version of the dataset
+
+                db.session.delete(data)  # delete the old metadata from the database
+                break
 
     results = parse_obj_as(
         list[MetaExtractResult],
