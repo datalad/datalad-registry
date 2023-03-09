@@ -8,3 +8,4 @@ SQLAlchemy==1.4.46
 psycopg2==2.9.5
 pydantic==1.10.4
 Flask-Migrate==4.0.4
+datalad-catalog==0.2.1
