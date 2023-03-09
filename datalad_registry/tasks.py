@@ -309,8 +309,14 @@ def extract_meta(url_id: int, dataset_path: str, extractor: str) -> bool:
     :param url_id: The ID (primary key) of the URL of the dataset in the database
     :param dataset_path: The path to the dataset in the local cache
     :param extractor: The name of the extractor to use
-    :return: True if the extractor has produced metadata and the metadata has been
-             recorded to the database; False otherwise.
+    :return: True if the extraction has produced valid metadata.
+                 In this case, the metadata has been recorded to the database
+                 upon return.
+             False if the extraction has been skipped due to some required files
+                 not being present in the dataset. For example, `.studyminimeta.yaml`
+                 is not present in the dataset for running the studyminimeta extractor.
+    :raise: RuntimeError if the extraction has produced no valid metadata.
+
     .. note:: The caller of this function is responsible for ensuring the arguments for
               url_id and dataset_path are valid, i.e. there is indeed a URL with the
               specified ID, and there is indeed a dataset at the specified path.
@@ -333,7 +339,9 @@ def extract_meta(url_id: int, dataset_path: str, extractor: str) -> bool:
         lgr.debug(
             "Extractor %s did not produce any metadata for %s", extractor, url.url
         )
-        return False
+        raise RuntimeError(
+            f"Extractor {extractor} did not produce any metadata for {url.url}"
+        )
 
     produced_valid_result = False
     for res in results:
@@ -364,4 +372,6 @@ def extract_meta(url_id: int, dataset_path: str, extractor: str) -> bool:
         db.session.commit()
         return True
     else:
-        return False
+        raise RuntimeError(
+            f"Extractor {extractor} did not produce any valid metadata for {url.url}"
+        )
