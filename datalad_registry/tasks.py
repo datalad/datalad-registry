@@ -211,10 +211,12 @@ def collect_dataset_uuid(url: str) -> None:
         # This is a temporary measure to invoke the extraction of metadata directly
         # here. Later this invocation should be done through a dedicated queue to avoid
         # race condition of accessing the local clone of the dataset.
+        url_id = result.one().id
+        dataset_path = str(destination_path)
         for extractor in current_app.config["DATALAD_REGISTRY_METADATA_EXTRACTORS"]:
             extract_meta.delay(
-                url_id=result.one().id,
-                dataset_path=str(destination_path),
+                url_id=url_id,
+                dataset_path=dataset_path,
                 extractor=extractor,
             )
     # todo: marking of problematic code ends
