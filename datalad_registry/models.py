@@ -8,9 +8,6 @@ migrate = Migrate()
 
 
 class URL(db.Model):  # type: ignore
-
-    __tablename__ = "urls"
-
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     url = db.Column(db.Text, nullable=False, unique=True)
     ds_id = db.Column(db.Text, nullable=True)
