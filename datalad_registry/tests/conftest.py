@@ -104,7 +104,7 @@ def _app_instance(dockerdb, tmp_path_factory, cache_dir):
 
     socket.setdefaulttimeout(2)  # seconds
     app = create_app(config)
-    yield AppInstance(app, db)
+    return AppInstance(app, db)
 
 
 @pytest.fixture
@@ -114,14 +114,14 @@ def app_instance(_app_instance):
     If you just need the client, you can use the `client` fixture
     instead.
 
-    Yields
+    Returns
     ------
     AppInstance namedtuple with app, db, and client fields.
     """
     with _app_instance.app.app_context():
         db.drop_all()
         db.create_all()
-        yield _app_instance
+        return _app_instance
 
 
 @pytest.fixture
@@ -131,4 +131,4 @@ def client(app_instance):
     If you need to access to the application or database, use the
     `app_instance` fixture instead.
     """
-    yield app_instance.app.test_client()
+    return app_instance.app.test_client()
