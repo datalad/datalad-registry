@@ -21,6 +21,8 @@ def flask_app(monkeypatch, tmp_path):
     monkeypatch.setenv("DATALAD_REGISTRY_INSTANCE_PATH", str(instance_path))
 
     test_config = {
+        # DATALAD_REGISTRY_DATASET_CACHE is required by app setup but not really used
+        # for this testing purpose
         "DATALAD_REGISTRY_DATASET_CACHE": str(cache_path),
         "SQLALCHEMY_DATABASE_URI": str(
             URL.create(
