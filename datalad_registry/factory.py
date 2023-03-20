@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from pathlib import Path
@@ -5,9 +6,10 @@ from typing import Any, Dict, Optional, Union
 
 from celery.app.base import Celery
 from celery.schedules import crontab
-from flask import Flask
+from flask import Flask, request
 from flask.logging import default_handler
 from kombu.serialization import register
+from werkzeug.exceptions import HTTPException
 
 from datalad_registry import celery, dataset_urls, datasets, overview, root
 from datalad_registry.models import db, init_db_command, migrate
@@ -97,5 +99,26 @@ def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
 
     # Register API blueprint
     app.register_blueprint(api_bp, url_prefix="/api/v1")
+
+    @app.errorhandler(HTTPException)
+    def handle_exception(e):
+        """
+        Convert all HTTPExceptions to JSON responses for the API paths
+        """
+        if request.path.startswith("/api/"):
+            # start with the correct headers and status code from the error
+            response = e.get_response()
+            # replace the body with JSON
+            response.data = json.dumps(
+                {
+                    "code": e.code,
+                    "name": e.name,
+                    "description": e.description,
+                }
+            )
+            response.content_type = "application/json"
+            return response
+        else:
+            return e
 
     return app
