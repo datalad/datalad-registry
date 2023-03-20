@@ -92,4 +92,10 @@ def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
     app.register_blueprint(dataset_urls.bp)
     app.register_blueprint(overview.bp)
     app.register_blueprint(root.bp)
+
+    from .blueprints.api import bp as api_bp
+
+    # Register API blueprint
+    app.register_blueprint(api_bp, url_prefix="/api/v1")
+
     return app

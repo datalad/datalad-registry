@@ -57,6 +57,9 @@
             .git/objects Size (KiB)
           </a>
         </th>
+        <th>
+          Metadata
+        </th>
       </tr>
       {%- for r in rows -%}
         <tr>
@@ -71,6 +74,14 @@
           <td>{{ r["annexed_files_in_wt_size"] if r["annexed_files_in_wt_size"] is not none }}</td>
           <td>{{ r["last_update"] if r["last_update"] }}</td>
           <td>{{ r["git_objects_kb"] if r["git_objects_kb"] is not none }}</td>
+          <td>
+            {%- for data in r["metadata_"] -%}
+              <a href="{{ url_for('api.url_metadata', url_metadata_id=data.id) }}">
+                {{ data.extractor_name }}
+              </a>
+              {{ ", " if not loop.last else "" }}
+            {%- endfor -%}
+          </td>
         </tr>
       {%- endfor -%}
     </table>

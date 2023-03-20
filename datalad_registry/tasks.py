@@ -6,16 +6,27 @@ from shutil import rmtree
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from celery import group
+from datalad import api as dl
+from datalad.distribution.dataset import require_dataset
 from datalad.support.exceptions import IncompleteResultsError
-from pydantic import StrictStr, validate_arguments
+from pydantic import StrictStr, parse_obj_as, validate_arguments
 
 from datalad_registry import celery
-from datalad_registry.models import URL, db
+from datalad_registry.models import URL, URLMetadata, db
+from datalad_registry.utils import StrEnum
 from datalad_registry.utils.url_encoder import url_encode
+
+from .com_models import MetaExtractResult
 
 lgr = logging.getLogger(__name__)
 
 InfoType = Dict[str, Union[str, float, datetime]]
+
+
+class ExtractMetaStatus(StrEnum):
+    SUCCEEDED = "succeeded"
+    ABORTED = "aborted"
+    SKIPPED = "skipped"
 
 
 # todo: The value of url is encoded in ds_path, so we have passed it twice to this func.
@@ -183,8 +194,9 @@ def collect_dataset_uuid(url: str) -> None:
     cache_dir_level1 = cache_dir / abbrev_id
     cache_dir_level1.mkdir(parents=True, exist_ok=True)
 
+    destination_path = cache_dir_level1 / url_encode(url)
     try:
-        ds_path.rename(cache_dir_level1 / url_encode(url))
+        ds_path.rename(destination_path)
     except OSError as e:
         if e.errno == errno.ENOTEMPTY:
             lgr.debug("Clone of %s already in cache", url)
@@ -195,6 +207,18 @@ def collect_dataset_uuid(url: str) -> None:
                 abbrev_id,
             )
         rmtree(ds_path)
+    else:
+        # This is a temporary measure to invoke the extraction of metadata directly
+        # here. Later this invocation should be done through a dedicated queue to avoid
+        # race condition of accessing the local clone of the dataset.
+        url_id = result.one().id
+        dataset_path = str(destination_path)
+        for extractor in current_app.config["DATALAD_REGISTRY_METADATA_EXTRACTORS"]:
+            extract_meta.delay(
+                url_id=url_id,
+                dataset_path=dataset_path,
+                extractor=extractor,
+            )
     # todo: marking of problematic code ends
 
     db.session.commit()
@@ -286,3 +310,119 @@ def update_url_info(ds_id: str, url: str) -> None:
     session = db.session
     session.query(URL).filter_by(url=url).update(info)
     session.commit()
+
+
+# Map of extractors to their respective required files
+#     The required files are specified relative to the root of the dataset
+_EXTRACTOR_REQUIRED_FILES = {
+    "metalad_studyminimeta": [".studyminimeta.yaml"],
+    "datacite_gin": ["datacite.yml"],
+}
+
+
+@celery.task
+def extract_meta(url_id: int, dataset_path: str, extractor: str) -> ExtractMetaStatus:
+    """
+    Extract dataset level metadata from a dataset
+
+    :param url_id: The ID (primary key) of the URL of the dataset in the database
+    :param dataset_path: The path to the dataset in the local cache
+    :param extractor: The name of the extractor to use
+    :return: ExtractMetaStatus.SUCCEEDED if the extraction has produced valid metadata.
+                 In this case, the metadata has been recorded to the database
+                 upon return.
+             ExtractMetaStatus.ABORTED if the extraction has been aborted due to some
+                 required files not being present in the dataset. For example,
+                 `.studyminimeta.yaml` is not present in the dataset for running
+                 the studyminimeta extractor.
+            ExtractMetaStatus.SKIPPED if the extraction has been skipped because the
+                metadata to be extracted is already present in the database,
+                as identified by the extractor name, URL, and dataset version.
+    :raise: RuntimeError if the extraction has produced no valid metadata.
+
+    .. note:: The caller of this function is responsible for ensuring the arguments for
+              url_id and dataset_path are valid, i.e. there is indeed a URL with the
+              specified ID, and there is indeed a dataset at the specified path.
+              An appropriate exception will be raised if the caller failed in
+              fulfilling this responsibility.
+    """
+    url = db.session.execute(db.select(URL).where(URL.id == url_id)).scalar_one()
+
+    ds_path = Path(dataset_path)
+
+    # Check for missing of required files
+    if extractor in _EXTRACTOR_REQUIRED_FILES:
+        for required_file_path in (
+            ds_path / f for f in _EXTRACTOR_REQUIRED_FILES[extractor]
+        ):
+            if not required_file_path.is_file():
+                # A required file is missing. Abort the extraction
+                return ExtractMetaStatus.ABORTED
+
+    # Check if the metadata to be extracted is already present in the database
+    for data in url.metadata_:
+        if extractor == data.extractor_name:
+            # Get the current version of the dataset as it exists in the local cache
+            ds_version = require_dataset(
+                ds_path, check_installed=True
+            ).repo.get_hexsha()
+
+            if ds_version == data.dataset_version:
+                # The metadata to be extracted is already present in the database
+                return ExtractMetaStatus.SKIPPED
+            else:
+                # metadata can be extracted for a new version of the dataset
+
+                db.session.delete(data)  # delete the old metadata from the database
+                break
+
+    results = parse_obj_as(
+        list[MetaExtractResult],
+        dl.meta_extract(
+            extractor,
+            dataset=ds_path,
+            result_renderer="disabled",
+            on_failure="stop",
+        ),
+    )
+
+    if len(results) == 0:
+        lgr.debug(
+            "Extractor %s did not produce any metadata for %s", extractor, url.url
+        )
+        raise RuntimeError(
+            f"Extractor {extractor} did not produce any metadata for {url.url}"
+        )
+
+    produced_valid_result = False
+    for res in results:
+        if res.status != "ok":
+            lgr.debug(
+                "A result of extractor %s for %s is not 'ok'."
+                "It will not be recorded to the database",
+                extractor,
+                url.url,
+            )
+        else:
+            # Record the metadata to the database
+            metadata_record = res.metadata_record
+            url_metadata = URLMetadata(
+                dataset_describe=url.head_describe,
+                dataset_version=metadata_record.dataset_version,
+                extractor_name=metadata_record.extractor_name,
+                extractor_version=metadata_record.extractor_version,
+                extraction_parameter=metadata_record.extraction_parameter,
+                extracted_metadata=metadata_record.extracted_metadata,
+                url=url,
+            )
+            db.session.add(url_metadata)
+
+            produced_valid_result = True
+
+    if produced_valid_result:
+        db.session.commit()
+        return ExtractMetaStatus.SUCCEEDED
+    else:
+        raise RuntimeError(
+            f"Extractor {extractor} did not produce any valid metadata for {url.url}"
+        )

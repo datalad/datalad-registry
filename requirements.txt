@@ -1,9 +1,11 @@
 celery==5.2.7
 click==8.1.3
 datalad==0.18.0
+datalad-metalad==0.4.12
 Flask==2.2.2
 Flask-SQLAlchemy==3.0.2
 SQLAlchemy==1.4.46
 psycopg2==2.9.5
 pydantic==1.10.4
 Flask-Migrate==4.0.4
+datalad-catalog==0.2.1
