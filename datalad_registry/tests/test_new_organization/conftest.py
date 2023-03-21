@@ -34,6 +34,7 @@ def flask_app(monkeypatch, tmp_path):
                 password=os.environ["DATALAD_REGISTRY_PASSWORD"],
             )
         ),
+        "TESTING": True,
     }
 
     app = create_app(test_config)
