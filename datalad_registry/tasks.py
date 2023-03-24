@@ -78,7 +78,9 @@ def get_info(ds_repo: Any) -> InfoType:
     info.update(_extract_annex_info(ds_repo))
     info["info_ts"] = datetime.now(timezone.utc)
     info["update_announced"] = False
-    info["git_objects_kb"] = ds_repo.count_objects["size"]
+    info["git_objects_kb"] = (
+        ds_repo.count_objects["size"] + ds_repo.count_objects["size-pack"]
+    )
     return info
 
 
