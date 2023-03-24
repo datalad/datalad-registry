@@ -4,6 +4,7 @@
 import logging
 
 from flask import Blueprint, render_template, request
+from sqlalchemy import nullslast
 
 from datalad_registry.models import URL, db
 
@@ -59,7 +60,7 @@ def overview():  # No type hints due to mypy#7187.
         lgr.debug("Ignoring unknown sort parameter: %s", sort_by)
         sort_by = default_sort_scheme
     col, sort_method = _SORT_ATTRS[sort_by]
-    r = r.order_by(getattr(getattr(URL, col), sort_method)())
+    r = r.order_by(nullslast(getattr(getattr(URL, col), sort_method)()))
 
     # Get total number of URLs to be displayed through pagination
     num_urls = r.count()
