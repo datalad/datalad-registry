@@ -20,7 +20,7 @@
     {% for page in pagination.iter_pages() %}
       {% if page %}
         {% if page != pagination.page %}
-          <a href="{{ url_for(endpoint, page=page) }}">{{ page }}</a>
+          <a href="{{ url_for(endpoint, page=page, per_page=pagination.per_page) }}">{{ page }}</a>
         {% else %}
           <strong>{{ page }}</strong>
         {% endif %}
@@ -80,21 +80,20 @@
           Metadata
         </th>
       </tr>
-      {%- for r in rows -%}
+      {%- for i in pagination -%}
         <tr>
-          <td><a href="{{ r["url"] }}">{{ r["url"] }}</a></td>
-          <td class="mono">{{ r["ds_id"] if r["ds_id"] is not none }}</td>
+          <td><a href="{{ i.url }}">{{ i.url }}</a></td>
+          <td class="mono">{{ i.ds_id if i.ds_id is not none }}</td>
           <td class="mono">
-            {{ r["head_describe"] if r["head_describe"] is not none
-                        else (r["head"]|truncate(9, False, "") if r["head"] is not none) }}
+            {{ i.head_describe if i.head_describe is not none }}
           </td>
-          <td>{{ r["annex_key_count"] if r["annex_key_count"] is not none }}</td>
-          <td>{{ r["annexed_files_in_wt_count"] if r["annexed_files_in_wt_count"] is not none }}</td>
-          <td>{{ r["annexed_files_in_wt_size"] if r["annexed_files_in_wt_size"] is not none }}</td>
-          <td>{{ r["last_update"] if r["last_update"] }}</td>
-          <td>{{ r["git_objects_kb"] if r["git_objects_kb"] is not none }}</td>
+          <td>{{ i.annex_key_count if i.annex_key_count is not none }}</td>
+          <td>{{ i.annexed_files_in_wt_count if i.annexed_files_in_wt_count is not none }}</td>
+          <td>{{ i.annexed_files_in_wt_size if i.annexed_files_in_wt_size is not none }}</td>
+          <td>{{ i.info_ts.strftime("%Y-%m-%dT%H:%M:%S%z") if i.info_ts is not none }}</td>
+          <td>{{ i.git_objects_kb if i.git_objects_kb is not none }}</td>
           <td>
-            {%- for data in r["metadata_"] -%}
+            {%- for data in i.metadata_ -%}
               <a href="{{ url_for('api.url_metadata', url_metadata_id=data.id) }}">
                 {{ data.extractor_name }}
               </a>
