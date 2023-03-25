@@ -104,23 +104,9 @@
         </tr>
       {%- endfor -%}
     </table>
-    <table class="pager">
-      <tr>
-        <td colspan="2">page {{ page }} ({{ num_urls }} URLs total)</td>
-      </tr>
-      <tr>
-        {%- if has_prev -%}
-          <td><a {{ page_href(page-1) }}>previous</a></td>
-        {%- else -%}
-          <td></td>
-        {%- endif -%}
-        {%- if has_next -%}
-          <td><a {{ page_href(page+1) }}>next</a></td>
-        {%- else -%}
-          <td></td>
-        {%- endif -%}
-      </tr>
-    </table>
+    <div class="pager">
+      {{ render_pagination_widget(pagination, '.overview') }}
+    </div>
   </div>
 </div>
 </body>
