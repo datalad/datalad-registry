@@ -7,11 +7,6 @@
   href="{{ url_for('.overview', filter=url_filter, sort='{}'.format(new_sort)) }}"
 {%- endmacro -%}
 
-{%- macro page_href(page) -%}
-  href="{{ url_for('.overview', sort=sort_by, filter=url_filter,
-                 page='{}'.format(page)) }}"
-{%- endmacro -%}
-
 {% macro render_pagination_widget(pagination, endpoint) %}
   <div class="page-items">
     {{ pagination.first }} - {{ pagination.last }} of {{ pagination.total }}
