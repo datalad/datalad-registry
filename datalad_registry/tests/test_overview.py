@@ -12,19 +12,28 @@ def test_overview_pager(client, tmp_path):
     resp = client.get("/overview/")
     assert "1 - 20 of 26" in resp.text
     assert "<strong>1</strong>" in resp.text
-    assert '<a href="/overview/?page=2&amp;per_page=20">2</a>' in resp.text
+    assert (
+        '<a href="/overview/?page=2&amp;per_page=20&amp;sort=update-desc">2</a>'
+        in resp.text
+    )
     assert "…" not in resp.text
 
     resp = client.get("/overview/?page=2&per_page=2")
     assert "3 - 4 of 26" in resp.text
     assert "<strong>2</strong>" in resp.text
-    assert '<a href="/overview/?page=3&amp;per_page=2">3</a>' in resp.text
+    assert (
+        '<a href="/overview/?page=3&amp;per_page=2&amp;sort=update-desc">3</a>'
+        in resp.text
+    )
     assert resp.text.count("…") == 1
 
     resp = client.get("/overview/?page=6&per_page=2")
     assert "11 - 12 of 26" in resp.text
     assert "<strong>6</strong>" in resp.text
-    assert '<a href="/overview/?page=5&amp;per_page=2">5</a>' in resp.text
+    assert (
+        '<a href="/overview/?page=5&amp;per_page=2&amp;sort=update-desc">5</a>'
+        in resp.text
+    )
     assert resp.text.count("…") == 2
 
     # Invalid page numbers
