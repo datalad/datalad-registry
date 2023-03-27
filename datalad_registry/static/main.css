@@ -23,12 +23,13 @@ div#datalad-registry table.list td.mono {
     font-family: monospace;
 }
 
-div#datalad-registry table.pager {
+div#datalad-registry div.pager {
+    padding-top: 2em;
     margin-left: auto;
     margin-right: auto;
+    text-align: center;
 }
 
-div#datalad-registry table.pager td {
-    text-align: center;
-    width: 7em;
+div#datalad-registry div.pagination {
+    padding-top: 0.5em;
 }

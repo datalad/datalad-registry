@@ -1,6 +1,5 @@
 import re
 import time
-from unittest.mock import patch
 
 import pytest
 
@@ -8,26 +7,41 @@ from datalad_registry.tests.utils import create_and_register_repos, register_dat
 
 
 def test_overview_pager(client, tmp_path):
-    create_and_register_repos(client, tmp_path, 5)
+    create_and_register_repos(client, tmp_path, 26)
 
-    r_overview = client.get("/overview/")
-    assert b"previous" not in r_overview.data
-    assert b"next" not in r_overview.data
+    resp = client.get("/overview/")
+    assert "1 - 20 of 26" in resp.text
+    assert "<strong>1</strong>" in resp.text
+    assert (
+        '<a href="/overview/?page=2&amp;per_page=20&amp;sort=update-desc">2</a>'
+        in resp.text
+    )
+    assert "…" not in resp.text
 
-    with patch("datalad_registry.overview._PAGE_NITEMS", 2):
-        r_overview_pg1 = client.get("/overview/")
-        assert b"previous" not in r_overview_pg1.data
-        assert b"next" in r_overview_pg1.data
+    resp = client.get("/overview/?page=2&per_page=2")
+    assert "3 - 4 of 26" in resp.text
+    assert "<strong>2</strong>" in resp.text
+    assert (
+        '<a href="/overview/?page=3&amp;per_page=2&amp;sort=update-desc">3</a>'
+        in resp.text
+    )
+    assert resp.text.count("…") == 1
 
-        assert r_overview_pg1.data == client.get("/overview/?page=1").data
+    resp = client.get("/overview/?page=6&per_page=2")
+    assert "11 - 12 of 26" in resp.text
+    assert "<strong>6</strong>" in resp.text
+    assert (
+        '<a href="/overview/?page=5&amp;per_page=2&amp;sort=update-desc">5</a>'
+        in resp.text
+    )
+    assert resp.text.count("…") == 2
 
-        r_overview_pg2 = client.get("/overview/?page=2")
-        assert b"previous" in r_overview_pg2.data
-        assert b"next" in r_overview_pg2.data
+    # Invalid page numbers
+    resp = client.get("/overview/?page=3")
+    assert resp.status_code == 404
 
-        r_overview_pg3 = client.get("/overview/?page=3")
-        assert b"previous" in r_overview_pg3.data
-        assert b"next" not in r_overview_pg3.data
+    resp = client.get("/overview/?page=0")
+    assert resp.status_code == 404
 
 
 @pytest.mark.slow
