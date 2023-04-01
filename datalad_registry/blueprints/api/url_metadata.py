@@ -6,8 +6,10 @@ from datalad_registry.models import URLMetadata, db
 
 from . import bp
 
+_URL_PREFIX = "/url-metadata"
 
-@bp.get("/url-metadata/<int:url_metadata_id>")
+
+@bp.get(f"{_URL_PREFIX}/<int:url_metadata_id>")
 def url_metadata(url_metadata_id):
     """
     Get URL metadata by ID.
