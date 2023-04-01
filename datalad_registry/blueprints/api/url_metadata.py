@@ -1,4 +1,4 @@
-# This file is for defining the API endpoints related to URL metadata,
+# This file is for defining the API endpoints related to dataset URL metadata,
 # i.e. the metadata of datasets at individual URLs.
 
 from datalad_registry.com_models import URLMetadataModel
