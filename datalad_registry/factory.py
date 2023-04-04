@@ -8,6 +8,7 @@ from celery.app.base import Celery
 from celery.schedules import crontab
 from flask import Flask, request
 from flask.logging import default_handler
+from flask_openapi3 import Info, OpenAPI
 from kombu.serialization import register
 from werkzeug.exceptions import HTTPException
 
@@ -70,8 +71,11 @@ def setup_celery(app: Flask, celery: Celery) -> Celery:
 
 
 def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
-    app = Flask(
-        FLASK_APP_NAME, instance_path=os.environ.get("DATALAD_REGISTRY_INSTANCE_PATH")
+    api_info = Info(title="Datalad Registry API", version="2.0")
+    app = OpenAPI(
+        FLASK_APP_NAME,
+        instance_path=os.environ.get("DATALAD_REGISTRY_INSTANCE_PATH"),
+        info=api_info,
     )
     instance_path = Path(app.instance_path)
     app.config.from_mapping(SQLALCHEMY_TRACK_MODIFICATIONS=False)
