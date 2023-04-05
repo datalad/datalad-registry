@@ -1,6 +1,26 @@
 from flask_openapi3 import APIBlueprint
+from pydantic import BaseModel, Field
 
-bp = APIBlueprint("api", __name__, url_prefix="/api/v2")
+
+class HTTPExceptionResp(BaseModel):
+    """
+    Default HTTP exception response
+    """
+
+    code: int = Field(..., description="HTTP status code")
+    name: str = Field(..., description="HTTP status name")
+    description: str = Field(..., description="HTTP status description")
+
+
+bp = APIBlueprint(
+    "api",
+    __name__,
+    url_prefix="/api/v2",
+    abp_responses={
+        "404": HTTPExceptionResp,
+        "500": HTTPExceptionResp,
+    },
+)
 
 # Ignoring flake8 rules in the following import.
 # F401: imported but unused
