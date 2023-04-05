@@ -1,6 +1,6 @@
-from flask import Blueprint
+from flask_openapi3 import APIBlueprint
 
-bp = Blueprint("api", __name__)
+bp = APIBlueprint("api", __name__, url_prefix="/api/v2")
 
 # Ignoring flake8 rules in the following import.
 # F401: imported but unused

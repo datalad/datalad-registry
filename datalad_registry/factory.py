@@ -102,7 +102,7 @@ def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
     from .blueprints.api import bp as api_bp
 
     # Register API blueprint
-    app.register_blueprint(api_bp, url_prefix="/api/v1")
+    app.register_api(api_bp)
 
     @app.errorhandler(HTTPException)
     def handle_exception(e):
