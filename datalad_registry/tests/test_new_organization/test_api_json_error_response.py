@@ -13,8 +13,8 @@ class TestAPIJSONErrorResponse:
             "/api/haha/world",
             "/api/haha/world/",
             # Paths that lead to a 404 because a 404 error is raised in a view function
-            "/api/v1/url-metadata/1",
-            "/api/v1/url-metadata/20",
+            "/api/v2/url-metadata/1",
+            "/api/v2/url-metadata/20",
         ],
     )
     def test_404_json_response_in_api_path(self, flask_client, path):
@@ -33,8 +33,8 @@ class TestAPIJSONErrorResponse:
     @pytest.mark.parametrize(
         "path",
         [
-            "/api/v1/url-metadata/1",
-            "/api/v1/url-metadata/20",
+            "/api/v2/url-metadata/1",
+            "/api/v2/url-metadata/20",
         ],
     )
     def test_405_json_response_in_api_path(self, flask_client, path):
@@ -53,9 +53,9 @@ class TestAPIJSONErrorResponse:
     @pytest.mark.parametrize(
         "path",
         [
-            "/api/v1/url-metadata/1",
-            "/api/v1/url-metadata/33",
-            "/api/v1/url-metadata/42",
+            "/api/v2/url-metadata/1",
+            "/api/v2/url-metadata/33",
+            "/api/v2/url-metadata/42",
         ],
     )
     def test_500_json_response_in_api_path(
