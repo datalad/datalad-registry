@@ -26,6 +26,14 @@ class _PathParams(BaseModel):
     id: int = Field(..., description="The ID of the dataset URL")
 
 
+class DatasetURLSubmitModel(BaseModel):
+    """
+    Model for representing the database model URL for submission communication
+    """
+
+    url: Union[FileUrl, AnyUrl, Path] = Field(..., description="The URL")
+
+
 class DatasetURLRespModel(BaseModel):
     """
     Model for representing the database model URL in response communication
