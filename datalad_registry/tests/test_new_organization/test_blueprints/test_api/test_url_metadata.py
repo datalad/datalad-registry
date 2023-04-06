@@ -1,6 +1,6 @@
 import pytest
 
-from datalad_registry.com_models import URLMetadataModel
+from datalad_registry.blueprints.api.url_metadata import URLMetadataModel
 
 
 @pytest.fixture
@@ -28,12 +28,12 @@ class TestURLMetadata:
     @pytest.mark.parametrize("url_metadata_id", [1, 2, 3, 60, 71, 100])
     def test_not_found(self, flask_client, url_metadata_id):
         with flask_client:
-            resp = flask_client.get(f"/api/v1/url-metadata/{url_metadata_id}")
+            resp = flask_client.get(f"/api/v2/url-metadata/{url_metadata_id}")
             assert resp.status_code == 404
 
     @pytest.mark.usefixtures("populate_with_metadata")
     def test_found(self, flask_client):
-        resp = flask_client.get("/api/v1/url-metadata/1")
+        resp = flask_client.get("/api/v2/url-metadata/1")
 
         assert resp.status_code == 200
 

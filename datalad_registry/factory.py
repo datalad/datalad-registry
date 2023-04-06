@@ -8,6 +8,7 @@ from celery.app.base import Celery
 from celery.schedules import crontab
 from flask import Flask, request
 from flask.logging import default_handler
+from flask_openapi3 import Info, OpenAPI
 from kombu.serialization import register
 from werkzeug.exceptions import HTTPException
 
@@ -70,8 +71,11 @@ def setup_celery(app: Flask, celery: Celery) -> Celery:
 
 
 def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
-    app = Flask(
-        FLASK_APP_NAME, instance_path=os.environ.get("DATALAD_REGISTRY_INSTANCE_PATH")
+    api_info = Info(title="Datalad Registry API", version="2.0")
+    app = OpenAPI(
+        FLASK_APP_NAME,
+        instance_path=os.environ.get("DATALAD_REGISTRY_INSTANCE_PATH"),
+        info=api_info,
     )
     instance_path = Path(app.instance_path)
     app.config.from_mapping(SQLALCHEMY_TRACK_MODIFICATIONS=False)
@@ -95,26 +99,26 @@ def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
     app.register_blueprint(overview.bp)
     app.register_blueprint(root.bp)
 
+    from .blueprints.api import HTTPExceptionResp
     from .blueprints.api import bp as api_bp
 
     # Register API blueprint
-    app.register_blueprint(api_bp, url_prefix="/api/v1")
+    app.register_api(api_bp)
 
     @app.errorhandler(HTTPException)
     def handle_exception(e):
         """
         Convert all HTTPExceptions to JSON responses for the API paths
+        while conforming to the API paths' OpenAPI specification.
         """
         if request.path.startswith("/api/"):
             # start with the correct headers and status code from the error
             response = e.get_response()
             # replace the body with JSON
             response.data = json.dumps(
-                {
-                    "code": e.code,
-                    "name": e.name,
-                    "description": e.description,
-                }
+                HTTPExceptionResp(
+                    code=e.code, name=e.name, description=e.description
+                ).dict()
             )
             response.content_type = "application/json"
             return response

@@ -2,7 +2,7 @@ from datalad import api as dl
 from datalad.distribution.dataset import require_dataset
 import pytest
 
-from datalad_registry.com_models import URLMetadataModel
+from datalad_registry.blueprints.api.url_metadata import URLMetadataModel
 from datalad_registry.tasks import ExtractMetaStatus, extract_meta
 
 _TEST_REPO_URL = "https://github.com/datalad/testrepo--minimalds.git"
