@@ -34,13 +34,12 @@ class DatasetURLSubmitModel(BaseModel):
     url: Union[FileUrl, AnyUrl, Path] = Field(..., description="The URL")
 
 
-class DatasetURLRespModel(BaseModel):
+class DatasetURLRespModel(DatasetURLSubmitModel):
     """
     Model for representing the database model URL in response communication
     """
 
     id: int = Field(..., alias="id", description="The ID of the dataset URL")
-    url: Union[FileUrl, AnyUrl, Path] = Field(..., description="The URL")
     dataset_id: Optional[UUID] = Field(
         ..., alias="ds_id", description="The ID, a UUID, of the dataset"
     )
