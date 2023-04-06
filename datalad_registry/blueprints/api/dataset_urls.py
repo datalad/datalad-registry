@@ -26,9 +26,9 @@ class _PathParams(BaseModel):
     id: int = Field(..., description="The ID of the dataset URL")
 
 
-class DatasetURLModel(BaseModel):
+class DatasetURLRespModel(BaseModel):
     """
-    Model for representing the database model URL for communication
+    Model for representing the database model URL in response communication
     """
 
     id: int = Field(..., alias="id", description="The ID of the dataset URL")
@@ -79,12 +79,12 @@ def dataset_urls():
 
 @bp.get(
     f"{_URL_PREFIX}/<int:id>",
-    responses={"200": DatasetURLModel},
+    responses={"200": DatasetURLRespModel},
     tags=[_TAG],
 )
 def dataset_url(path: _PathParams):
     """
     Get a dataset URL by ID.
     """
-    ds_url = DatasetURLModel.from_orm(db.get_or_404(URL, path.id))
+    ds_url = DatasetURLRespModel.from_orm(db.get_or_404(URL, path.id))
     return json_resp_from_str(ds_url.json())
