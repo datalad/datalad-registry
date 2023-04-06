@@ -1,13 +1,15 @@
 # This file is for defining the API endpoints related to dataset URls
 
 from datetime import datetime
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Union
 from uuid import UUID
 
 from flask_openapi3 import Tag
-from pydantic import BaseModel, Field
+from pydantic import AnyUrl, BaseModel, Field, FileUrl
 
 from datalad_registry.models import URL, db
+from datalad_registry.utils.flask_tools import json_resp_from_str
 
 from . import bp
 
@@ -30,7 +32,7 @@ class DatasetURLModel(BaseModel):
     """
 
     id: int = Field(..., alias="id", description="The ID of the dataset URL")
-    url: str = Field(..., description="The URL")
+    url: Union[FileUrl, AnyUrl, Path] = Field(..., description="The URL")
     dataset_id: Optional[UUID] = Field(
         ..., alias="ds_id", description="The ID, a UUID, of the dataset"
     )
@@ -84,5 +86,5 @@ def dataset_url(path: _PathParams):
     """
     Get a dataset URL by ID.
     """
-    data = DatasetURLModel.from_orm(db.get_or_404(URL, path.id))
-    return data.dict()
+    ds_url = DatasetURLModel.from_orm(db.get_or_404(URL, path.id))
+    return json_resp_from_str(ds_url.json())
