@@ -21,7 +21,7 @@ class _PathParams(BaseModel):
     dataset URLs.
     """
 
-    dataset_url_id: int = Field(..., description="The ID of the dataset URL")
+    id: int = Field(..., description="The ID of the dataset URL")
 
 
 class DatasetURLModel(BaseModel):
@@ -78,7 +78,7 @@ def dataset_urls():
 
 
 @bp.get(
-    f"{_URL_PREFIX}/<int:dataset_url_id>",
+    f"{_URL_PREFIX}/<int:id>",
     responses={"200": DatasetURLModel},
     tags=[_TAG],
 )
@@ -86,5 +86,5 @@ def dataset_url(path: _PathParams):
     """
     Get a dataset URL by ID.
     """
-    data = DatasetURLModel.from_orm(db.get_or_404(URL, path.dataset_url_id))
+    data = DatasetURLModel.from_orm(db.get_or_404(URL, path.id))
     return data.dict()
