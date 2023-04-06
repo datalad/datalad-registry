@@ -1,6 +1,6 @@
 import pytest
 
-from datalad_registry.com_models import URLMetadataModel
+from datalad_registry.blueprints.api.url_metadata import URLMetadataModel
 
 
 @pytest.fixture
