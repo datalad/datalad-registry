@@ -29,9 +29,7 @@ class DatasetURLModel(BaseModel):
     Model for representing the database model URL for communication
     """
 
-    dataset_url_id: int = Field(
-        ..., alias="id", description="The ID of the dataset URL"
-    )
+    id: int = Field(..., alias="id", description="The ID of the dataset URL")
     url: str = Field(..., description="The URL")
     dataset_id: Optional[UUID] = Field(
         ..., alias="ds_id", description="The ID, a UUID, of the dataset"
