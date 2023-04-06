@@ -23,8 +23,7 @@ class _PathParams(BaseModel):
 
 class URLMetadataModel(BaseModel):
     """
-    Pydantic model for representing the database model URLMetadata for communication
-    in JSON
+    Model for representing the database model URLMetadata for communication
     """
 
     dataset_describe: StrictStr
