@@ -75,6 +75,9 @@ class DatasetURLs(BaseModel):
 
     __root__: list[DatasetURLRespModel]
 
+    class Config:
+        orm_mode = True
+
 
 @bp.post(f"{_URL_PREFIX}")
 def create_dataset_url():
