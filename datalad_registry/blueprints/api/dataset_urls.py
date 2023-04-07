@@ -26,6 +26,58 @@ class _PathParams(BaseModel):
     id: int = Field(..., description="The ID of the dataset URL")
 
 
+class _QueryParams(BaseModel):
+    """
+    Pydantic model for representing the query parameters to query
+    the dataset_urls endpoint
+    """
+
+    url: Optional[Union[FileUrl, AnyUrl, Path]] = Field(None, description="The URL")
+
+    dataset_id: Optional[UUID] = Field(
+        None, description="The ID, a UUID, of the dataset"
+    )
+
+    min_annex_key_count: Optional[int] = Field(
+        None, description="The minimum number of annex keys "
+    )
+    max_annex_key_count: Optional[int] = Field(
+        None, description="The maximum number of annex keys "
+    )
+
+    min_annexed_files_in_wt_count: Optional[int] = Field(
+        None, description="The minimum number of annexed files in the working tree"
+    )
+    max_annexed_files_in_wt_count: Optional[int] = Field(
+        None, description="The maximum number of annexed files in the working tree"
+    )
+
+    min_annexed_files_in_wt_size: Optional[int] = Field(
+        None,
+        description="The minimum size of annexed files in the working tree in bytes",
+    )
+    max_annexed_files_in_wt_size: Optional[int] = Field(
+        None,
+        description="The maximum size of annexed files in the working tree in bytes",
+    )
+
+    earliest_last_update: Optional[datetime] = Field(
+        None,
+        description="The earliest last update time",
+    )
+    latest_last_update: Optional[datetime] = Field(
+        None,
+        description="The latest last update time",
+    )
+
+    min_git_objects_kb: Optional[int] = Field(
+        None, description="The minimum size of the `.git/objects` in KiB"
+    )
+    max_git_objects_kb: Optional[int] = Field(
+        None, description="The maximum size of the `.git/objects` in KiB"
+    )
+
+
 class DatasetURLSubmitModel(BaseModel):
     """
     Model for representing the database model URL for submission communication
@@ -92,7 +144,7 @@ def create_dataset_url():
     responses={"200": DatasetURLs},
     tags=[_TAG],
 )
-def dataset_urls():
+def dataset_urls(query: _QueryParams):
     """
     Get all dataset URLs that satisfy the constraints imposed by the query parameters.
     """
