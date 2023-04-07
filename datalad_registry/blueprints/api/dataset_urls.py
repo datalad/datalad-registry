@@ -68,6 +68,14 @@ class DatasetURLRespModel(DatasetURLSubmitModel):
         orm_mode = True
 
 
+class DatasetURLs(BaseModel):
+    """
+    Model for representing a list of dataset URLs in response communication
+    """
+
+    __root__: list[DatasetURLRespModel]
+
+
 @bp.post(f"{_URL_PREFIX}")
 def create_dataset_url():
     """
@@ -78,19 +86,7 @@ def create_dataset_url():
 
 @bp.get(
     f"{_URL_PREFIX}",
-    extra_responses={
-        "200": {
-            "description": "A filtered list of dataset URls",
-            "content": {
-                "application/json": {
-                    "schema": {
-                        "type": "array",
-                        "items": {"$ref": "#/components/schemas/DatasetURLRespModel"},
-                    }
-                }
-            },
-        },
-    },
+    responses={"200": DatasetURLs},
     tags=[_TAG],
 )
 def dataset_urls():
