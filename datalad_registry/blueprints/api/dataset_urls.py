@@ -76,7 +76,23 @@ def create_dataset_url():
     raise NotImplementedError
 
 
-@bp.get(f"{_URL_PREFIX}")
+@bp.get(
+    f"{_URL_PREFIX}",
+    extra_responses={
+        "200": {
+            "description": "A filtered list of dataset URls",
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "array",
+                        "items": {"$ref": "#/components/schemas/DatasetURLRespModel"},
+                    }
+                }
+            },
+        },
+    },
+    tags=[_TAG],
+)
 def dataset_urls():
     """
     Get all dataset URLs that satisfy the constraints imposed by the query parameters.
