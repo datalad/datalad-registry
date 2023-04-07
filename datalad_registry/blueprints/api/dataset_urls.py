@@ -48,7 +48,7 @@ class DatasetURLRespModel(DatasetURLSubmitModel):
         alias="head_describe",
         description="The output of `git describe --tags --always` on the dataset",
     )
-    annex_key_count: Optional[int] = Field(..., description="The number of annex keys ")
+    annex_key_count: Optional[int] = Field(..., description="The number of annex keys")
     annexed_files_in_wt_count: Optional[int] = Field(
         ..., description="The number of annexed files in the working tree"
     )
