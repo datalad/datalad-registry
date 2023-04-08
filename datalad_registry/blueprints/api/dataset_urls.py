@@ -161,15 +161,15 @@ def dataset_urls(query: _QueryParams):
     """
 
     def append_constraint(
-        qry, db_model_column, op, qry_spec_transform=(lambda x: x)
+        db_model_column, op, qry, qry_spec_transform=(lambda x: x)
     ) -> None:
         """
         Append a filter constraint corresponding to a given query parameter value
         to the list of filter constraints.
 
-        :param qry: The query parameter value
         :param db_model_column: The SQLAlchemy model column to build the constraint with
         :param op: The operator to build the constraint with
+        :param qry: The query parameter value
         :param qry_spec_transform: The transformation to apply to the query parameter
                                    value in to build the constraint. Defaults to the
                                    identity function.
@@ -182,27 +182,27 @@ def dataset_urls(query: _QueryParams):
     constraints: list[BinaryExpression] = []
 
     append_constrain_arg_lst = [
-        (query.url, URL.url, operator.eq, str),
-        (query.ds_id, URL.ds_id, operator.eq, str),
-        (query.min_annex_key_count, URL.annex_key_count, operator.ge),
-        (query.max_annex_key_count, URL.annex_key_count, operator.le),
+        (URL.url, operator.eq, query.url, str),
+        (URL.ds_id, operator.eq, query.ds_id, str),
+        (URL.annex_key_count, operator.ge, query.min_annex_key_count),
+        (URL.annex_key_count, operator.le, query.max_annex_key_count),
         (
-            query.min_annexed_files_in_wt_count,
             URL.annexed_files_in_wt_count,
             operator.ge,
+            query.min_annexed_files_in_wt_count,
         ),
         (
-            query.max_annexed_files_in_wt_count,
             URL.annexed_files_in_wt_count,
             operator.le,
+            query.max_annexed_files_in_wt_count,
         ),
-        (query.min_annexed_files_in_wt_size, URL.annexed_files_in_wt_size, operator.ge),
-        (query.max_annexed_files_in_wt_size, URL.annexed_files_in_wt_size, operator.le),
-        (query.earliest_last_update, URL.info_ts, operator.ge),
-        (query.latest_last_update, URL.info_ts, operator.le),
-        (query.min_git_objects_kb, URL.git_objects_kb, operator.ge),
-        (query.max_git_objects_kb, URL.git_objects_kb, operator.le),
-        (query.processed, URL.processed, operator.eq),
+        (URL.annexed_files_in_wt_size, operator.ge, query.min_annexed_files_in_wt_size),
+        (URL.annexed_files_in_wt_size, operator.le, query.max_annexed_files_in_wt_size),
+        (URL.info_ts, operator.ge, query.earliest_last_update),
+        (URL.info_ts, operator.le, query.latest_last_update),
+        (URL.git_objects_kb, operator.ge, query.min_git_objects_kb),
+        (URL.git_objects_kb, operator.le, query.max_git_objects_kb),
+        (URL.processed, operator.eq, query.processed),
     ]
 
     for args in append_constrain_arg_lst:
