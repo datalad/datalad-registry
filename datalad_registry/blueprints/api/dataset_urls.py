@@ -202,6 +202,7 @@ def dataset_urls(query: _QueryParams):
         (query.latest_last_update, URL.info_ts, operator.le),
         (query.min_git_objects_kb, URL.git_objects_kb, operator.ge),
         (query.max_git_objects_kb, URL.git_objects_kb, operator.le),
+        (query.processed, URL.processed, operator.eq),
     ]
 
     for args in append_constrain_arg_lst:
