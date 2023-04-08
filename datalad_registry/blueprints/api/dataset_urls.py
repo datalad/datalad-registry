@@ -78,6 +78,12 @@ class _QueryParams(BaseModel):
         None, description="The maximum size of the `.git/objects` in KiB"
     )
 
+    processed: Optional[bool] = Field(
+        None,
+        description="Whether an initial processing has been completed "
+        "on the dataset URL",
+    )
+
 
 class DatasetURLSubmitModel(BaseModel):
     """
