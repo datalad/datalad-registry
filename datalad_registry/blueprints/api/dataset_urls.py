@@ -1,12 +1,15 @@
 # This file is for defining the API endpoints related to dataset URls
 
 from datetime import datetime
+import operator
 from pathlib import Path
 from typing import Optional, Union
 from uuid import UUID
 
 from flask_openapi3 import Tag
 from pydantic import AnyUrl, BaseModel, Field, FileUrl
+from sqlalchemy import and_
+from sqlalchemy.sql.elements import BinaryExpression
 
 from datalad_registry.models import URL, db
 from datalad_registry.utils.flask_tools import json_resp_from_str
@@ -148,7 +151,60 @@ def dataset_urls(query: _QueryParams):
     """
     Get all dataset URLs that satisfy the constraints imposed by the query parameters.
     """
-    raise NotImplementedError
+
+    def append_constraint(
+        qry, db_model_column, op, qry_spec_transform=(lambda x: x)
+    ) -> None:
+        """
+        Append a filter constraint corresponding to a given query parameter value
+        to the list of filter constraints.
+
+        :param qry: The query parameter value
+        :param db_model_column: The SQLAlchemy model column to build the constraint with
+        :param op: The operator to build the constraint with
+        :param qry_spec_transform: The transformation to apply to the query parameter
+                                   value in to build the constraint. Defaults to the
+                                   identity function.
+        """
+        if qry is not None:
+            constraints.append(op(db_model_column, qry_spec_transform(qry)))
+
+    # ==== Gathering constraints from query parameters ====
+
+    constraints: list[BinaryExpression] = []
+
+    append_constrain_arg_lst = [
+        (query.url, URL.url, operator.eq, str),
+        (query.dataset_id, URL.ds_id, operator.eq, str),
+        (query.min_annex_key_count, URL.annex_key_count, operator.ge),
+        (query.max_annex_key_count, URL.annex_key_count, operator.le),
+        (
+            query.min_annexed_files_in_wt_count,
+            URL.annexed_files_in_wt_count,
+            operator.ge,
+        ),
+        (
+            query.max_annexed_files_in_wt_count,
+            URL.annexed_files_in_wt_count,
+            operator.le,
+        ),
+        (query.min_annexed_files_in_wt_size, URL.annexed_files_in_wt_size, operator.ge),
+        (query.max_annexed_files_in_wt_size, URL.annexed_files_in_wt_size, operator.le),
+        (query.earliest_last_update, URL.info_ts, operator.ge),
+        (query.latest_last_update, URL.info_ts, operator.le),
+        (query.min_git_objects_kb, URL.git_objects_kb, operator.ge),
+        (query.max_git_objects_kb, URL.git_objects_kb, operator.le),
+    ]
+
+    for args in append_constrain_arg_lst:
+        append_constraint(*args)
+
+    # ==== Gathering constraints from query parameters ends ====
+
+    ds_urls = DatasetURLs.from_orm(
+        db.session.execute(db.select(URL).filter(and_(*constraints))).scalars().all()
+    )
+    return json_resp_from_str(ds_urls.json())
 
 
 @bp.get(
