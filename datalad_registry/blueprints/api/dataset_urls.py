@@ -93,7 +93,7 @@ class DatasetURLRespModel(DatasetURLSubmitModel):
     """
 
     id: int = Field(..., alias="id", description="The ID of the dataset URL")
-    dataset_id: Optional[UUID] = Field(
+    ds_id: Optional[UUID] = Field(
         ..., alias="ds_id", description="The ID, a UUID, of the dataset"
     )
     describe: Optional[str] = Field(
