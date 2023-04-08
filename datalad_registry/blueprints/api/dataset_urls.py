@@ -116,6 +116,10 @@ class DatasetURLRespModel(DatasetURLSubmitModel):
     git_objects_kb: Optional[int] = Field(
         ..., description="The size of the `.git/objects` in KiB"
     )
+    processed: bool = Field(
+        description="Whether an initial processing has been completed "
+        "on the dataset URL"
+    )
 
     class Config:
         orm_mode = True
