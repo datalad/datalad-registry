@@ -37,9 +37,7 @@ class _QueryParams(BaseModel):
 
     url: Optional[Union[FileUrl, AnyUrl, Path]] = Field(None, description="The URL")
 
-    dataset_id: Optional[UUID] = Field(
-        None, description="The ID, a UUID, of the dataset"
-    )
+    ds_id: Optional[UUID] = Field(None, description="The ID, a UUID, of the dataset")
 
     min_annex_key_count: Optional[int] = Field(
         None, description="The minimum number of annex keys "
@@ -175,7 +173,7 @@ def dataset_urls(query: _QueryParams):
 
     append_constrain_arg_lst = [
         (query.url, URL.url, operator.eq, str),
-        (query.dataset_id, URL.ds_id, operator.eq, str),
+        (query.ds_id, URL.ds_id, operator.eq, str),
         (query.min_annex_key_count, URL.annex_key_count, operator.ge),
         (query.max_annex_key_count, URL.annex_key_count, operator.le),
         (
