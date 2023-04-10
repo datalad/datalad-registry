@@ -8,7 +8,7 @@ from uuid import UUID
 
 from flask import abort
 from flask_openapi3 import Tag
-from pydantic import AnyUrl, BaseModel, Field, FileUrl
+from pydantic import AnyUrl, BaseModel, Field, FileUrl, validator
 from sqlalchemy import and_
 from sqlalchemy.sql.elements import BinaryExpression
 
@@ -92,6 +92,17 @@ class DatasetURLSubmitModel(BaseModel):
     """
 
     url: Union[FileUrl, AnyUrl, Path] = Field(..., description="The URL")
+
+    # flake8 detect errors incorrectly in the following method
+    # by using @validator path_url_must_be_absolute is actually a class method
+    # The following errors are ignored:
+    # B902 Invalid first argument 'cls' used for instance method.
+    # U100 Unused argument 'cls'
+    @validator("url")
+    def path_url_must_be_absolute(cls, v):  # noqa: B902, U100
+        if isinstance(v, Path) and not v.is_absolute():
+            raise ValueError("Path URLs must be absolute")
+        return v
 
 
 class DatasetURLRespModel(DatasetURLSubmitModel):
