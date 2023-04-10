@@ -13,6 +13,7 @@ from sqlalchemy import and_
 from sqlalchemy.sql.elements import BinaryExpression
 
 from datalad_registry.models import URL, db
+from datalad_registry.tasks import process_dataset_url
 from datalad_registry.utils.flask_tools import json_resp_from_str
 
 from . import HTTPExceptionResp, bp
@@ -172,7 +173,13 @@ def create_dataset_url(body: DatasetURLSubmitModel):
         db.session.add(url)
         db.session.commit()
 
-        # todo: fire off a celery task to process the dataset URL
+        # Initiate a celery task to process the dataset URL
+        process_dataset_url.delay(url.id)
+        # todo: be sure to call `forget()` on the result of the last statement
+        #   when backend is enabled for all
+        #   deployments of datalad-registry, development,
+        #   testing, production. For details,
+        #   see https://docs.celeryq.dev/en/stable/userguide/tasks.html#result-backends
 
         return json_resp_from_str(DatasetURLRespModel.from_orm(url).json(), 201)
 
