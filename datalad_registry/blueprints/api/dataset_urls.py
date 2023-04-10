@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional, Union
 from uuid import UUID
 
+from flask import abort
 from flask_openapi3 import Tag
 from pydantic import AnyUrl, BaseModel, Field, FileUrl
 from sqlalchemy import and_
@@ -14,7 +15,7 @@ from sqlalchemy.sql.elements import BinaryExpression
 from datalad_registry.models import URL, db
 from datalad_registry.utils.flask_tools import json_resp_from_str
 
-from . import bp
+from . import HTTPExceptionResp, bp
 
 _URL_PREFIX = "/dataset-urls"
 _TAG = Tag(name="Dataset URLs", description="API endpoints for dataset URLs")
@@ -142,12 +143,32 @@ class DatasetURLs(BaseModel):
         orm_mode = True
 
 
-@bp.post(f"{_URL_PREFIX}")
-def create_dataset_url():
+@bp.post(
+    f"{_URL_PREFIX}",
+    responses={"201": DatasetURLRespModel, "409": HTTPExceptionResp},
+    tags=[_TAG],
+)
+def create_dataset_url(body: DatasetURLSubmitModel):
     """
     Create a new dataset URL.
     """
-    raise NotImplementedError
+    url_as_str = str(body.url)
+
+    if db.session.execute(db.select(URL.id).filter_by(url=url_as_str)).first() is None:
+        # == The URL requested to be created does not exist in the database ==
+
+        url = URL(url=url_as_str)
+        db.session.add(url)
+        db.session.commit()
+
+        # todo: fire off a celery task to process the dataset URL
+
+        return json_resp_from_str(DatasetURLRespModel.from_orm(url).json(), 201)
+
+    else:
+        # == The URL requested to be created already exists in the database ==
+
+        abort(409, "The URL requested to be created already exists in the database.")
 
 
 @bp.get(
