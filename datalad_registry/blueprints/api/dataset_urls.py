@@ -22,6 +22,15 @@ _URL_PREFIX = "/dataset-urls"
 _TAG = Tag(name="Dataset URLs", description="API endpoints for dataset URLs")
 
 
+def path_url_must_be_absolute(url):
+    """
+    Validator for the path URL field that ensures that the URL is absolute
+    """
+    if isinstance(url, Path) and not url.is_absolute():
+        raise ValueError("Path URLs must be absolute")
+    return url
+
+
 class _PathParams(BaseModel):
     """
     Pydantic model for representing the path parameters for API endpoints related to
@@ -86,6 +95,11 @@ class _QueryParams(BaseModel):
         "on the dataset URL",
     )
 
+    # Validator
+    _path_url_must_be_absolute = validator("url", allow_reuse=True)(
+        path_url_must_be_absolute
+    )
+
 
 class DatasetURLSubmitModel(BaseModel):
     """
@@ -94,16 +108,10 @@ class DatasetURLSubmitModel(BaseModel):
 
     url: Union[FileUrl, AnyUrl, Path] = Field(..., description="The URL")
 
-    # flake8 detect errors incorrectly in the following method
-    # by using @validator path_url_must_be_absolute is actually a class method
-    # The following errors are ignored:
-    # B902 Invalid first argument 'cls' used for instance method.
-    # U100 Unused argument 'cls'
-    @validator("url")
-    def path_url_must_be_absolute(cls, v):  # noqa: B902, U100
-        if isinstance(v, Path) and not v.is_absolute():
-            raise ValueError("Path URLs must be absolute")
-        return v
+    # Validator
+    _path_url_must_be_absolute = validator("url", allow_reuse=True)(
+        path_url_must_be_absolute
+    )
 
 
 class DatasetURLRespModel(DatasetURLSubmitModel):
