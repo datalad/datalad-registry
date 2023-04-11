@@ -258,7 +258,9 @@ def dataset_urls(query: _QueryParams):
     # ==== Gathering constraints from query parameters ends ====
 
     ds_urls = DatasetURLs.from_orm(
-        db.session.execute(db.select(URL).filter(and_(*constraints))).scalars().all()
+        db.session.execute(db.select(URL).filter(and_(True, *constraints)))
+        .scalars()
+        .all()
     )
     return json_resp_from_str(ds_urls.json())
 
