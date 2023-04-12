@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 
 from datalad_registry.blueprints.api.dataset_urls import DatasetURLRespModel
@@ -20,6 +22,59 @@ def populate_with_2_dataset_urls(flask_app):
         db.session.commit()
 
         db.session.delete(dataset_url2)
+        db.session.commit()
+
+
+@pytest.fixture
+def populate_with_dataset_urls(flask_app):
+    """
+    Populate the url table with a list of URLs.
+    """
+    from datalad_registry.models import URL, db
+
+    urls = [
+        URL(
+            url="https://www.example.com",
+            ds_id="2a0b7b7b-a984-4c4a-844c-be3132291d7b",
+            head_describe="1234",
+            annex_key_count=20,
+            annexed_files_in_wt_count=200,
+            annexed_files_in_wt_size=1000,
+            git_objects_kb=110,
+            info_ts=datetime(2008, 7, 18, 18, 34, 32),
+            processed=True,
+        ),
+        URL(
+            url="http://www.yahoo.com",
+            ds_id="2a0b7b7b-a984-4c4a-844c-be3132291d7c",
+            head_describe="1234",
+            annex_key_count=40,
+            annexed_files_in_wt_count=100,
+            annexed_files_in_wt_size=400,
+            git_objects_kb=1100,
+            info_ts=datetime(2009, 6, 18, 18, 34, 32),
+            processed=True,
+        ),
+        URL(
+            url="https://www.youtube.com",
+            ds_id="2a0b7b7b-a984-4c4a-844c-be3132291a7c",
+            head_describe="1234",
+            annex_key_count=90,
+            annexed_files_in_wt_count=490,
+            annexed_files_in_wt_size=1000_000,
+            git_objects_kb=4000,
+            info_ts=datetime(2004, 6, 18, 18, 34, 32),
+            processed=True,
+        ),
+        URL(
+            url="https://www.facebook.com",
+            processed=False,
+        ),
+    ]
+
+    with flask_app.app_context():
+        for url in urls:
+            db.session.add(url)
         db.session.commit()
 
 
@@ -108,6 +163,94 @@ class TestDatasetURLs:
     def test_valid_query_params(self, flask_client, query_params):
         resp = flask_client.get("/api/v2/dataset-urls", query_string=query_params)
         assert resp.status_code == 200
+
+    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.parametrize(
+        "query_params, expected_output",
+        [
+            (
+                {},
+                {
+                    "https://www.example.com",
+                    "http://www.yahoo.com",
+                    "https://www.youtube.com",
+                    "https://www.facebook.com",
+                },
+            ),
+            ({"url": "https://www.example.com"}, {"https://www.example.com"}),
+            (
+                {"ds_id": "2a0b7b7b-a984-4c4a-844c-be3132291d7c"},
+                {"http://www.yahoo.com"},
+            ),
+            (
+                {"min_annex_key_count": "39"},
+                {"http://www.yahoo.com", "https://www.youtube.com"},
+            ),
+            (
+                {"min_annex_key_count": "39", "max_annex_key_count": 40},
+                {"http://www.yahoo.com"},
+            ),
+            (
+                {
+                    "min_annexed_files_in_wt_count": 190,
+                    "max_annexed_files_in_wt_count": 500,
+                },
+                {"https://www.example.com", "https://www.youtube.com"},
+            ),
+            ({"min_annexed_files_in_wt_size": 1000_001}, set()),
+            ({"max_annexed_files_in_wt_size": 500}, {"http://www.yahoo.com"}),
+            (
+                {"max_annexed_files_in_wt_size": 2000},
+                {"https://www.example.com", "http://www.yahoo.com"},
+            ),
+            (
+                {
+                    "min_annexed_files_in_wt_size": 300,
+                    "max_annexed_files_in_wt_size": 2200,
+                },
+                {"https://www.example.com", "http://www.yahoo.com"},
+            ),
+            (
+                {"earliest_last_update": "2001-03-22T01:22:34"},
+                {
+                    "https://www.example.com",
+                    "http://www.yahoo.com",
+                    "https://www.youtube.com",
+                },
+            ),
+            (
+                {
+                    "earliest_last_update": "2007-03-22T01:22:34",
+                    "latest_last_update": "2009-03-22T01:22:34",
+                },
+                {"https://www.example.com"},
+            ),
+            (
+                {"min_git_objects_kb": 1000, "max_git_objects_kb": 2000},
+                {"http://www.yahoo.com"},
+            ),
+            (
+                {"processed": True},
+                {
+                    "https://www.example.com",
+                    "http://www.yahoo.com",
+                    "https://www.youtube.com",
+                },
+            ),
+            ({"processed": False}, {"https://www.facebook.com"}),
+            (
+                {"min_annex_key_count": "39", "max_annexed_files_in_wt_size": 2200},
+                {"http://www.yahoo.com"},
+            ),
+        ],
+    )
+    def test_filter(self, flask_client, query_params, expected_output):
+        resp = flask_client.get("/api/v2/dataset-urls", query_string=query_params)
+        assert resp.status_code == 200
+
+        resp_json_body: list = resp.json
+
+        assert {i["url"] for i in resp_json_body} == expected_output
 
 
 @pytest.mark.usefixtures("populate_with_2_dataset_urls")
