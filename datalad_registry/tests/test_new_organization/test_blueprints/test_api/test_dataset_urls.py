@@ -65,7 +65,27 @@ class TestCreateDatasetURL:
 
 
 class TestDatasetURLs:
-    pass
+    @pytest.mark.parametrize(
+        "query_params",
+        [
+            {"url": "www.example.com"},
+            {"ds_id": "34"},
+            {"min_annex_key_count": "ab"},
+            {"max_annex_key_count": "bc"},
+            {"min_annexed_files_in_wt_count": "cd"},
+            {"max_annexed_files_in_wt_count": "def"},
+            {"min_annexed_files_in_wt_size": "efg"},
+            {"max_annexed_files_in_wt_size": "hij"},
+            {"earliest_last_update": "jkl"},
+            {"latest_last_update": "klm"},
+            {"min_git_objects_kb": "lmn"},
+            {"max_git_objects_kb": "mno"},
+            {"processed": "nop"},
+        ],
+    )
+    def test_invalid_query_params(self, flask_client, query_params):
+        resp = flask_client.get("/api/v2/dataset-urls", query_string=query_params)
+        assert resp.status_code == 422
 
 
 @pytest.mark.usefixtures("populate_with_2_dataset_urls")
