@@ -87,6 +87,28 @@ class TestDatasetURLs:
         resp = flask_client.get("/api/v2/dataset-urls", query_string=query_params)
         assert resp.status_code == 422
 
+    @pytest.mark.parametrize(
+        "query_params",
+        [
+            {"url": "https://www.example.com"},
+            {"ds_id": "2a0b7b7b-a984-4c4a-844c-be3132291d7b"},
+            {"min_annex_key_count": "1"},
+            {"max_annex_key_count": 2},
+            {"min_annexed_files_in_wt_count": 200},
+            {"max_annexed_files_in_wt_count": "40"},
+            {"min_annexed_files_in_wt_size": 33},
+            {"max_annexed_files_in_wt_size": 21},
+            {"earliest_last_update": 656409661000},
+            {"latest_last_update": "2001-03-22T01:22:34"},
+            {"min_git_objects_kb": 40},
+            {"max_git_objects_kb": "100"},
+            {"processed": True},
+        ],
+    )
+    def test_valid_query_params(self, flask_client, query_params):
+        resp = flask_client.get("/api/v2/dataset-urls", query_string=query_params)
+        assert resp.status_code == 200
+
 
 @pytest.mark.usefixtures("populate_with_2_dataset_urls")
 class TestDatasetURL:
