@@ -118,6 +118,17 @@ class TestCreateDatasetURL:
         # Ensure the `processed` field is the default value of False
         assert not resp_json_body["processed"]
 
+    @pytest.mark.usefixtures("populate_with_2_dataset_urls")
+    @pytest.mark.parametrize(
+        "request_json_body", [{"url": "https://example.com"}, {"url": "/foo/bar"}]
+    )
+    def test_resubmission(self, flask_client, request_json_body):
+        """
+        Test resubmitting URLs that already exist in the database
+        """
+        resp = flask_client.post("/api/v2/dataset-urls", json=request_json_body)
+        assert resp.status_code == 409
+
 
 class TestDatasetURLs:
     @pytest.mark.parametrize(
