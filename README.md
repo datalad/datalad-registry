@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/datalad/datalad-registry/branch/master/graph/badge.svg?token=CY783CBF77)](https://codecov.io/gh/datalad/datalad-registry)
+
 DataLad registry -- work in progress
 
   * [docs/openapi.yml](docs/openapi.yml)
