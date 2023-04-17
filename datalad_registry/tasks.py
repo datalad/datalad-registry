@@ -438,13 +438,14 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
 
     :param dataset_url_id: The ID (primary key) of the dataset URL in the database
 
-    note:: If the dataset URL specified by dataset_url_id does not exist
-           in the database or if the dataset URL has already been processed,
-           this function will raise a ValueError. Otherwise, the corresponding dataset
-           of the URL will be cloned to the local cache, the null cells of
-           the dataset URL in the database will be populated,
-           the `processed` cell of the dataset URL in the database will be set
-           to `True`, and the metadata extractions of the dataset as celery tasks
-           will be initiated.
+    note:: This function clones the dataset at the specified URL to a new local
+           cache directory and extracts information from the cloned copy of the dataset
+           to populate the cells of the given URL row in the URL table. If both
+           the cloning and extraction of information are successful,
+           the `processed` cell of the given URL row will be set to `True`
+           and the other cells of the row will be populated with the extracted
+           information. Otherwise, no cell of the given URL row will be changed,
+           and the local cache will be restored to its previous state
+           (by deleting the new cache directory for the cloning of the dateset).
     """
     raise NotImplementedError("This function is not implemented yet")
