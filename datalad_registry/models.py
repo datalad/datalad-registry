@@ -25,6 +25,9 @@ class URL(db.Model):  # type: ignore
     #: Whether initial data has been collected for this URL
     processed = db.Column(db.Boolean, default=False, nullable=False)
 
+    # The path in the local cache where a copy of the dataset at the URL is stored
+    cache_path = db.Column(db.String(34), nullable=True, default=None)
+
     metadata_ = db.relationship("URLMetadata", backref="url")
 
     def __repr__(self) -> str:
