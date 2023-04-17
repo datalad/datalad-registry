@@ -9,11 +9,12 @@ from celery import group
 from datalad import api as dl
 from datalad.distribution.dataset import require_dataset
 from datalad.support.exceptions import IncompleteResultsError
+from flask import current_app
 from pydantic import StrictInt, StrictStr, parse_obj_as, validate_arguments
 
 from datalad_registry import celery
 from datalad_registry.models import URL, URLMetadata, db
-from datalad_registry.utils import StrEnum
+from datalad_registry.utils import StrEnum, allocate_ds_path
 from datalad_registry.utils.url_encoder import url_encode
 
 from .com_models import MetaExtractResult
@@ -448,4 +449,57 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
            and the local cache will be restored to its previous state
            (by deleting the new cache directory for the cloning of the dateset).
     """
-    raise NotImplementedError("This function is not implemented yet")
+
+    # Get the dataset URL from the database by ID
+    dataset_url: Optional[URL] = db.session.execute(
+        db.select(URL).filter_by(id=dataset_url_id)
+    ).salar()
+
+    if dataset_url is None:
+        # Error out when no dataset URL in the database with the specified ID
+        raise ValueError(f"URL with ID {dataset_url_id} does not exist")
+
+    # Allocate a new path in the local cache for cloning the dataset
+    # at the specified URL
+    ds_path_relative = allocate_ds_path()
+    ds_path_absolute = (
+        Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]) / ds_path_relative
+    )
+
+    # Create a directory at the newly allocated path
+    ds_path_absolute.mkdir(parents=True, exist_ok=False)
+
+    try:
+        # Clone the dataset at the specified URL to the newly created directory
+        ds = dl.clone(
+            source=dataset_url.url,
+            path=ds_path_absolute,
+            on_failure="stop",
+            result_renderer="disabled",
+            return_type="item-or-list",
+        )
+        if not isinstance(ds, dl.Dataset):
+            raise RuntimeError("Cloning of a dataset failed to produce a Dataset")
+
+        # Extract information from the cloned copy of the dataset
+        dataset_url.ds_id
+        dataset_url.annex_uuid
+        dataset_url.annex_key_count
+        dataset_url.annexed_files_in_wt_count
+        dataset_url.annexed_files_in_wt_size
+        dataset_url.info_ts
+        dataset_url.head
+        dataset_url.head_describe
+        dataset_url.branches
+        dataset_url.tags
+        dataset_url.git_objects_kb
+        dataset_url.processed
+        dataset_url.cache_path
+
+        # Commit to the database
+        raise NotImplementedError
+    except Exception as e:
+        # Delete the newly created directory for cloning the dataset
+        rmtree(ds_path_absolute)
+
+        raise e
