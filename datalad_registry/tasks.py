@@ -15,6 +15,7 @@ from pydantic import StrictInt, StrictStr, parse_obj_as, validate_arguments
 from datalad_registry import celery
 from datalad_registry.models import URL, URLMetadata, db
 from datalad_registry.utils import StrEnum, allocate_ds_path
+from datalad_registry.utils.datalad_tls import clone
 from datalad_registry.utils.url_encoder import url_encode
 
 from .com_models import MetaExtractResult
@@ -471,18 +472,15 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
 
     try:
         # Clone the dataset at the specified URL to the newly created directory
-        ds = dl.clone(
+        ds = clone(
             source=dataset_url.url,
             path=ds_path_absolute,
             on_failure="stop",
             result_renderer="disabled",
-            return_type="item-or-list",
         )
-        if not isinstance(ds, dl.Dataset):
-            raise RuntimeError("Cloning of a dataset failed to produce a Dataset")
 
         # Extract information from the cloned copy of the dataset
-        dataset_url.ds_id
+        dataset_url.ds_id = ds.id
         dataset_url.annex_uuid
         dataset_url.annex_key_count
         dataset_url.annexed_files_in_wt_count
