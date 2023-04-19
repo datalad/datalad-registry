@@ -481,7 +481,6 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
 
         # Extract information from the cloned copy of the dataset
         dataset_url.ds_id = ds.id
-        dataset_url.annex_uuid
         dataset_url.annex_key_count
         dataset_url.annexed_files_in_wt_count
         dataset_url.annexed_files_in_wt_size
