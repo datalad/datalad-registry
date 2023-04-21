@@ -1,6 +1,6 @@
 import pytest
 
-from datalad_registry.utils.datalad_tls import clone
+from datalad_registry.utils.datalad_tls import clone, get_origin_annex_uuid
 
 _TEST_MIN_DATASET_URL = "https://github.com/datalad/testrepo--minimalds.git"
 _TEST_MIN_DATASET_ID = "e7f3d914-e971-11e8-a371-f0d5bf7b5561"
@@ -45,3 +45,19 @@ class TestClone:
         """
         ds = clone(source=_TEST_MIN_DATASET_URL, path=tmp_path)
         assert ds.id == _TEST_MIN_DATASET_ID
+
+
+class TestGetOriginAnnexUuid:
+    def test_origin_annex_uuid_exists(self, tmp_path, empty_ds):
+        """
+        Test the case that the origin remote has an annex UUID
+        """
+        ds_clone = clone(source=empty_ds.path, path=tmp_path)
+        assert get_origin_annex_uuid(ds_clone) == empty_ds.config.get("annex.uuid")
+
+    def test_origin_annex_uuid_not_exist(self, tmp_path):
+        """
+        Test the case that the origin remote has no annex UUID
+        """
+        ds = clone(source=_TEST_MIN_DATASET_URL, path=tmp_path)
+        assert get_origin_annex_uuid(ds) is None
