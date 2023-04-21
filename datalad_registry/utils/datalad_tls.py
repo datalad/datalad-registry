@@ -1,4 +1,7 @@
+from typing import Optional
+
 from datalad import api as dl
+from datalad.api import Dataset
 
 
 def clone(*args, **kwargs) -> dl.Dataset:
@@ -24,3 +27,14 @@ def clone(*args, **kwargs) -> dl.Dataset:
         raise RuntimeError("Cloning of a dataset failed to produce a Dataset object")
 
     return ds
+
+
+def get_origin_annex_uuid(ds: Dataset) -> Optional[str]:
+    """
+    Get the annex UUID of the origin remote of a given dataset
+
+    :param ds: The dataset
+    :return: The annex UUID of the origin remote of the given dataset if it exists;
+             None otherwise.
+    """
+    return ds.config.get("remote.origin.annex-uuid")
