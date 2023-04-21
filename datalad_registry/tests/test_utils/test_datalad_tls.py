@@ -2,8 +2,8 @@ import pytest
 
 from datalad_registry.utils.datalad_tls import clone
 
-_TEST_DATASET_URL = "https://github.com/datalad/testrepo--minimalds.git"
-_TEST_DATASET_ID = "e7f3d914-e971-11e8-a371-f0d5bf7b5561"
+_TEST_MIN_DATASET_URL = "https://github.com/datalad/testrepo--minimalds.git"
+_TEST_MIN_DATASET_ID = "e7f3d914-e971-11e8-a371-f0d5bf7b5561"
 
 
 class TestClone:
@@ -17,7 +17,7 @@ class TestClone:
         is provided
         """
         with pytest.raises(TypeError):
-            clone(source=_TEST_DATASET_URL, path=tmp_path, return_type=return_type)
+            clone(source=_TEST_MIN_DATASET_URL, path=tmp_path, return_type=return_type)
 
     @pytest.mark.parametrize(
         "clone_return",
@@ -37,11 +37,11 @@ class TestClone:
         monkeypatch.setattr(dl, "clone", mock_clone)
 
         with pytest.raises(RuntimeError):
-            clone(source=_TEST_DATASET_URL, path=tmp_path)
+            clone(source=_TEST_MIN_DATASET_URL, path=tmp_path)
 
     def test_clone_minimal_dataset(self, tmp_path):
         """
         Test cloning a minimal dataset used for testing
         """
-        ds = clone(source=_TEST_DATASET_URL, path=tmp_path)
-        assert ds.id == _TEST_DATASET_ID
+        ds = clone(source=_TEST_MIN_DATASET_URL, path=tmp_path)
+        assert ds.id == _TEST_MIN_DATASET_ID
