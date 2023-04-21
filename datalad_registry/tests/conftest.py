@@ -7,6 +7,8 @@ import string
 from subprocess import PIPE, run
 from time import sleep
 
+from datalad import api as dl
+from datalad.api import Dataset
 import pytest
 from sqlalchemy.engine.url import URL
 
@@ -132,3 +134,11 @@ def client(app_instance):
     `app_instance` fixture instead.
     """
     return app_instance.app.test_client()
+
+
+@pytest.fixture(scope="session")
+def empty_ds(tmp_path_factory) -> Dataset:
+    """
+    An empty dataset
+    """
+    return dl.create(path=tmp_path_factory.mktemp("empty_ds"))
