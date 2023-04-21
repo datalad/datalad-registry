@@ -1,3 +1,5 @@
+from uuid import UUID
+
 import pytest
 
 from datalad_registry.utils.datalad_tls import clone, get_origin_annex_uuid
@@ -53,7 +55,9 @@ class TestGetOriginAnnexUuid:
         Test the case that the origin remote has an annex UUID
         """
         ds_clone = clone(source=empty_ds.path, path=tmp_path)
-        assert get_origin_annex_uuid(ds_clone) == empty_ds.config.get("annex.uuid")
+        assert get_origin_annex_uuid(ds_clone) == UUID(
+            empty_ds.config.get("annex.uuid")
+        )
 
     def test_origin_annex_uuid_not_exist(self, tmp_path):
         """

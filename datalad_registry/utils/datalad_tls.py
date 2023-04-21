@@ -1,4 +1,5 @@
 from typing import Optional
+from uuid import UUID
 
 from datalad import api as dl
 from datalad.api import Dataset
@@ -29,7 +30,7 @@ def clone(*args, **kwargs) -> dl.Dataset:
     return ds
 
 
-def get_origin_annex_uuid(ds: Dataset) -> Optional[str]:
+def get_origin_annex_uuid(ds: Dataset) -> Optional[UUID]:
     """
     Get the annex UUID of the origin remote of a given dataset
 
@@ -37,4 +38,9 @@ def get_origin_annex_uuid(ds: Dataset) -> Optional[str]:
     :return: The annex UUID of the origin remote of the given dataset if it exists;
              None otherwise.
     """
-    return ds.config.get("remote.origin.annex-uuid")
+
+    return (
+        UUID(uuid_str)
+        if (uuid_str := ds.config.get("remote.origin.annex-uuid")) is not None
+        else None
+    )
