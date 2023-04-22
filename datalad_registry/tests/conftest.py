@@ -142,3 +142,11 @@ def empty_ds(tmp_path_factory) -> Dataset:
     An empty dataset
     """
     return dl.create(path=tmp_path_factory.mktemp("empty_ds"))
+
+
+@pytest.fixture(scope="session")
+def empty_ds_non_annex(tmp_path_factory) -> Dataset:
+    """
+    An empty dataset that is not a git-annex repository
+    """
+    return dl.create(path=tmp_path_factory.mktemp("empty_ds_non_annex"), annex=False)
