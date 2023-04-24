@@ -89,3 +89,22 @@ def get_wt_annexed_file_info(ds: Dataset) -> Optional[WtAnnexedFileInfo]:
         )
     else:
         return None
+
+
+def get_origin_branches(ds: Dataset) -> list[dict[str, str]]:
+    """
+    Get the branches of the origin remote of a given dataset
+
+    :param ds: The given dataset
+    :return: A list of dictionaries representing the branches of the origin remote
+             of the given dataset. Each dictionary has two keys, "name" and "hexsha".
+             The value of "name" is the name of the branch and the value of "hexsha"
+             is the commit hash of the branch.
+    """
+    return [
+        {"name": branch_name, "hexsha": branch_info["objectname"]}
+        for branch_info in ds.repo.for_each_ref_(
+            pattern="refs/remotes/origin/", fields=["objectname", "refname:strip=3"]
+        )
+        if (branch_name := branch_info["refname:strip=3"]) != "HEAD"
+    ]
