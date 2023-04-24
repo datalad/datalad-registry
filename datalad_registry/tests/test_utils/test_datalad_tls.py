@@ -3,9 +3,11 @@ from uuid import UUID
 import pytest
 
 from datalad_registry.utils.datalad_tls import (
+    WtAnnexedFileInfo,
     clone,
     get_origin_annex_key_count,
     get_origin_annex_uuid,
+    get_wt_annexed_file_info,
 )
 
 _TEST_MIN_DATASET_URL = "https://github.com/datalad/testrepo--minimalds.git"
@@ -108,3 +110,30 @@ class TestGetOriginAnnexKeyCount:
         ds = request.getfixturevalue(ds_name)
         ds_clone = clone(source=ds.path, path=tmp_path)
         assert get_origin_annex_key_count(ds_clone) is None
+
+
+class TestGetWtAnnexedFileInfo:
+    @pytest.mark.parametrize(
+        "ds_name, expected_info",
+        [
+            ("empty_ds_annex", WtAnnexedFileInfo(0, 0)),
+            ("two_files_ds_annex", WtAnnexedFileInfo(2, 38)),
+        ],
+    )
+    def test_annex_repo(self, ds_name, expected_info, request):
+        """
+        Test the case that the given dataset is a git-annex repo
+        """
+        ds = request.getfixturevalue(ds_name)
+        wt_annexed_file_info = get_wt_annexed_file_info(ds)
+        assert wt_annexed_file_info == expected_info
+
+    @pytest.mark.parametrize(
+        "ds_name", ["empty_ds_non_annex", "two_files_ds_non_annex"]
+    )
+    def test_non_annex_repo(self, ds_name, request):
+        """
+        Test the case that the given dataset is not a git-annex repo
+        """
+        ds = request.getfixturevalue(ds_name)
+        assert get_wt_annexed_file_info(ds) is None
