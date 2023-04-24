@@ -1,8 +1,18 @@
-from typing import Optional
+from typing import NamedTuple, Optional
 from uuid import UUID
 
 from datalad import api as dl
 from datalad.api import Dataset
+
+
+class WtAnnexedFileInfo(NamedTuple):
+    """
+    Represent information about annexed files in the working tree of a datalad dataset
+    that is a git-annex repo
+    """
+
+    count: int
+    size: int
 
 
 def clone(*args, **kwargs) -> dl.Dataset:
@@ -57,5 +67,25 @@ def get_origin_annex_key_count(ds: Dataset) -> Optional[int]:
     """
     if ds.repo.is_with_annex():
         return ds.repo.call_annex_records(["info"], "origin")[0]["remote annex keys"]
+    else:
+        return None
+
+
+def get_wt_annexed_file_info(ds: Dataset) -> Optional[WtAnnexedFileInfo]:
+    """
+    Get information about annexed files in the working tree of a given datalad dataset
+
+    :param ds: The given dataset
+    :return: In the case that the dataset is a git-annex repo, information about
+             annexed files in the working tree of the dataset is returned.
+             In the case that the dataset is not a git-annex repo, return None.
+    """
+    if ds.repo.is_with_annex():
+        annex_record = ds.repo.call_annex_records(["info", "--bytes"], ".")[0]
+
+        return WtAnnexedFileInfo(
+            count=annex_record["annexed files in working tree"],
+            size=int(annex_record["size of annexed files in working tree"]),
+        )
     else:
         return None
