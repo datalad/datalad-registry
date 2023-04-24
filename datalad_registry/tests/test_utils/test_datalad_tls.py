@@ -50,13 +50,13 @@ class TestClone:
 
 
 class TestGetOriginAnnexUuid:
-    def test_origin_annex_uuid_exists(self, tmp_path, empty_ds):
+    def test_origin_annex_uuid_exists(self, tmp_path, empty_ds_annex):
         """
         Test the case that the origin remote has an annex UUID
         """
-        ds_clone = clone(source=empty_ds.path, path=tmp_path)
+        ds_clone = clone(source=empty_ds_annex.path, path=tmp_path)
         assert get_origin_annex_uuid(ds_clone) == UUID(
-            empty_ds.config.get("annex.uuid")
+            empty_ds_annex.config.get("annex.uuid")
         )
 
     def test_origin_annex_uuid_not_exist(self, tmp_path):

@@ -138,9 +138,9 @@ def client(app_instance):
 
 
 @pytest.fixture(scope="session")
-def empty_ds(tmp_path_factory) -> Dataset:
+def empty_ds_annex(tmp_path_factory) -> Dataset:
     """
-    An empty dataset
+    An empty dataset that is a git-annex repository
     """
     return dl.create(path=tmp_path_factory.mktemp("empty_ds"))
 
