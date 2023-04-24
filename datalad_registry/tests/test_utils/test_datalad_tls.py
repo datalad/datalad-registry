@@ -2,7 +2,11 @@ from uuid import UUID
 
 import pytest
 
-from datalad_registry.utils.datalad_tls import clone, get_origin_annex_uuid
+from datalad_registry.utils.datalad_tls import (
+    clone,
+    get_origin_annex_key_count,
+    get_origin_annex_uuid,
+)
 
 _TEST_MIN_DATASET_URL = "https://github.com/datalad/testrepo--minimalds.git"
 _TEST_MIN_DATASET_ID = "e7f3d914-e971-11e8-a371-f0d5bf7b5561"
@@ -77,3 +81,30 @@ class TestGetOriginAnnexUuid:
         """
         ds = clone(source=_TEST_MIN_DATASET_URL, path=tmp_path)
         assert get_origin_annex_uuid(ds) is None
+
+
+class TestGetOriginAnnexKeyCount:
+    @pytest.mark.parametrize(
+        "ds_name, expected_annex_key_count",
+        [("empty_ds_annex", 0), ("two_files_ds_annex", 2)],
+    )
+    def test_annex_repo(self, ds_name, expected_annex_key_count, request, tmp_path):
+        """
+        Test the case that the origin remote is a git-annex repo
+        """
+        ds = request.getfixturevalue(ds_name)
+        ds_clone = clone(source=ds.path, path=tmp_path)
+        annex_key_count = get_origin_annex_key_count(ds_clone)
+        assert type(annex_key_count) is int
+        assert annex_key_count == expected_annex_key_count
+
+    @pytest.mark.parametrize(
+        "ds_name", ["empty_ds_non_annex", "two_files_ds_non_annex"]
+    )
+    def test_non_annex_repo(self, ds_name, request, tmp_path):
+        """
+        Test the case that the origin remote is not a git-annex repo
+        """
+        ds = request.getfixturevalue(ds_name)
+        ds_clone = clone(source=ds.path, path=tmp_path)
+        assert get_origin_annex_key_count(ds_clone) is None
