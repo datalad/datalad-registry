@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from datalad.api import Dataset
 import pytest
 
 from datalad_registry.utils.datalad_tls import (
@@ -7,6 +8,7 @@ from datalad_registry.utils.datalad_tls import (
     clone,
     get_origin_annex_key_count,
     get_origin_annex_uuid,
+    get_origin_branches,
     get_wt_annexed_file_info,
 )
 
@@ -137,3 +139,24 @@ class TestGetWtAnnexedFileInfo:
         """
         ds = request.getfixturevalue(ds_name)
         assert get_wt_annexed_file_info(ds) is None
+
+
+@pytest.mark.parametrize(
+    "ds_name",
+    [
+        "empty_ds_annex",
+        "two_files_ds_annex",
+        "empty_ds_non_annex",
+        "two_files_ds_non_annex",
+    ],
+)
+def test_get_origin_branches(ds_name, request, tmp_path):
+    ds: Dataset = request.getfixturevalue(ds_name)
+    ds_clone = clone(source=ds.path, path=tmp_path)
+
+    origin_branches = get_origin_branches(ds_clone)
+
+    assert origin_branches == [
+        {"name": branch_name, "hexsha": ds.repo.get_hexsha(branch_name)}
+        for branch_name in ds.repo.get_branches()
+    ]
