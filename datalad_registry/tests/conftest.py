@@ -142,7 +142,7 @@ def empty_ds_annex(tmp_path_factory) -> Dataset:
     """
     An empty dataset that is a git-annex repository
     """
-    return dl.create(path=tmp_path_factory.mktemp("empty_ds"))
+    return dl.create(path=tmp_path_factory.mktemp("empty_ds_annex"))
 
 
 @pytest.fixture(scope="session")
@@ -157,7 +157,12 @@ def two_files_ds(annex: bool, tmp_path_factory: TempPathFactory) -> Dataset:
     """
     A dataset with two simple files
     """
-    ds: Dataset = dl.create(path=tmp_path_factory.mktemp("two_files_ds"), annex=annex)
+    ds: Dataset = dl.create(
+        path=tmp_path_factory.mktemp(
+            f"two_files_ds_{'annex' if annex else 'non_annex'}"
+        ),
+        annex=annex,
+    )
 
     file_names = ["file1.txt", "file2.txt"]
     for file_name in file_names:
