@@ -44,3 +44,18 @@ def get_origin_annex_uuid(ds: Dataset) -> Optional[UUID]:
         if (uuid_str := ds.config.get("remote.origin.annex-uuid")) is not None
         else None
     )
+
+
+def get_origin_annex_key_count(ds: Dataset) -> Optional[int]:
+    """
+    Get "remote annex keys" of the origin remote of a given dataset
+
+    :param ds: The given dataset
+    :return: In the case that the dataset is a git-annex repo, the "remote annex keys"
+             of the origin remote of the given dataset is returned.
+             In the case that the dataset is not a git-annex repo, return None.
+    """
+    if ds.repo.is_with_annex():
+        return ds.repo.call_annex_records(["info"], "origin")[0]["remote annex keys"]
+    else:
+        return None
