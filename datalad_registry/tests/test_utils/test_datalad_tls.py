@@ -50,18 +50,30 @@ class TestClone:
 
 
 class TestGetOriginAnnexUuid:
-    def test_origin_annex_uuid_exists(self, tmp_path, empty_ds_annex):
+    @pytest.mark.parametrize("ds_name", ["empty_ds_annex", "two_files_ds_annex"])
+    def test_annex_repo(self, ds_name, request, tmp_path):
         """
-        Test the case that the origin remote has an annex UUID
+        Test the case that the origin remote is a git-annex repo
         """
-        ds_clone = clone(source=empty_ds_annex.path, path=tmp_path)
-        assert get_origin_annex_uuid(ds_clone) == UUID(
-            empty_ds_annex.config.get("annex.uuid")
-        )
+        ds = request.getfixturevalue(ds_name)
+        ds_clone = clone(source=ds.path, path=tmp_path)
+        assert get_origin_annex_uuid(ds_clone) == UUID(ds.config.get("annex.uuid"))
+
+    @pytest.mark.parametrize(
+        "ds_name", ["empty_ds_non_annex", "two_files_ds_non_annex"]
+    )
+    def test_non_annex_repo(self, ds_name, request, tmp_path):
+        """
+        Test the case that the origin remote is not a git-annex repo
+        """
+        ds = request.getfixturevalue(ds_name)
+        ds_clone = clone(source=ds.path, path=tmp_path)
+        assert get_origin_annex_uuid(ds_clone) is None
 
     def test_origin_annex_uuid_not_exist(self, tmp_path):
         """
-        Test the case that the origin remote has no annex UUID
+        Test the case that the origin remote has no annex UUID even though it is an
+        annex repo
         """
         ds = clone(source=_TEST_MIN_DATASET_URL, path=tmp_path)
         assert get_origin_annex_uuid(ds) is None
