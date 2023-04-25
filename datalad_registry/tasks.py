@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import errno
+import json
 import logging
 from pathlib import Path
 from shutil import rmtree
@@ -7,6 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from celery import group
 from datalad import api as dl
+from datalad.api import Dataset
 from datalad.distribution.dataset import require_dataset
 from datalad.support.exceptions import IncompleteResultsError
 from flask import current_app
@@ -15,7 +17,13 @@ from pydantic import StrictInt, StrictStr, parse_obj_as, validate_arguments
 from datalad_registry import celery
 from datalad_registry.models import URL, URLMetadata, db
 from datalad_registry.utils import StrEnum, allocate_ds_path
-from datalad_registry.utils.datalad_tls import clone
+from datalad_registry.utils.datalad_tls import (
+    clone,
+    get_origin_annex_key_count,
+    get_origin_annex_uuid,
+    get_origin_branches,
+    get_wt_annexed_file_info,
+)
 from datalad_registry.utils.url_encoder import url_encode
 
 from .com_models import MetaExtractResult
@@ -29,6 +37,50 @@ class ExtractMetaStatus(StrEnum):
     SUCCEEDED = "succeeded"
     ABORTED = "aborted"
     SKIPPED = "skipped"
+
+
+def _update_dataset_url_info(dataset_url: URL, ds: Dataset) -> None:
+    """
+    Update a given dataset URL object with the information of a given dataset
+
+    Note: The timestamp regarding the update of this information, `info_ts`, is to be
+          updated as well.
+
+    :param dataset_url: The dataset URL object to be updated
+    :param ds: A dataset object representing an up-to-date clone of the dataset
+               in the local cache. Note: The caller of this function is responsible for
+               ensuring the clone of the dataset in cache is up-to-date.
+    """
+
+    dataset_url.ds_id = ds.id
+
+    dataset_url.annex_uuid = (
+        str(annex_uuid)
+        if (annex_uuid := get_origin_annex_uuid(ds)) is not None
+        else None
+    )
+
+    dataset_url.annex_key_count = get_origin_annex_key_count(ds)
+
+    if (wt_annexed_file_info := get_wt_annexed_file_info(ds)) is not None:
+        dataset_url.annexed_files_in_wt_count = wt_annexed_file_info.count
+        dataset_url.annexed_files_in_wt_size = wt_annexed_file_info.size
+    else:
+        dataset_url.annexed_files_in_wt_count = None
+        dataset_url.annexed_files_in_wt_size = None
+
+    dataset_url.head = ds.repo.get_hexsha("origin/HEAD")
+    dataset_url.head_describe = ds.repo.describe("origin/HEAD", tags=True, always=True)
+
+    dataset_url.branches = json.dumps(get_origin_branches(ds))
+
+    dataset_url.tags = json.dumps(ds.repo.get_tags())
+
+    dataset_url.git_objects_kb = (
+        ds.repo.count_objects["size"] + ds.repo.count_objects["size-pack"]
+    )
+
+    dataset_url.info_ts = datetime.now(timezone.utc)
 
 
 # todo: The value of url is encoded in ds_path, so we have passed it twice to this func.
