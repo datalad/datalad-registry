@@ -1,11 +1,13 @@
-from typing import NamedTuple, Optional
+from dataclasses import dataclass
+from typing import Optional
 from uuid import UUID
 
 from datalad import api as dl
 from datalad.api import Dataset
 
 
-class WtAnnexedFileInfo(NamedTuple):
+@dataclass
+class WtAnnexedFileInfo:
     """
     Represent information about annexed files in the working tree of a datalad dataset
     that is a git-annex repo
