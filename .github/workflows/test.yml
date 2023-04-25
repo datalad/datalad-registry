@@ -10,6 +10,7 @@ on:
 
 env:
   DATALAD_REGISTRY_PASSWORD: foobar123
+  CELERY_BROKER_URL: "amqp://user:foobar123@127.0.0.1:5672"
 
 jobs:
   test:

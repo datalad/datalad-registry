@@ -9,7 +9,7 @@ from celery import group
 from datalad import api as dl
 from datalad.distribution.dataset import require_dataset
 from datalad.support.exceptions import IncompleteResultsError
-from pydantic import StrictStr, parse_obj_as, validate_arguments
+from pydantic import StrictInt, StrictStr, parse_obj_as, validate_arguments
 
 from datalad_registry import celery
 from datalad_registry.models import URL, URLMetadata, db
@@ -428,3 +428,23 @@ def extract_meta(url_id: int, dataset_path: str, extractor: str) -> ExtractMetaS
         raise RuntimeError(
             f"Extractor {extractor} did not produce any valid metadata for {url.url}"
         )
+
+
+@celery.task
+@validate_arguments
+def process_dataset_url(dataset_url_id: StrictInt) -> None:
+    """
+    Process a dataset URL
+
+    :param dataset_url_id: The ID (primary key) of the dataset URL in the database
+
+    note:: If the dataset URL specified by dataset_url_id does not exist
+           in the database or if the dataset URL has already been processed,
+           this function will raise a ValueError. Otherwise, the corresponding dataset
+           of the URL will be cloned to the local cache, the null cells of
+           the dataset URL in the database will be populated,
+           the `processed` cell of the dataset URL in the database will be set
+           to `True`, and the metadata extractions of the dataset as celery tasks
+           will be initiated.
+    """
+    raise NotImplementedError("This function is not implemented yet")
