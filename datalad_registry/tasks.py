@@ -11,6 +11,7 @@ from datalad import api as dl
 from datalad.api import Dataset
 from datalad.distribution.dataset import require_dataset
 from datalad.support.exceptions import IncompleteResultsError
+from datalad.utils import rmtree as rm_ds_tree
 from flask import current_app
 from pydantic import StrictInt, StrictStr, parse_obj_as, validate_arguments
 
@@ -532,23 +533,16 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
         )
 
         # Extract information from the cloned copy of the dataset
-        dataset_url.ds_id = ds.id
-        dataset_url.annex_key_count
-        dataset_url.annexed_files_in_wt_count
-        dataset_url.annexed_files_in_wt_size
-        dataset_url.info_ts
-        dataset_url.head
-        dataset_url.head_describe
-        dataset_url.branches
-        dataset_url.tags
-        dataset_url.git_objects_kb
-        dataset_url.processed
-        dataset_url.cache_path
+        _update_dataset_url_info(dataset_url, ds)
 
-        # Commit to the database
-        raise NotImplementedError
+        dataset_url.processed = True
+        dataset_url.cache_path = str(ds_path_relative)
+
+        # Commit the updated dataset URL object to the database
+        db.session.commit()
+
     except Exception as e:
         # Delete the newly created directory for cloning the dataset
-        rmtree(ds_path_absolute)
+        rm_ds_tree(ds_path_absolute)
 
         raise e
