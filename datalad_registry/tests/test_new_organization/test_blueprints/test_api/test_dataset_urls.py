@@ -13,7 +13,7 @@ def populate_with_2_dataset_urls(flask_app):
     from datalad_registry.models import URL, db
 
     dataset_url1 = URL(url="https://example.com")
-    dataset_url2 = URL(url="https://www.google.com")
+    dataset_url2 = URL(url="https://docs.datalad.org")
     dataset_url3 = URL(url="/foo/bar")
 
     with flask_app.app_context():
@@ -45,7 +45,7 @@ def populate_with_dataset_urls(flask_app):
             processed=True,
         ),
         URL(
-            url="http://www.yahoo.com",
+            url="http://www.datalad.org",
             ds_id="2a0b7b7b-a984-4c4a-844c-be3132291d7c",
             head_describe="1234",
             annex_key_count=40,
@@ -56,7 +56,7 @@ def populate_with_dataset_urls(flask_app):
             processed=True,
         ),
         URL(
-            url="https://www.youtube.com",
+            url="https://handbook.datalad.org",
             ds_id="2a0b7b7b-a984-4c4a-844c-be3132291a7c",
             head_describe="1234",
             annex_key_count=90,
@@ -67,7 +67,7 @@ def populate_with_dataset_urls(flask_app):
             processed=True,
         ),
         URL(
-            url="https://www.facebook.com",
+            url="https://www.dandiarchive.org",
             processed=False,
         ),
     ]
@@ -183,50 +183,50 @@ class TestDatasetURLs:
                 {},
                 {
                     "https://www.example.com",
-                    "http://www.yahoo.com",
-                    "https://www.youtube.com",
-                    "https://www.facebook.com",
+                    "http://www.datalad.org",
+                    "https://handbook.datalad.org",
+                    "https://www.dandiarchive.org",
                 },
             ),
             ({"url": "https://www.example.com"}, {"https://www.example.com"}),
             (
                 {"ds_id": "2a0b7b7b-a984-4c4a-844c-be3132291d7c"},
-                {"http://www.yahoo.com"},
+                {"http://www.datalad.org"},
             ),
             (
                 {"min_annex_key_count": "39"},
-                {"http://www.yahoo.com", "https://www.youtube.com"},
+                {"http://www.datalad.org", "https://handbook.datalad.org"},
             ),
             (
                 {"min_annex_key_count": "39", "max_annex_key_count": 40},
-                {"http://www.yahoo.com"},
+                {"http://www.datalad.org"},
             ),
             (
                 {
                     "min_annexed_files_in_wt_count": 190,
                     "max_annexed_files_in_wt_count": 500,
                 },
-                {"https://www.example.com", "https://www.youtube.com"},
+                {"https://www.example.com", "https://handbook.datalad.org"},
             ),
             ({"min_annexed_files_in_wt_size": 1000_001}, set()),
-            ({"max_annexed_files_in_wt_size": 500}, {"http://www.yahoo.com"}),
+            ({"max_annexed_files_in_wt_size": 500}, {"http://www.datalad.org"}),
             (
                 {"max_annexed_files_in_wt_size": 2000},
-                {"https://www.example.com", "http://www.yahoo.com"},
+                {"https://www.example.com", "http://www.datalad.org"},
             ),
             (
                 {
                     "min_annexed_files_in_wt_size": 300,
                     "max_annexed_files_in_wt_size": 2200,
                 },
-                {"https://www.example.com", "http://www.yahoo.com"},
+                {"https://www.example.com", "http://www.datalad.org"},
             ),
             (
                 {"earliest_last_update": "2001-03-22T01:22:34"},
                 {
                     "https://www.example.com",
-                    "http://www.yahoo.com",
-                    "https://www.youtube.com",
+                    "http://www.datalad.org",
+                    "https://handbook.datalad.org",
                 },
             ),
             (
@@ -238,20 +238,20 @@ class TestDatasetURLs:
             ),
             (
                 {"min_git_objects_kb": 1000, "max_git_objects_kb": 2000},
-                {"http://www.yahoo.com"},
+                {"http://www.datalad.org"},
             ),
             (
                 {"processed": True},
                 {
                     "https://www.example.com",
-                    "http://www.yahoo.com",
-                    "https://www.youtube.com",
+                    "http://www.datalad.org",
+                    "https://handbook.datalad.org",
                 },
             ),
-            ({"processed": False}, {"https://www.facebook.com"}),
+            ({"processed": False}, {"https://www.dandiarchive.org"}),
             (
                 {"min_annex_key_count": "39", "max_annexed_files_in_wt_size": 2200},
-                {"http://www.yahoo.com"},
+                {"http://www.datalad.org"},
             ),
         ],
     )
