@@ -515,7 +515,7 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
 
     base_cache_path = Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
 
-    old_cache_path = dataset_url.cache_path
+    old_cache_path_relative = dataset_url.cache_path
 
     # Allocate a new path in the local cache for cloning the dataset
     # at the specified URL
@@ -551,7 +551,7 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
         raise e
 
     else:
-        if old_cache_path is not None:
+        if old_cache_path_relative is not None:
             # Delete the old cache directory for the dataset (the directory that is
             # a previous clone of the dataset)
-            rm_ds_tree(base_cache_path / old_cache_path)
+            rm_ds_tree(base_cache_path / old_cache_path_relative)
