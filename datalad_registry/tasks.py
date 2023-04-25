@@ -513,14 +513,15 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
         # Error out when no dataset URL in the database with the specified ID
         raise ValueError(f"URL with ID {dataset_url_id} does not exist")
 
+    base_cache_path = Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+
     old_cache_path = dataset_url.cache_path
 
     # Allocate a new path in the local cache for cloning the dataset
     # at the specified URL
     ds_path_relative = allocate_ds_path()
-    ds_path_absolute = (
-        Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]) / ds_path_relative
-    )
+
+    ds_path_absolute = base_cache_path / ds_path_relative
 
     # Create a directory at the newly allocated path
     ds_path_absolute.mkdir(parents=True, exist_ok=False)
@@ -553,7 +554,4 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
         if old_cache_path is not None:
             # Delete the old cache directory for the dataset (the directory that is
             # a previous clone of the dataset)
-            rm_ds_tree(
-                Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
-                / old_cache_path
-            )
+            rm_ds_tree(base_cache_path / old_cache_path)
