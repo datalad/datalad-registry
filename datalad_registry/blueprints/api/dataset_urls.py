@@ -119,7 +119,7 @@ class DatasetURLRespModel(DatasetURLSubmitModel):
     Model for representing the database model URL in response communication
     """
 
-    id: int = Field(..., alias="id", description="The ID of the dataset URL")
+    id: int = Field(..., description="The ID of the dataset URL")
     ds_id: Optional[UUID] = Field(
         ..., alias="ds_id", description="The ID, a UUID, of the dataset"
     )
