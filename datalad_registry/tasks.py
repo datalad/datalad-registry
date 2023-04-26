@@ -497,9 +497,11 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
            cache directory and extracts information from the cloned copy of the dataset
            to populate the cells of the given URL row in the URL table. If both
            the cloning and extraction of information are successful,
-           the `processed` cell of the given URL row will be set to `True`
-           and the other cells of the row will be populated with the extracted
-           information. Otherwise, no cell of the given URL row will be changed,
+           the `processed` cell of the given URL row will be set to `True`,
+           the other cells of the row will be populated with the up-to-date
+           information, and if the dataset URL has been processed previously, the old
+           cache directory established by the previous processing will be removed.
+           Otherwise, no cell of the given URL row will be changed,
            and the local cache will be restored to its previous state
            (by deleting the new cache directory for the cloning of the dateset).
     """
