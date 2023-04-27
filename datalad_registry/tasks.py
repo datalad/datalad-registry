@@ -509,7 +509,7 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
     # Get the dataset URL from the database by ID
     dataset_url: Optional[URL] = db.session.execute(
         db.select(URL).filter_by(id=dataset_url_id)
-    ).salar()
+    ).scalar()
 
     if dataset_url is None:
         # Error out when no dataset URL in the database with the specified ID
