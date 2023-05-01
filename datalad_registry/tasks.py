@@ -503,7 +503,7 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
            cache directory established by the previous processing will be removed.
            Otherwise, no cell of the given URL row will be changed,
            and the local cache will be restored to its previous state
-           (by deleting the new cache directory for the cloning of the dateset).
+           (by deleting the new cache directory for the cloning of the dataset).
     """
 
     # Get the dataset URL from the database by ID
