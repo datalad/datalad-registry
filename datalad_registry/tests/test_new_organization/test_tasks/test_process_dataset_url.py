@@ -78,19 +78,6 @@ def populate_db_with_unprocessed_dataset_urls(
         db.session.commit()  # 1 is no longer a valid dataset URL id
 
 
-@pytest.fixture
-def populate_db_with_unprocessed_invalid_dataset_urls(flask_app):
-    """
-    Populate the database with unprocessed invalid dataset URLs
-    """
-
-    with flask_app.app_context():
-        db.session.add(URL(url="https://www.datalad.org/"))  # id == 1
-        db.session.add(URL(url="https://dandiarchive.org/"))  # id == 2
-
-        db.session.commit()
-
-
 class TestProcessDatasetUrl:
     @pytest.mark.usefixtures("populate_db_with_unprocessed_dataset_urls")
     @pytest.mark.parametrize("invalid_dataset_url_id", [-100, -1, 0, 1, 7, 8, 99])
@@ -128,16 +115,23 @@ class TestProcessDatasetUrl:
             assert dataset_url.processed
             assert dataset_url.cache_path is not None
 
-    @pytest.mark.usefixtures("populate_db_with_unprocessed_invalid_dataset_urls")
-    @pytest.mark.parametrize("dataset_url_id", [1, 2])
-    def test_invalid_dataset_url(self, dataset_url_id, flask_app):
+    @pytest.mark.usefixtures("populate_db_with_unprocessed_dataset_urls")
+    @pytest.mark.parametrize("dataset_url_id", [3, 4, 5])
+    def test_clone_failure(self, dataset_url_id, flask_app, monkeypatch):
         """
-        Test the case that the given dataset URL by id is invalid, i.e. the URL is not
-        a URL that can be `datalad cloned`
+        Test the case that the cloning of the dataset fails when processing the dataset
+        URL
         """
 
+        def mock_clone(*args, **kwargs):  # noqa: U100
+            raise RuntimeError("Mocked clone failure")
+
+        from datalad_registry import tasks as datalad_registry_tasks
+
+        monkeypatch.setattr(datalad_registry_tasks, "clone", mock_clone)
+
         with flask_app.app_context():
-            with pytest.raises(Exception):
+            with pytest.raises(RuntimeError):
                 process_dataset_url(dataset_url_id)
 
             # Check that the dataset URL not been modified in the database
