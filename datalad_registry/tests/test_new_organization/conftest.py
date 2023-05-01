@@ -1,29 +1,30 @@
 import os
+from pathlib import Path
 
 from datalad import api as dl
 from datalad.api import Dataset
+from datalad.utils import rmtree as rm_ds_tree
 import pytest
 from pytest import TempPathFactory
 from sqlalchemy.engine.url import URL
 
 from datalad_registry.factory import create_app
+from datalad_registry.models import db
 
 
-@pytest.fixture
-def flask_app(monkeypatch, tmp_path):
+@pytest.fixture(scope="session")
+def _flask_app(tmp_path_factory):
     """
-    The fixture of the datalad_registry Flask app set up with the database of the test
-    environment that is cleanly initialized for each test
+    The fixture of the datalad registry flask app that exists throughout a test session.
+
+    Note: This fixture should only be used by `flask_app` fixture directly.
     """
-    instance_path = tmp_path / "instance"
-    cache_path = tmp_path / "cache"
 
-    instance_path.mkdir()
-    cache_path.mkdir()
-
-    monkeypatch.setenv("DATALAD_REGISTRY_INSTANCE_PATH", str(instance_path))
+    instance_path = tmp_path_factory.mktemp("instance")
+    cache_path = tmp_path_factory.mktemp("cache")
 
     test_config = {
+        "DATALAD_REGISTRY_INSTANCE_PATH": str(instance_path),
         "DATALAD_REGISTRY_DATASET_CACHE": str(cache_path),
         "SQLALCHEMY_DATABASE_URI": str(
             URL.create(
@@ -40,14 +41,27 @@ def flask_app(monkeypatch, tmp_path):
 
     app = create_app(test_config)
 
-    from datalad_registry.models import db
+    return app
 
-    # Ensure the Flask app is one with a cleanly initialized database
-    with app.app_context():
+
+@pytest.fixture
+def flask_app(_flask_app):
+    """
+    The fixture of the datalad_registry Flask app set up with the database of the test
+    environment
+    """
+
+    # Reset the database
+    with _flask_app.app_context():
         db.drop_all()
         db.create_all()
 
-    return app
+    # Reset the base local cache for datasets
+    cache_path = Path(_flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+    rm_ds_tree(cache_path)
+    cache_path.mkdir()
+
+    return _flask_app
 
 
 @pytest.fixture
