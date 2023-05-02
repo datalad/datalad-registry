@@ -27,6 +27,8 @@ def is_dataset_url_unprocessed(dataset_url_id: int) -> bool:
     """
     Check if the given dataset URL, identified by ID, is unprocessed
 
+    :raise ValueError: If the given dataset URL ID is invalid
+
     Note: This check also verifies that the other fields of the dataset URL are also
           unmodified since they are initialized.
 
@@ -44,6 +46,9 @@ def is_dataset_url_unprocessed(dataset_url_id: int) -> bool:
     dataset_url: Optional[URL] = db.session.execute(
         db.select(URL).filter_by(id=dataset_url_id)
     ).scalar()
+
+    if dataset_url is None:
+        raise ValueError(f"Invalid dataset URL ID: {dataset_url_id}")
 
     return (not dataset_url.processed) and all(
         getattr(dataset_url, f) is None for f in default_none_fields
