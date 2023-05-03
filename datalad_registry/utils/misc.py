@@ -25,6 +25,9 @@ def allocate_ds_path() -> Path:
 
     Note: This allocated path is based on a randomly generated UUID
     Note: The execution of this function requires an active application context of Flask
+    Note: This function always returns a path that, when expressed in `str` form, is
+          34 characters long. 32 characters for the UUID as hex string plus two path
+          component separators, e.g. `/` in *nix
     """
 
     # The while loop with the checking of the existence of the generated path can be
