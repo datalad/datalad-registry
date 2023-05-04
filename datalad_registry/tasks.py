@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import errno
+import json
 import logging
 from pathlib import Path
 from shutil import rmtree
@@ -7,13 +8,23 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from celery import group
 from datalad import api as dl
+from datalad.api import Dataset
 from datalad.distribution.dataset import require_dataset
 from datalad.support.exceptions import IncompleteResultsError
+from datalad.utils import rmtree as rm_ds_tree
+from flask import current_app
 from pydantic import StrictInt, StrictStr, parse_obj_as, validate_arguments
 
 from datalad_registry import celery
 from datalad_registry.models import URL, URLMetadata, db
-from datalad_registry.utils import StrEnum
+from datalad_registry.utils import StrEnum, allocate_ds_path
+from datalad_registry.utils.datalad_tls import (
+    clone,
+    get_origin_annex_key_count,
+    get_origin_annex_uuid,
+    get_origin_branches,
+    get_wt_annexed_file_info,
+)
 from datalad_registry.utils.url_encoder import url_encode
 
 from .com_models import MetaExtractResult
@@ -27,6 +38,50 @@ class ExtractMetaStatus(StrEnum):
     SUCCEEDED = "succeeded"
     ABORTED = "aborted"
     SKIPPED = "skipped"
+
+
+def _update_dataset_url_info(dataset_url: URL, ds: Dataset) -> None:
+    """
+    Update a given dataset URL object with the information of a given dataset
+
+    Note: The timestamp regarding the update of this information, `info_ts`, is to be
+          updated as well.
+
+    :param dataset_url: The dataset URL object to be updated
+    :param ds: A dataset object representing an up-to-date clone of the dataset
+               in the local cache. Note: The caller of this function is responsible for
+               ensuring the clone of the dataset in cache is up-to-date.
+    """
+
+    dataset_url.ds_id = ds.id
+
+    dataset_url.annex_uuid = (
+        str(annex_uuid)
+        if (annex_uuid := get_origin_annex_uuid(ds)) is not None
+        else None
+    )
+
+    dataset_url.annex_key_count = get_origin_annex_key_count(ds)
+
+    if (wt_annexed_file_info := get_wt_annexed_file_info(ds)) is not None:
+        dataset_url.annexed_files_in_wt_count = wt_annexed_file_info.count
+        dataset_url.annexed_files_in_wt_size = wt_annexed_file_info.size
+    else:
+        dataset_url.annexed_files_in_wt_count = None
+        dataset_url.annexed_files_in_wt_size = None
+
+    dataset_url.head = ds.repo.get_hexsha("origin/HEAD")
+    dataset_url.head_describe = ds.repo.describe("origin/HEAD", tags=True, always=True)
+
+    dataset_url.branches = json.dumps(get_origin_branches(ds))
+
+    dataset_url.tags = json.dumps(ds.repo.get_tags())
+
+    dataset_url.git_objects_kb = (
+        ds.repo.count_objects["size"] + ds.repo.count_objects["size-pack"]
+    )
+
+    dataset_url.info_ts = datetime.now(timezone.utc)
 
 
 # todo: The value of url is encoded in ds_path, so we have passed it twice to this func.
@@ -438,13 +493,67 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
 
     :param dataset_url_id: The ID (primary key) of the dataset URL in the database
 
-    note:: If the dataset URL specified by dataset_url_id does not exist
-           in the database or if the dataset URL has already been processed,
-           this function will raise a ValueError. Otherwise, the corresponding dataset
-           of the URL will be cloned to the local cache, the null cells of
-           the dataset URL in the database will be populated,
-           the `processed` cell of the dataset URL in the database will be set
-           to `True`, and the metadata extractions of the dataset as celery tasks
-           will be initiated.
+    note:: This function clones the dataset at the specified URL to a new local
+           cache directory and extracts information from the cloned copy of the dataset
+           to populate the cells of the given URL row in the URL table. If both
+           the cloning and extraction of information are successful,
+           the `processed` cell of the given URL row will be set to `True`,
+           the other cells of the row will be populated with the up-to-date
+           information, and if the dataset URL has been processed previously, the old
+           cache directory established by the previous processing will be removed.
+           Otherwise, no cell of the given URL row will be changed,
+           and the local cache will be restored to its previous state
+           (by deleting the new cache directory for the cloning of the dataset).
     """
-    raise NotImplementedError("This function is not implemented yet")
+
+    # Get the dataset URL from the database by ID
+    dataset_url: Optional[URL] = db.session.execute(
+        db.select(URL).filter_by(id=dataset_url_id)
+    ).scalar()
+
+    if dataset_url is None:
+        # Error out when no dataset URL in the database with the specified ID
+        raise ValueError(f"URL with ID {dataset_url_id} does not exist")
+
+    base_cache_path = Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+
+    old_cache_path_relative = dataset_url.cache_path
+
+    # Allocate a new path in the local cache for cloning the dataset
+    # at the specified URL
+    ds_path_relative = allocate_ds_path()
+
+    ds_path_absolute = base_cache_path / ds_path_relative
+
+    # Create a directory at the newly allocated path
+    ds_path_absolute.mkdir(parents=True, exist_ok=False)
+
+    try:
+        # Clone the dataset at the specified URL to the newly created directory
+        ds = clone(
+            source=dataset_url.url,
+            path=ds_path_absolute,
+            on_failure="stop",
+            result_renderer="disabled",
+        )
+
+        # Extract information from the cloned copy of the dataset
+        _update_dataset_url_info(dataset_url, ds)
+
+        dataset_url.processed = True
+        dataset_url.cache_path = str(ds_path_relative)
+
+        # Commit the updated dataset URL object to the database
+        db.session.commit()
+
+    except Exception as e:
+        # Delete the newly created directory for cloning the dataset
+        rm_ds_tree(ds_path_absolute)
+
+        raise e
+
+    else:
+        if old_cache_path_relative is not None:
+            # Delete the old cache directory for the dataset (the directory that is
+            # a previous clone of the dataset)
+            rm_ds_tree(base_cache_path / old_cache_path_relative)
