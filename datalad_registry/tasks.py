@@ -495,8 +495,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
     """
     Extract dataset level metadata from a dataset
 
-    :param url_id: The ID (primary key) of the URL of the dataset in the database
-    :param dataset_path: The path to the dataset in the local cache
+    :param ds_url_id: The ID (primary key) of the URL of the dataset in the database
     :param extractor: The name of the extractor to use
     :return: `ExtractMetaStatus.SUCCEEDED` if the extraction has produced
                  valid metadata. In this case, the metadata has been recorded to
