@@ -381,6 +381,9 @@ _EXTRACTOR_REQUIRED_FILES = {
 @celery.task
 def extract_meta(url_id: int, dataset_path: str, extractor: str) -> ExtractMetaStatus:
     """
+    deprecated
+    todo: This function is to be put inline in `extract_ds_meta` once V1 API and its
+            associated code is removed.
     Extract dataset level metadata from a dataset
 
     :param url_id: The ID (primary key) of the URL of the dataset in the database
