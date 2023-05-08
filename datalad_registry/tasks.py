@@ -535,7 +535,12 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
 
     assert url.cache_path is not None, "Encountered a processed URL with no cache path"
 
-    return extract_meta.run(ds_url_id, url.cache_path, extractor)
+    # Absolute path of the dataset clone in cache
+    cache_path_abs = (
+        Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]) / url.cache_path
+    )
+
+    return extract_meta.run(ds_url_id, cache_path_abs, extractor)
 
 
 @celery.task
