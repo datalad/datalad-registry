@@ -379,6 +379,17 @@ _EXTRACTOR_REQUIRED_FILES = {
 
 
 @celery.task
+def log_error(request, exc, traceback) -> None:
+    """
+    An error handler for logging errors in tasks
+    :param request: The request in fulfilling which the error/exception has occurred
+    :param exc: The exception that has occurred
+    :param traceback: The traceback of the exception
+    """
+    raise NotImplementedError
+
+
+@celery.task
 def extract_meta(url_id: int, dataset_path: str, extractor: str) -> ExtractMetaStatus:
     """
     deprecated

@@ -6,14 +6,15 @@ from pathlib import Path
 from typing import Optional, Union
 from uuid import UUID
 
-from flask import abort
+from celery import group
+from flask import abort, current_app
 from flask_openapi3 import Tag
 from pydantic import AnyUrl, BaseModel, Field, FileUrl, validator
 from sqlalchemy import and_
 from sqlalchemy.sql.elements import BinaryExpression
 
 from datalad_registry.models import URL, db
-from datalad_registry.tasks import process_dataset_url
+from datalad_registry.tasks import extract_ds_meta, log_error, process_dataset_url
 from datalad_registry.utils.flask_tools import json_resp_from_str
 
 from . import HTTPExceptionResp, bp
@@ -181,13 +182,21 @@ def create_dataset_url(body: DatasetURLSubmitModel):
         db.session.add(url)
         db.session.commit()
 
-        # Initiate a celery task to process the dataset URL
-        process_dataset_url.delay(url.id)
-        # todo: be sure to call `forget()` on the result of the last statement
-        #   when backend is enabled for all
-        #   deployments of datalad-registry, development,
-        #   testing, production. For details,
-        #   see https://docs.celeryq.dev/en/stable/userguide/tasks.html#result-backends
+        # Initiate celery tasks to process the dataset URL
+        # and extract metadata from the corresponding dataset
+        url_processing = process_dataset_url.signature(
+            (url.id,), ignore_result=True, link_error=log_error.s()
+        )
+        meta_extractions = [
+            extract_ds_meta.signature(
+                (url.id, extractor),
+                ignore_result=True,
+                immutable=True,
+                link_error=log_error.s(),
+            )
+            for extractor in current_app.config["DATALAD_REGISTRY_METADATA_EXTRACTORS"]
+        ]
+        (url_processing | group(meta_extractions)).apply_async()
 
         return json_resp_from_str(DatasetURLRespModel.from_orm(url).json(), 201)
 
