@@ -386,7 +386,7 @@ def log_error(request, exc, traceback) -> None:
     :param exc: The exception that has occurred
     :param traceback: The traceback of the exception
     """
-    raise NotImplementedError
+    lgr.error("%s\n%r\n%s\n", request, exc, traceback)
 
 
 @celery.task
