@@ -1,5 +1,9 @@
 import sys
 
+# The default base API endpoint of the DataLad Registry instance
+# that the client interacts with.
+DEFAULT_BASE_ENDPOINT = "http://127.0.0.1:5000/api/v2"
+
 command_suite = (
     "Interact with DataLad registry",
     [
