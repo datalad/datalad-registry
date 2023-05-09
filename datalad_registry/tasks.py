@@ -14,6 +14,7 @@ from datalad.support.exceptions import IncompleteResultsError
 from datalad.utils import rmtree as rm_ds_tree
 from flask import current_app
 from pydantic import StrictInt, StrictStr, parse_obj_as, validate_arguments
+from sqlalchemy.exc import NoResultFound
 
 from datalad_registry import celery
 from datalad_registry.models import URL, URLMetadata, db
@@ -378,8 +379,22 @@ _EXTRACTOR_REQUIRED_FILES = {
 
 
 @celery.task
+def log_error(request, exc, traceback) -> None:
+    """
+    An error handler for logging errors in tasks
+    :param request: The request in fulfilling which the error/exception has occurred
+    :param exc: The exception that has occurred
+    :param traceback: The traceback of the exception
+    """
+    lgr.error("%s\n%r\n%s\n", request, exc, traceback)
+
+
+@celery.task
 def extract_meta(url_id: int, dataset_path: str, extractor: str) -> ExtractMetaStatus:
     """
+    deprecated
+    todo: This function is to be put inline in `extract_ds_meta` once V1 API and its
+            associated code is removed.
     Extract dataset level metadata from a dataset
 
     :param url_id: The ID (primary key) of the URL of the dataset in the database
@@ -483,6 +498,49 @@ def extract_meta(url_id: int, dataset_path: str, extractor: str) -> ExtractMetaS
         raise RuntimeError(
             f"Extractor {extractor} did not produce any valid metadata for {url.url}"
         )
+
+
+@celery.task
+@validate_arguments
+def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaStatus:
+    """
+    Extract dataset level metadata from a dataset
+
+    :param ds_url_id: The ID (primary key) of the URL of the dataset in the database
+    :param extractor: The name of the extractor to use
+    :return: `ExtractMetaStatus.SUCCEEDED` if the extraction has produced
+                 valid metadata. In this case, the metadata has been recorded to
+                 the database upon return.
+             `ExtractMetaStatus.ABORTED` if the extraction has been aborted due to some
+                 required files not being present in the dataset. For example,
+                 `.studyminimeta.yaml` is not present in the dataset for running
+                 the studyminimeta extractor.
+             `ExtractMetaStatus.SKIPPED` if the extraction has been skipped because the
+                 metadata to be extracted is already present in the database,
+                 as identified by the extractor name, URL, and dataset version.
+    :raise: ValueError if the dataset URL of the specified ID does not exist or has not
+                been processed yet.
+            RuntimeError if the extraction has produced no valid metadata.
+
+    """
+    try:
+        url = db.session.execute(db.select(URL).where(URL.id == ds_url_id)).scalar_one()
+    except NoResultFound:
+        raise ValueError(f"Dataset URL of ID: {ds_url_id} does not exist")
+
+    if not url.processed:
+        raise ValueError(
+            f"Dataset URL {url.url}, of ID: {url.id}, has not been processed yet"
+        )
+
+    assert url.cache_path is not None, "Encountered a processed URL with no cache path"
+
+    # Absolute path of the dataset clone in cache
+    cache_path_abs = (
+        Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]) / url.cache_path
+    )
+
+    return extract_meta.run(ds_url_id, cache_path_abs, extractor)
 
 
 @celery.task
