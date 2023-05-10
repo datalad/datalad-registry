@@ -9,7 +9,8 @@ from datalad.support.param import Parameter
 import requests
 
 from datalad_registry.utils.url_encoder import url_encode
-from datalad_registry_client.consts import DEFAULT_ENDPOINT
+
+from . import DEFAULT_BASE_ENDPOINT
 
 lgr = logging.getLogger("datalad.registry.submit_urls")
 
@@ -22,9 +23,9 @@ class RegistrySubmitURLs(Interface):
         "endpoint": Parameter(
             args=("--endpoint",),
             metavar="URL",
-            doc=f"""DataLad Registry instance to use (no trailing slash).
-            This defaults to the datalad_registry.endpoint option, if set,
-            or {DEFAULT_ENDPOINT} otherwise.""",
+            doc=f"""The base API endpoint of the DataLad Registry instance to interact
+            with. This defaults to the datalad_registry.endpoint option if set,
+            or {DEFAULT_BASE_ENDPOINT} otherwise.""",
             constraints=EnsureStr() | EnsureNone(),
         ),
         "urls": Parameter(
@@ -42,7 +43,7 @@ class RegistrySubmitURLs(Interface):
         urls: List[str], endpoint: Optional[str] = None
     ) -> Iterator[Dict[str, Any]]:
         if endpoint is None:
-            endpoint = cfg.get("datalad_registry.endpoint", DEFAULT_ENDPOINT)
+            endpoint = cfg.get("datalad_registry.endpoint", DEFAULT_BASE_ENDPOINT)
         res_base = get_status_dict(
             action="registry-submit-urls",
             logger=lgr,
