@@ -20,11 +20,11 @@ class RegistrySubmitURLs(Interface):
     """Submit one or more URLs to a DataLad Registry instance."""
 
     _params_ = {
-        "endpoint": Parameter(
-            args=("--endpoint",),
+        "base_endpoint": Parameter(
+            args=("--base-endpoint",),
             metavar="URL",
             doc=f"""The base API endpoint of the DataLad Registry instance to interact
-            with. This defaults to the datalad_registry.endpoint option if set,
+            with. This defaults to the datalad_registry.base_endpoint option if set,
             or {DEFAULT_BASE_ENDPOINT} otherwise.""",
             constraints=EnsureStr() | EnsureNone(),
         ),
@@ -40,20 +40,22 @@ class RegistrySubmitURLs(Interface):
     @staticmethod
     @eval_results
     def __call__(
-        urls: List[str], endpoint: Optional[str] = None
+        urls: List[str], base_endpoint: Optional[str] = None
     ) -> Iterator[Dict[str, Any]]:
-        if endpoint is None:
-            endpoint = cfg.get("datalad_registry.endpoint", DEFAULT_BASE_ENDPOINT)
+        if base_endpoint is None:
+            base_endpoint = cfg.get(
+                "datalad_registry.base_endpoint", DEFAULT_BASE_ENDPOINT
+            )
         res_base = get_status_dict(
             action="registry-submit-urls",
             logger=lgr,
-            endpoint=endpoint,
+            base_endpoint=base_endpoint,
         )
         with requests.Session() as s:
             for url in urls:
                 url_encoded = url_encode(url)
                 try:
-                    r = s.get(f"{endpoint}/urls/{url_encoded}", timeout=1)
+                    r = s.get(f"{base_endpoint}/urls/{url_encoded}", timeout=1)
                     r.raise_for_status()
                 except requests.exceptions.RequestException as exc:
                     yield {
@@ -70,7 +72,7 @@ class RegistrySubmitURLs(Interface):
                 else:
                     msg = "Announced update"
                 try:
-                    r = s.patch(f"{endpoint}/urls/{url_encoded}", timeout=1)
+                    r = s.patch(f"{base_endpoint}/urls/{url_encoded}", timeout=1)
                     r.raise_for_status()
                 except requests.exceptions.RequestException as exc:
                     yield {
