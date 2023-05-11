@@ -175,3 +175,36 @@ class TestRegistrySubmitURLs:
 
         assert len(exc_info.value.failed) == 1
         assert exc_info.value.failed[0]["status"] == "error"
+
+    def test_multi_urls(self, monkeypatch):
+        """
+        Test a submission of multiple URLs
+        """
+
+        urls = [
+            "http://example.test",
+            "https://www.datalad.org",
+            "https://centerforopenneuroscience.org/",
+        ]
+
+        urls_in_set = set(urls)
+
+        def mock_post(s, url, json=None):  # noqa: U100 Unused argument
+
+            submitted_url = json["url"]
+
+            if submitted_url in urls_in_set:
+                urls_in_set.remove(submitted_url)
+                return MockResponse(201, "Created")
+            else:
+                return MockResponse(
+                    400, f"Bad Request: submitted unexpected URL: {submitted_url}"
+                )
+
+        monkeypatch.setattr(requests.Session, "post", mock_post)
+
+        res = dl.registry_submit_urls(urls=urls)
+
+        assert len(res) == len(urls)
+        assert all(r["status"] == "ok" for r in res)
+        assert len(urls_in_set) == 0
