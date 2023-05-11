@@ -7,6 +7,7 @@ import pytest
 import requests
 
 from datalad_registry.utils.url_encoder import url_encode
+from datalad_registry_client import DEFAULT_BASE_ENDPOINT
 from datalad_registry_client.consts import DEFAULT_ENDPOINT
 
 
@@ -79,3 +80,57 @@ def test_submit_urls_explicit_endpoint(tmp_path):
     )
 
     assert requests.get(query_url).json()["status"] != "unknown"
+
+
+class MockResponse:
+    """
+    Custom class used to mock the response object returned by
+    requests' Session.post() method
+    """
+
+    def __init__(self, status_code, text):
+        self.status_code = status_code
+        self.text = text
+
+
+class TestRegistrySubmitURLs:
+    @pytest.mark.parametrize(
+        "base_endpoint, endpoint",
+        [
+            (None, DEFAULT_BASE_ENDPOINT + "/dataset-urls"),
+            (
+                "http://127.0.0.1:5000/api/v2",
+                "http://127.0.0.1:5000/api/v2/dataset-urls",
+            ),
+            (
+                "http://127.0.0.1:5000/api/v2/",
+                "http://127.0.0.1:5000/api/v2/dataset-urls",
+            ),
+            ("http://127.0.0.1:5000/api///", "http://127.0.0.1:5000/api/dataset-urls"),
+        ],
+    )
+    def test_endpoint_construction(self, base_endpoint, endpoint, monkeypatch):
+        """
+        Verify the correctness of the endpoint construction.
+        """
+
+        def mock_post(s, url, json=None):  # noqa: U100 Unused argument
+            if url == endpoint:
+                return MockResponse(201, "Created")
+            else:
+                return MockResponse(404, "Not Found")
+
+        monkeypatch.setattr(requests.Session, "post", mock_post)
+
+        if base_endpoint is not None:
+            res = dl.registry_submit_urls(
+                urls=["http://example.test"], base_endpoint=base_endpoint
+            )
+        else:
+            res = dl.registry_submit_urls(urls=["http://example.test"])
+
+        assert len(res) == 1
+        assert res[0]["status"] == "ok"
+
+    def test_handle_201(self):
+        raise NotImplementedError
