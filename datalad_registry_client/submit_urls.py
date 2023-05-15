@@ -7,9 +7,13 @@ from datalad.interface.results import get_status_dict
 from datalad.support.constraints import EnsureNone, EnsureStr
 from datalad.support.param import Parameter
 import requests
+from yarl import URL
 
-from datalad_registry.utils.url_encoder import url_encode
-from datalad_registry_client.consts import DEFAULT_ENDPOINT
+from . import DEFAULT_BASE_ENDPOINT
+
+# The path of the dataset URLs resource on the DataLad Registry instance relative to
+# the base API endpoint of the instance.
+_DATASET_URLS_PATH = "dataset-urls"
 
 lgr = logging.getLogger("datalad.registry.submit_urls")
 
@@ -19,12 +23,12 @@ class RegistrySubmitURLs(Interface):
     """Submit one or more URLs to a DataLad Registry instance."""
 
     _params_ = {
-        "endpoint": Parameter(
-            args=("--endpoint",),
+        "base_endpoint": Parameter(
+            args=("--base-endpoint",),
             metavar="URL",
-            doc=f"""DataLad Registry instance to use (no trailing slash).
-            This defaults to the datalad_registry.endpoint option, if set,
-            or {DEFAULT_ENDPOINT} otherwise.""",
+            doc=f"""The base API endpoint of the DataLad Registry instance to interact
+            with. This defaults to the datalad_registry.base_endpoint option if set,
+            or {DEFAULT_BASE_ENDPOINT} otherwise.""",
             constraints=EnsureStr() | EnsureNone(),
         ),
         "urls": Parameter(
@@ -39,51 +43,79 @@ class RegistrySubmitURLs(Interface):
     @staticmethod
     @eval_results
     def __call__(
-        urls: List[str], endpoint: Optional[str] = None
+        urls: List[str], base_endpoint: Optional[str] = None
     ) -> Iterator[Dict[str, Any]]:
-        if endpoint is None:
-            endpoint = cfg.get("datalad_registry.endpoint", DEFAULT_ENDPOINT)
+        if base_endpoint is None:
+            base_endpoint = cfg.get(
+                "datalad_registry.base_endpoint", DEFAULT_BASE_ENDPOINT
+            )
+
+        endpoint = URL(base_endpoint) / _DATASET_URLS_PATH
+        endpoint_str = str(endpoint)
+
         res_base = get_status_dict(
             action="registry-submit-urls",
             logger=lgr,
-            endpoint=endpoint,
+            base_endpoint=base_endpoint,
+            endpoint=endpoint.human_repr(),
         )
-        with requests.Session() as s:
+
+        with requests.Session() as session:
             for url in urls:
-                url_encoded = url_encode(url)
-                try:
-                    r = s.get(f"{endpoint}/urls/{url_encoded}", timeout=1)
-                    r.raise_for_status()
-                except requests.exceptions.RequestException as exc:
+                resp = session.post(endpoint_str, json={"url": url})
+
+                res_base.update(URL=url)
+
+                resp_status_code = resp.status_code
+                if resp_status_code == 201:
                     yield {
                         **res_base,
-                        "url": url,
-                        "url_encoded": url_encoded,
-                        "status": "error",
-                        "message": ("Check if URL is known failed: %s", exc),
+                        "status": "ok",
+                        "message": ("Registered %s", url),
                     }
-                    continue
-                url_info = r.json()
-                if url_info.get("status") == "unknown":
-                    msg = "Registered URL"
+                elif resp_status_code == 404:
+                    yield {
+                        **res_base,
+                        "status": "error",
+                        "message": (
+                            "Submitted URL: %s; " "Incorrect endpoint: %s",
+                            url,
+                            endpoint_str,
+                        ),
+                    }
+                elif resp_status_code == 409:
+                    yield {
+                        **res_base,
+                        "status": "error",
+                        "message": ("The URL, %s, is already registered", url),
+                    }
+                elif resp_status_code == 422:
+                    yield {
+                        **res_base,
+                        "status": "error",
+                        "message": (
+                            "Submitted URL: %s; "
+                            "Unprocessable argument(s) to server: %s",
+                            url,
+                            resp.text,
+                        ),
+                    }
+                elif resp_status_code == 500:
+                    yield {
+                        **res_base,
+                        "status": "error",
+                        "message": ("Submitted URL: %s; " "Server Error", url),
+                    }
                 else:
-                    msg = "Announced update"
-                try:
-                    r = s.patch(f"{endpoint}/urls/{url_encoded}", timeout=1)
-                    r.raise_for_status()
-                except requests.exceptions.RequestException as exc:
                     yield {
                         **res_base,
-                        "url": url,
-                        "url_encoded": url_encoded,
                         "status": "error",
-                        "message": ("Submitting URL failed: %s", exc),
+                        "message": (
+                            "Submitted URL: %s; "
+                            "Server HTTP response code: %s; "
+                            "Message from server: %s",
+                            url,
+                            resp_status_code,
+                            resp.text,
+                        ),
                     }
-                    continue
-                yield {
-                    **res_base,
-                    "url": url,
-                    "url_encoded": url_encoded,
-                    "status": "ok",
-                    "message": ("%s: %s", msg, url),
-                }
