@@ -500,7 +500,8 @@ def extract_meta(url_id: int, dataset_path: str, extractor: str) -> ExtractMetaS
         )
 
 
-@celery.task
+# `acks_late` is set. Make sure this task is always idempotent
+@celery.task(acks_late=True)
 @validate_arguments
 def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaStatus:
     """
