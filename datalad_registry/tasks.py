@@ -543,7 +543,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
     return extract_meta.run(ds_url_id, cache_path_abs, extractor)
 
 
-@celery.task
+@celery.task(autoretry_for=(IncompleteResultsError,), max_retries=4, retry_backoff=100)
 @validate_arguments
 def process_dataset_url(dataset_url_id: StrictInt) -> None:
     """
