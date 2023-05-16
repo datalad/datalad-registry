@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 from celery.app.base import Celery
-from celery.schedules import crontab
 from flask import Flask, request
 from flask.logging import default_handler
 from flask_openapi3 import Info, OpenAPI
@@ -31,12 +30,7 @@ def _setup_logging(level: Union[int, str]) -> None:
 def setup_celery(app: Flask, celery: Celery) -> Celery:
     celery.conf.beat_schedule = {}
     cache_dir = app.config.get("DATALAD_REGISTRY_DATASET_CACHE")
-    if cache_dir:
-        celery.conf.beat_schedule["collect_dataset_info"] = {
-            "task": "datalad_registry.tasks.collect_dataset_info",
-            "schedule": crontab(minute="*/5"),
-        }
-    else:
+    if cache_dir is None:
         lgr.debug(
             "DATALAD_REGISTRY_DATASET_CACHE isn't configured. "
             "Not registering periodic tasks that depend on it"
