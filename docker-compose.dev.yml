@@ -49,21 +49,24 @@ services:
       timeout: 3s
       retries: 10
 
-  scheduler:
-    build: .
-    depends_on:
-      broker:
-        condition: service_healthy
-    command: [
-      celery, -A, datalad_registry.runcelery.celery,
-      beat,
-      --loglevel, DEBUG,
-      -s, /app/instance/celerybeat-schedule
-    ]
-    volumes:
-      - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
-    environment:
-      <<: *env
+# TODO: Currently, there is no job to be scheduled.
+#   Disable this to make debugging easier.
+#   Once there is a job to be scheduled, we can uncomment this to enable the scheduler
+#  scheduler:
+#    build: .
+#    depends_on:
+#      broker:
+#        condition: service_healthy
+#    command: [
+#      celery, -A, datalad_registry.runcelery.celery,
+#      beat,
+#      --loglevel, DEBUG,
+#      -s, /app/instance/celerybeat-schedule
+#    ]
+#    volumes:
+#      - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
+#    environment:
+#      <<: *env
 
   broker:
     image: docker.io/rabbitmq:3-alpine
