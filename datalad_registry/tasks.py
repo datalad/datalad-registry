@@ -375,6 +375,7 @@ def update_url_info(ds_id: str, url: str) -> None:
 _EXTRACTOR_REQUIRED_FILES = {
     "metalad_studyminimeta": [".studyminimeta.yaml"],
     "datacite_gin": ["datacite.yml"],
+    "bids_dataset": ["dataset_description.json"],
 }
 
 
