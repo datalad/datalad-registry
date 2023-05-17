@@ -27,6 +27,7 @@ class Config(object):
         "metalad_core",
         "metalad_studyminimeta",
         "datacite_gin",
+        "bids_dataset",
     ]
 
 
