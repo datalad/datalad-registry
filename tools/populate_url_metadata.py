@@ -6,35 +6,40 @@
 # the Celery worker is running before running this script.
 
 
-from pathlib import Path
+import click
 
 from datalad_registry.factory import create_app
 from datalad_registry.models import URL, db
-from datalad_registry.tasks import extract_meta
-from datalad_registry.utils.url_encoder import url_encode
+from datalad_registry.tasks import extract_ds_meta
 
 flask_app = create_app()
 
 
-cache_dir = Path(flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+@click.command
+@click.option(
+    "--extractor",
+    "-e",
+    type=str,
+    prompt="Extractor name",
+    help="The name of the extractor to use",
+)
+def populate_url_metadata(extractor: str) -> None:
+    with flask_app.app_context():
+        urls = db.session.execute(db.select(URL)).scalars().all()
+        print(f"Found {len(urls)} URLs and submitting them for {extractor} extraction.")
 
-with flask_app.app_context():
-    urls = db.session.execute(db.select(URL)).scalars().all()
-    print(f"Found {len(urls)} URLs.")
+        for url in urls:
+            if url.processed:
+                extract_ds_meta.delay(url.id, extractor)
 
-    for url in urls:
-        if url.ds_id is not None:
-            # Reconstruct the path of the dataset of the URL at the local cache
-            ds_path = cache_dir / url.ds_id[:3] / url_encode(url.url)
+            else:
+                print(
+                    f"Warning: {url.url} has not been processed initially "
+                    f"(possibly not cloned yet).\n"
+                    f"  Therefore, no metadata can be extracted "
+                    f"for the dataset at the URL."
+                )
 
-            url_id = url.id
-            ds_path_str = str(ds_path)
 
-            for extractor in flask_app.config["DATALAD_REGISTRY_METADATA_EXTRACTORS"]:
-                extract_meta.delay(url_id, ds_path_str, extractor)
-        else:
-            print(
-                f"Warning: {url.url} has no dataset ID in the database.\n"
-                f"    Therefore, no metadata can be extracted "
-                f"for the dataset at the URL."
-            )
+if __name__ == "__main__":
+    populate_url_metadata()
