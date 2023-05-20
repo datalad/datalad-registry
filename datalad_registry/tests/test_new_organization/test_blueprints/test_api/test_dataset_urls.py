@@ -43,6 +43,7 @@ def populate_with_dataset_urls(flask_app):
             git_objects_kb=110,
             info_ts=datetime(2008, 7, 18, 18, 34, 32),
             processed=True,
+            cache_path="8c8/fff/e01f2142d88690d92144b00af0",
         ),
         URL(
             url="http://www.datalad.org",
@@ -54,6 +55,7 @@ def populate_with_dataset_urls(flask_app):
             git_objects_kb=1100,
             info_ts=datetime(2009, 6, 18, 18, 34, 32),
             processed=True,
+            cache_path="72e/cd9/cc10534e2a9f551e32119e0e60",
         ),
         URL(
             url="https://handbook.datalad.org",
@@ -65,10 +67,12 @@ def populate_with_dataset_urls(flask_app):
             git_objects_kb=4000,
             info_ts=datetime(2004, 6, 18, 18, 34, 32),
             processed=True,
+            cache_path="72e/4e5/4184da47e282c02ae7e568ba74",
         ),
         URL(
             url="https://www.dandiarchive.org",
             processed=False,
+            cache_path="a/b/c",
         ),
     ]
 
