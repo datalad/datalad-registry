@@ -169,7 +169,7 @@ class DatasetURLs(BaseModel):
         orm_mode = True
 
 
-@bp.post("/", responses={"201": DatasetURLRespModel, "409": HTTPExceptionResp})
+@bp.post("", responses={"201": DatasetURLRespModel, "409": HTTPExceptionResp})
 def create_dataset_url(body: DatasetURLSubmitModel):
     """
     Create a new dataset URL.
@@ -207,7 +207,7 @@ def create_dataset_url(body: DatasetURLSubmitModel):
         abort(409, "The URL requested to be created already exists in the database.")
 
 
-@bp.get("/", responses={"200": DatasetURLs})
+@bp.get("", responses={"200": DatasetURLs})
 def dataset_urls(query: _QueryParams):
     """
     Get all dataset URLs that satisfy the constraints imposed by the query parameters.
