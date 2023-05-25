@@ -6,17 +6,14 @@ from pydantic import BaseModel, Field, StrictStr
 
 from datalad_registry.models import URLMetadata, db
 
-from .. import API_URL_PREFIX, HTTPExceptionResp
+from .. import API_URL_PREFIX, COMMON_API_RESPONSES
 
 bp = APIBlueprint(
     "url_metadata_api",
     __name__,
     url_prefix=f"{API_URL_PREFIX}/url-metadata",
     abp_tags=[Tag(name="URL Metadata", description="API endpoints for URL metadata")],
-    abp_responses={
-        "404": HTTPExceptionResp,
-        "500": HTTPExceptionResp,
-    },
+    abp_responses=COMMON_API_RESPONSES,
 )
 
 

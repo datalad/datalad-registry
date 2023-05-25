@@ -11,3 +11,7 @@ class HTTPExceptionResp(BaseModel):
     code: int = Field(..., description="HTTP status code")
     name: str = Field(..., description="HTTP status name")
     description: str = Field(..., description="HTTP status description")
+
+
+# The responses common to all API endpoints
+COMMON_API_RESPONSES = {"404": HTTPExceptionResp, "500": HTTPExceptionResp}

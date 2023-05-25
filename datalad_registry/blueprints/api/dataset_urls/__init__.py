@@ -17,17 +17,14 @@ from datalad_registry.models import URL, db
 from datalad_registry.tasks import extract_ds_meta, log_error, process_dataset_url
 from datalad_registry.utils.flask_tools import json_resp_from_str
 
-from .. import API_URL_PREFIX, HTTPExceptionResp
+from .. import API_URL_PREFIX, COMMON_API_RESPONSES, HTTPExceptionResp
 
 bp = APIBlueprint(
     "dataset_urls_api",
     __name__,
     url_prefix=f"{API_URL_PREFIX}/dataset-urls",
     abp_tags=[Tag(name="Dataset URLs", description="API endpoints for dataset URLs")],
-    abp_responses={
-        "404": HTTPExceptionResp,
-        "500": HTTPExceptionResp,
-    },
+    abp_responses=COMMON_API_RESPONSES,
 )
 
 
