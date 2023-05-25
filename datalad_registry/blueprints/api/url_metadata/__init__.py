@@ -1,15 +1,20 @@
 # This file is for defining the API endpoints related to dataset URL metadata,
 # i.e. the metadata of datasets at individual URLs.
 
-from flask_openapi3 import Tag
+from flask_openapi3 import APIBlueprint, Tag
 from pydantic import BaseModel, Field, StrictStr
 
 from datalad_registry.models import URLMetadata, db
 
-from . import bp
+from .. import API_URL_PREFIX, COMMON_API_RESPONSES
 
-_URL_PREFIX = "/url-metadata"
-_TAG = Tag(name="URL Metadata", description="API endpoints for URL metadata")
+bp = APIBlueprint(
+    "url_metadata_api",
+    __name__,
+    url_prefix=f"{API_URL_PREFIX}/url-metadata",
+    abp_tags=[Tag(name="URL Metadata", description="API endpoints for URL metadata")],
+    abp_responses=COMMON_API_RESPONSES,
+)
 
 
 class _PathParams(BaseModel):
@@ -37,11 +42,7 @@ class URLMetadataModel(BaseModel):
         orm_mode = True
 
 
-@bp.get(
-    f"{_URL_PREFIX}/<int:url_metadata_id>",
-    responses={"200": URLMetadataModel},
-    tags=[_TAG],
-)
+@bp.get("/<int:url_metadata_id>", responses={"200": URLMetadataModel})
 def url_metadata(path: _PathParams):
     """
     Get URL metadata by ID.

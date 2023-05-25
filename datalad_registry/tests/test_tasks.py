@@ -16,6 +16,7 @@ class TestCloneDataset:
 
         result_iter = mock_clone_run_result()
 
+        # noinspection PyUnusedLocal
         def mock_clone(*args, **kwargs):  # noqa: U100 (unused arguments)
             result = next(result_iter)
             if isinstance(result, IncompleteResultsError):
@@ -32,6 +33,7 @@ class TestCloneDataset:
         assert ret == 42
 
     def test_incomplete_results_error_unresolved(self, monkeypatch, tmp_path):
+        # noinspection PyUnusedLocal
         def mock_clone(*args, **kwargs):  # noqa: U100 (unused arguments)
             raise IncompleteResultsError(msg="Only half full")
 
@@ -43,6 +45,7 @@ class TestCloneDataset:
             tasks.clone_dataset("https://example.com", non_existent_path)
 
     def test_other_error(self, monkeypatch, tmp_path):
+        # noinspection PyUnusedLocal
         def mock_clone(*args, **kwargs):  # noqa: U100 (unused arguments)
             raise RuntimeError("mocked error")
 

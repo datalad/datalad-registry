@@ -8,7 +8,7 @@ from uuid import UUID
 
 from celery import group
 from flask import abort, current_app
-from flask_openapi3 import Tag
+from flask_openapi3 import APIBlueprint, Tag
 from pydantic import AnyUrl, BaseModel, Field, FileUrl, validator
 from sqlalchemy import and_
 from sqlalchemy.sql.elements import BinaryExpression
@@ -17,10 +17,15 @@ from datalad_registry.models import URL, db
 from datalad_registry.tasks import extract_ds_meta, log_error, process_dataset_url
 from datalad_registry.utils.flask_tools import json_resp_from_str
 
-from . import HTTPExceptionResp, bp
+from .. import API_URL_PREFIX, COMMON_API_RESPONSES, HTTPExceptionResp
 
-_URL_PREFIX = "/dataset-urls"
-_TAG = Tag(name="Dataset URLs", description="API endpoints for dataset URLs")
+bp = APIBlueprint(
+    "dataset_urls_api",
+    __name__,
+    url_prefix=f"{API_URL_PREFIX}/dataset-urls",
+    abp_tags=[Tag(name="Dataset URLs", description="API endpoints for dataset URLs")],
+    abp_responses=COMMON_API_RESPONSES,
+)
 
 
 def path_url_must_be_absolute(url):
@@ -164,11 +169,7 @@ class DatasetURLs(BaseModel):
         orm_mode = True
 
 
-@bp.post(
-    f"{_URL_PREFIX}",
-    responses={"201": DatasetURLRespModel, "409": HTTPExceptionResp},
-    tags=[_TAG],
-)
+@bp.post("", responses={"201": DatasetURLRespModel, "409": HTTPExceptionResp})
 def create_dataset_url(body: DatasetURLSubmitModel):
     """
     Create a new dataset URL.
@@ -206,11 +207,7 @@ def create_dataset_url(body: DatasetURLSubmitModel):
         abort(409, "The URL requested to be created already exists in the database.")
 
 
-@bp.get(
-    f"{_URL_PREFIX}",
-    responses={"200": DatasetURLs},
-    tags=[_TAG],
-)
+@bp.get("", responses={"200": DatasetURLs})
 def dataset_urls(query: _QueryParams):
     """
     Get all dataset URLs that satisfy the constraints imposed by the query parameters.
@@ -274,11 +271,7 @@ def dataset_urls(query: _QueryParams):
     return json_resp_from_str(ds_urls.json())
 
 
-@bp.get(
-    f"{_URL_PREFIX}/<int:id>",
-    responses={"200": DatasetURLRespModel},
-    tags=[_TAG],
-)
+@bp.get("/<int:id>", responses={"200": DatasetURLRespModel})
 def dataset_url(path: _PathParams):
     """
     Get a dataset URL by ID.
