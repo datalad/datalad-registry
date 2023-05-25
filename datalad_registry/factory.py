@@ -94,10 +94,12 @@ def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
     app.register_blueprint(root.bp)
 
     from .blueprints.api import HTTPExceptionResp
-    from .blueprints.api import bp as api_bp
+    from .blueprints.api.dataset_urls import bp as dataset_urls_bp
+    from .blueprints.api.url_metadata import bp as url_metadata_bp
 
-    # Register API blueprint
-    app.register_api(api_bp)
+    # Register API blueprints
+    app.register_api(dataset_urls_bp)
+    app.register_api(url_metadata_bp)
 
     @app.errorhandler(HTTPException)
     def handle_exception(e):
