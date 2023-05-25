@@ -98,6 +98,7 @@ class TestProcessDatasetUrl:
         URL
         """
 
+        # noinspection PyUnusedLocal
         def mock_clone(*args, **kwargs):  # noqa: U100
             raise RuntimeError("Mocked clone failure")
 
@@ -127,6 +128,7 @@ class TestProcessDatasetUrl:
 
         from datalad_registry import tasks
 
+        # noinspection PyUnusedLocal
         def mock_update_dataset_url_info(
             *args, **kwargs  # noqa: U100 (Unused argument)
         ):
