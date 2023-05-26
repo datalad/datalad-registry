@@ -37,7 +37,7 @@ def path_url_must_be_absolute(url):
     return url
 
 
-class _PathParams(BaseModel):
+class PathParams(BaseModel):
     """
     Pydantic model for representing the path parameters for API endpoints related to
     dataset URLs.
@@ -272,7 +272,7 @@ def dataset_urls(query: _QueryParams):
 
 
 @bp.get("/<int:id>", responses={"200": DatasetURLRespModel})
-def dataset_url(path: _PathParams):
+def dataset_url(path: PathParams):
     """
     Get a dataset URL by ID.
     """
