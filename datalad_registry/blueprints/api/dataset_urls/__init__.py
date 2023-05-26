@@ -46,7 +46,7 @@ class PathParams(BaseModel):
     id: int = Field(..., description="The ID of the dataset URL")
 
 
-class _QueryParams(BaseModel):
+class QueryParams(BaseModel):
     """
     Pydantic model for representing the query parameters to query
     the dataset_urls endpoint
@@ -208,7 +208,7 @@ def create_dataset_url(body: DatasetURLSubmitModel):
 
 
 @bp.get("", responses={"200": DatasetURLs})
-def dataset_urls(query: _QueryParams):
+def dataset_urls(query: QueryParams):
     """
     Get all dataset URLs that satisfy the constraints imposed by the query parameters.
     """
