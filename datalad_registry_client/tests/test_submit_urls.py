@@ -6,6 +6,15 @@ import requests
 from datalad_registry_client import DEFAULT_BASE_ENDPOINT
 
 
+def test_register():
+    """
+    Test that `registry_submit_urls` is registered with DataLad.
+    """
+    import datalad.api as ds
+
+    assert hasattr(ds, "registry_submit_urls")
+
+
 class MockResponse:
     """
     Custom class used to mock the response object returned by
