@@ -1,6 +1,7 @@
 # This file is for defining the API endpoints related to dataset URls
 
 import operator
+from pathlib import Path
 
 from celery import group
 from flask import abort, current_app
@@ -90,6 +91,16 @@ def dataset_urls(query: QueryParams):
         """
         if qry is not None:
             constraints.append(op(db_model_column, qry_spec_transform(qry)))
+
+    def cache_path_trans(cache_path: Path) -> str:
+        """
+        Transform a cache path to its string representation.
+        If the cache path is absolute, only the last three components of the path
+        are used in the string representation.
+        """
+        if cache_path.is_absolute():
+            cache_path = Path(*(cache_path.parts[-3:]))
+        return str(cache_path)
 
     # ==== Gathering constraints from query parameters ====
 
