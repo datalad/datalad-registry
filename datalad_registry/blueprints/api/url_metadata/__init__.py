@@ -17,7 +17,7 @@ bp = APIBlueprint(
 )
 
 
-class _PathParams(BaseModel):
+class PathParams(BaseModel):
     """
     Pydantic model for representing the path parameters for the URL metadata API
     endpoints.
@@ -43,7 +43,7 @@ class URLMetadataModel(BaseModel):
 
 
 @bp.get("/<int:url_metadata_id>", responses={"200": URLMetadataModel})
-def url_metadata(path: _PathParams):
+def url_metadata(path: PathParams):
     """
     Get URL metadata by ID.
     """
