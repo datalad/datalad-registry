@@ -13,8 +13,6 @@ from datalad.support.param import Parameter
 import requests
 from yarl import URL
 
-from datalad_registry.blueprints.api.dataset_urls import DatasetURLs
-
 from . import DEFAULT_BASE_ENDPOINT
 
 # The path of the dataset URLs resource on the DataLad Registry instance relative to
@@ -66,6 +64,8 @@ class RegistryGetURLs(Interface):
     # signature must match parameter list above
     # additional generic arguments are added by decorators
     def __call__(cache_path: Optional[str] = None, base_endpoint: Optional[str] = None):
+        from datalad_registry.blueprints.api.dataset_urls.models import DatasetURLs
+
         # Set `base_endpoint` to the default if it is not provided.
         if base_endpoint is None:
             base_endpoint = cfg.get(
