@@ -152,5 +152,8 @@ class DatasetURLs(BaseModel):
 
     __root__: list[DatasetURLRespModel]
 
+    def __str__(self):
+        return str(self.__root__)
+
     class Config:
         orm_mode = True
