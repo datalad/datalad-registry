@@ -23,6 +23,19 @@ class MockResponse:
         self.text = text
 
 
+dataset_url_resp_model_template = dict(
+    id=2,
+    ds_id="2a0b7b7b-a984-4c4a-844c-be3132291d7b",
+    describe="1234",
+    annex_key_count=30,
+    annexed_files_in_wt_count=45,
+    annexed_files_in_wt_size=100,
+    last_update=datetime(2008, 7, 18, 18, 34, 32),
+    git_objects_kb=1200,
+    processed=True,
+)
+
+
 def test_register():
     """
     Test that `registry_get_urls` is registered with DataLad
@@ -63,16 +76,8 @@ class TestRegistryGetURLs:
                     DatasetURLs(
                         __root__=[
                             DatasetURLRespModel(
-                                url="http://www.example.com",
-                                id=2,
-                                ds_id="2a0b7b7b-a984-4c4a-844c-be3132291d7b",
-                                describe="1234",
-                                annex_key_count=30,
-                                annexed_files_in_wt_count=45,
-                                annexed_files_in_wt_size=100,
-                                last_update=datetime(2008, 7, 18, 18, 34, 32),
-                                git_objects_kb=1200,
-                                processed=True,
+                                **dataset_url_resp_model_template,
+                                url="https://www.example.com"
                             )
                         ]
                     ).json(),
