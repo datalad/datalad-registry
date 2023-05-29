@@ -138,25 +138,46 @@ class TestRegistryGetURLs:
         assert len(res) == 1
         assert res[0]["status"] == "ok"
 
-    # @pytest.mark.parametrize(
-    #     "response_urls",
-    #     [
-    #         ["https://www.example.com"],
-    #         [
-    #             "https://www.example.com",
-    #             "https://centerforopenneuroscience.org/",
-    #             "https://www.datalad.org/",
-    #         ],
-    #     ],
-    # )
-    # def test_handle_successful_response(self, response_urls: list[str], monkeypatch):
-    #     """
-    #     Test handling of a successful response from the server
-    #     """
-    #
-    #     def mock_get(s, url):
-    #         raise NotImplementedError
-    #
+    @pytest.mark.parametrize(
+        "response_urls",
+        [
+            ["https://www.example.com"],
+            [
+                "https://www.example.com",
+                "https://centerforopenneuroscience.org/",
+                "https://www.datalad.org/",
+            ],
+        ],
+    )
+    def test_handle_successful_response(self, response_urls: list[str], monkeypatch):
+        """
+        Test handling of a successful response from the server
+        """
+
+        # noinspection PyUnusedLocal
+        def mock_get(s, url):  # noqa: U100 Unused argument
+            # noinspection PyTypeChecker
+            return MockResponse(
+                200,
+                DatasetURLs(
+                    __root__=[
+                        DatasetURLRespModel(
+                            **dataset_url_resp_model_template, url=response_url
+                        )
+                        for response_url in response_urls
+                    ]
+                ).json(),
+            )
+
+        monkeypatch.setattr(requests.Session, "get", mock_get)
+
+        res = dl.registry_get_urls(cache_path="a/b/c")
+
+        assert len(res) == 1
+        assert res[0]["status"] == "ok"
+        assert str(response_urls) in res[0]["message"]
+        assert "error_message" not in res[0]
+
     # def test_handle_error_response(self, status_code, msg_content, monkeypatch):
     #     """
     #     Test handling of an error response from the server
