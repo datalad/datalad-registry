@@ -99,7 +99,7 @@ class RegistryGetURLs(Interface):
 
                 yield get_status_dict(
                     status="ok",
-                    message=f"{[e.url for e in dataset_urls.__root__]}",
+                    message=f"{[str(i.url) for i in dataset_urls.__root__]}",
                     **res_base,
                 )
             elif resp_status_code == 404:
