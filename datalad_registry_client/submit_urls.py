@@ -68,49 +68,49 @@ class RegistrySubmitURLs(Interface):
 
                 resp_status_code = resp.status_code
                 if resp_status_code == 201:
-                    yield {
+                    yield get_status_dict(
                         **res_base,
-                        "status": "ok",
-                        "message": ("Registered %s", url),
-                    }
+                        status="ok",
+                        message=("Registered %s", url),
+                    )
                 elif resp_status_code == 404:
-                    yield {
+                    yield get_status_dict(
                         **res_base,
-                        "status": "error",
-                        "message": (
+                        status="error",
+                        error_message=(
                             "Submitted URL: %s; " "Incorrect endpoint: %s",
                             url,
                             endpoint_str,
                         ),
-                    }
+                    )
                 elif resp_status_code == 409:
-                    yield {
+                    yield get_status_dict(
                         **res_base,
-                        "status": "error",
-                        "message": ("The URL, %s, is already registered", url),
-                    }
+                        status="error",
+                        error_message=("The URL, %s, is already registered", url),
+                    )
                 elif resp_status_code == 422:
-                    yield {
+                    yield get_status_dict(
                         **res_base,
-                        "status": "error",
-                        "message": (
+                        status="error",
+                        error_message=(
                             "Submitted URL: %s; "
                             "Unprocessable argument(s) to server: %s",
                             url,
                             resp.text,
                         ),
-                    }
+                    )
                 elif resp_status_code == 500:
-                    yield {
+                    yield get_status_dict(
                         **res_base,
-                        "status": "error",
-                        "message": ("Submitted URL: %s; " "Server Error", url),
-                    }
+                        status="error",
+                        error_message=("Submitted URL: %s; " "Server Error", url),
+                    )
                 else:
-                    yield {
+                    yield get_status_dict(
                         **res_base,
-                        "status": "error",
-                        "message": (
+                        status="error",
+                        error_message=(
                             "Submitted URL: %s; "
                             "Server HTTP response code: %s; "
                             "Message from server: %s",
@@ -118,4 +118,4 @@ class RegistrySubmitURLs(Interface):
                             resp_status_code,
                             resp.text,
                         ),
-                    }
+                    )
