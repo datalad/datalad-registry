@@ -77,7 +77,7 @@ class RegistrySubmitURLs(Interface):
                     yield get_status_dict(
                         **res_base,
                         status="error",
-                        message=(
+                        error_message=(
                             "Submitted URL: %s; " "Incorrect endpoint: %s",
                             url,
                             endpoint_str,
@@ -87,13 +87,13 @@ class RegistrySubmitURLs(Interface):
                     yield get_status_dict(
                         **res_base,
                         status="error",
-                        message=("The URL, %s, is already registered", url),
+                        error_message=("The URL, %s, is already registered", url),
                     )
                 elif resp_status_code == 422:
                     yield get_status_dict(
                         **res_base,
                         status="error",
-                        message=(
+                        error_message=(
                             "Submitted URL: %s; "
                             "Unprocessable argument(s) to server: %s",
                             url,
@@ -104,13 +104,13 @@ class RegistrySubmitURLs(Interface):
                     yield get_status_dict(
                         **res_base,
                         status="error",
-                        message=("Submitted URL: %s; " "Server Error", url),
+                        error_message=("Submitted URL: %s; " "Server Error", url),
                     )
                 else:
                     yield get_status_dict(
                         **res_base,
                         status="error",
-                        message=(
+                        error_message=(
                             "Submitted URL: %s; "
                             "Server HTTP response code: %s; "
                             "Message from server: %s",
