@@ -112,6 +112,8 @@ class TestRegistrySubmitURLs:
 
         assert len(exc_info.value.failed) == 1
         assert exc_info.value.failed[0]["status"] == "error"
+        assert "message" not in exc_info.value.failed[0]
+        assert "error_message" in exc_info.value.failed[0]
 
     def test_multi_urls(self, monkeypatch):
         """
