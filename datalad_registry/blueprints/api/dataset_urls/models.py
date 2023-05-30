@@ -99,6 +99,22 @@ class QueryParams(BaseModel):
         "in the query.",
     )
 
+    return_metadata: Optional[MetadataReturnOption] = Field(
+        None,
+        description="Whether and how to return metadata of the datasets at the URLs. "
+        "If this query parameter is not provided, the `metadata` field "
+        "of each returned dataset URL object will be `null`. "
+        'If this query parameter is "references", '
+        "the `metadata` field of each returned dataset URL object will be "
+        "an object with metadata extractor names being the fields and "
+        "the links to the corresponding metadata being the values. "
+        'If this query parameter is "content", the `metadata` field '
+        "of each returned dataset URL object will be an object "
+        "with metadata extractor names being the fields "
+        "and objects representing the corresponding metadata "
+        "being the values.",
+    )
+
     # Validator
     _path_url_must_be_absolute = validator("url", allow_reuse=True)(
         path_url_must_be_absolute
