@@ -7,6 +7,8 @@ from pydantic import AnyUrl, BaseModel, Field, FileUrl, validator
 
 from datalad_registry.utils import StrEnum
 
+from ..url_metadata.models import URLMetadataModel
+
 
 def path_url_must_be_absolute(url):
     """
@@ -166,6 +168,9 @@ class DatasetURLRespModel(DatasetURLSubmitModel):
     processed: bool = Field(
         description="Whether an initial processing has been completed "
         "on the dataset URL"
+    )
+    metadata: list[URLMetadataModel] = Field(
+        ..., alias="metadata_", description="The metadata of the dataset at the URL"
     )
 
     class Config:
