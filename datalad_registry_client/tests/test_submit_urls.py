@@ -80,6 +80,8 @@ class TestRegistrySubmitURLs:
         res = dl.registry_submit_urls(urls=["http://example.test"])
         assert len(res) == 1
         assert res[0]["status"] == "ok"
+        assert "message" in res[0]
+        assert "error_message" not in res[0]
 
     @pytest.mark.parametrize(
         "status_code, msg_content",
@@ -110,6 +112,8 @@ class TestRegistrySubmitURLs:
 
         assert len(exc_info.value.failed) == 1
         assert exc_info.value.failed[0]["status"] == "error"
+        assert "message" not in exc_info.value.failed[0]
+        assert "error_message" in exc_info.value.failed[0]
 
     def test_multi_urls(self, monkeypatch):
         """
