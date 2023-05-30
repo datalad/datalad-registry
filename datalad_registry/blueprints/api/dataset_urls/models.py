@@ -5,6 +5,8 @@ from uuid import UUID
 
 from pydantic import AnyUrl, BaseModel, Field, FileUrl, validator
 
+from datalad_registry.utils import StrEnum
+
 
 def path_url_must_be_absolute(url):
     """
@@ -13,6 +15,15 @@ def path_url_must_be_absolute(url):
     if isinstance(url, Path) and not url.is_absolute():
         raise ValueError("Path URLs must be absolute")
     return url
+
+
+class MetadataReturnOption(StrEnum):
+    """
+    Enum for representing the metadata return options
+    """
+
+    references = "references"
+    content = "content"
 
 
 class PathParams(BaseModel):
