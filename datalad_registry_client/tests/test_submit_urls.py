@@ -80,6 +80,8 @@ class TestRegistrySubmitURLs:
         res = dl.registry_submit_urls(urls=["http://example.test"])
         assert len(res) == 1
         assert res[0]["status"] == "ok"
+        assert "message" in res[0]
+        assert "error_message" not in res[0]
 
     @pytest.mark.parametrize(
         "status_code, msg_content",
