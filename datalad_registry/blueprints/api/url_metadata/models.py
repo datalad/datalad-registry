@@ -24,3 +24,13 @@ class URLMetadataModel(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class URLMetadataRef(BaseModel):
+    """
+    Model for referencing metadata of a dataset at a URL extracted by an extractor
+    through the API
+    """
+
+    extractor_name: StrictStr
+    link: StrictStr  # This link is relative
