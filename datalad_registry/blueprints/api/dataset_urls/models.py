@@ -103,6 +103,7 @@ class QueryParams(BaseModel):
 
     return_metadata: Optional[MetadataReturnOption] = Field(
         None,
+        # todo: description to be modified
         description="Whether and how to return metadata of the datasets at the URLs. "
         "If this query parameter is not provided, the `metadata` field "
         "of each returned dataset URL object will be `null`. "
