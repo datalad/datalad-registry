@@ -169,8 +169,8 @@ class DatasetURLRespModel(DatasetURLSubmitModel):
         description="Whether an initial processing has been completed "
         "on the dataset URL"
     )
-    metadata: list[URLMetadataModel] = Field(
-        ..., alias="metadata_", description="The metadata of the dataset at the URL"
+    metadata: Optional[list[URLMetadataModel]] = Field(
+        None, description="The metadata of the dataset at the URL"
     )
 
     class Config:
