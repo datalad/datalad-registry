@@ -10,14 +10,21 @@ class PathParams(BaseModel):
     url_metadata_id: int = Field(..., description="The ID of the URL metadata")
 
 
-class URLMetadataModel(BaseModel):
+class _URLMetadataRep(BaseModel):
+    """
+    Base model for representing metadata of a dataset at a URL
+    """
+
+    extractor_name: StrictStr
+
+
+class URLMetadataModel(_URLMetadataRep):
     """
     Model for representing the database model URLMetadata for communication
     """
 
     dataset_describe: StrictStr
     dataset_version: StrictStr
-    extractor_name: StrictStr
     extractor_version: StrictStr
     extraction_parameter: dict
     extracted_metadata: dict
@@ -26,11 +33,10 @@ class URLMetadataModel(BaseModel):
         orm_mode = True
 
 
-class URLMetadataRef(BaseModel):
+class URLMetadataRef(_URLMetadataRep):
     """
     Model for referencing metadata of a dataset at a URL extracted by an extractor
     through the API
     """
 
-    extractor_name: StrictStr
-    link: StrictStr  # This link is relative
+    link: StrictStr
