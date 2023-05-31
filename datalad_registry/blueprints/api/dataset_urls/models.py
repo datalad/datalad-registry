@@ -24,7 +24,7 @@ class MetadataReturnOption(StrEnum):
     Enum for representing the metadata return options
     """
 
-    references = "references"
+    reference = "reference"
     content = "content"
 
 
@@ -107,7 +107,7 @@ class QueryParams(BaseModel):
         description="Whether and how to return metadata of the datasets at the URLs. "
         "If this query parameter is not provided, the `metadata` field "
         "of each returned dataset URL object will be `null`. "
-        'If this query parameter is "references", '
+        'If this query parameter is "reference", '
         "the `metadata` field of each returned dataset URL object will be "
         "an object with metadata extractor names being the fields and "
         "the links to the corresponding metadata being the values. "
