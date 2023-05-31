@@ -136,9 +136,12 @@ class DatasetURLSubmitModel(BaseModel):
     )
 
 
-class DatasetURLRespModel(DatasetURLSubmitModel):
+class DatasetURLRespBaseModel(DatasetURLSubmitModel):
     """
-    Model for representing the database model URL in response communication
+    Base model for `DatasetURLRespModel`
+
+    All fields defined in this model are intended to be populated
+    from an orm model object directly.
     """
 
     id: int = Field(..., description="The ID of the dataset URL")
@@ -169,13 +172,20 @@ class DatasetURLRespModel(DatasetURLSubmitModel):
         description="Whether an initial processing has been completed "
         "on the dataset URL"
     )
-    metadata: Optional[list[URLMetadataModel]] = Field(
-        None, description="The metadata of the dataset at the URL"
-    )
 
     class Config:
         orm_mode = True
         allow_population_by_field_name = True
+
+
+class DatasetURLRespModel(DatasetURLRespBaseModel):
+    """
+    Model for representing the database model URL in response communication
+    """
+
+    metadata: Optional[list[URLMetadataModel]] = Field(
+        None, description="The metadata of the dataset at the URL"
+    )
 
 
 class DatasetURLs(BaseModel):
