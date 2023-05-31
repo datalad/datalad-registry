@@ -184,7 +184,7 @@ class DatasetURLRespModel(DatasetURLRespBaseModel):
     """
 
     metadata: Optional[list[URLMetadataModel]] = Field(
-        None, description="The metadata of the dataset at the URL"
+        None, alias="metadata_", description="The metadata of the dataset at the URL"
     )
 
 
