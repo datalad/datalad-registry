@@ -184,7 +184,7 @@ class DatasetURLRespModel(DatasetURLRespBaseModel):
     Model for representing the database model URL in response communication
     """
 
-    metadata: Optional[list[URLMetadataModel]] = Field(
+    metadata: Optional[Union[list[URLMetadataModel], list[int]]] = Field(
         ..., alias="metadata_", description="The metadata of the dataset at the URL"
     )
 
