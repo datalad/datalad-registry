@@ -7,7 +7,7 @@ from pydantic import AnyUrl, BaseModel, Field, FileUrl, validator
 
 from datalad_registry.utils import StrEnum
 
-from ..url_metadata.models import URLMetadataModel
+from ..url_metadata.models import URLMetadataModel, URLMetadataRef
 
 
 def path_url_must_be_absolute(url):
@@ -184,7 +184,7 @@ class DatasetURLRespModel(DatasetURLRespBaseModel):
     Model for representing the database model URL in response communication
     """
 
-    metadata: Optional[Union[list[URLMetadataModel], list[int]]] = Field(
+    metadata: Optional[Union[list[URLMetadataModel], list[URLMetadataRef]]] = Field(
         ..., alias="metadata_", description="The metadata of the dataset at the URL"
     )
 
