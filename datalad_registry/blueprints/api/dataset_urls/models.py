@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Union
@@ -195,3 +196,6 @@ class DatasetURLs(BaseModel):
     """
 
     __root__: list[DatasetURLRespModel]
+
+    def __iter__(self) -> Iterator[DatasetURLRespModel]:
+        return iter(self.__root__)
