@@ -3,6 +3,7 @@ from datetime import datetime
 import pytest
 
 from datalad_registry.blueprints.api.dataset_urls import DatasetURLRespModel
+from datalad_registry.models import URL, db
 
 
 @pytest.fixture
@@ -10,7 +11,6 @@ def populate_with_2_dataset_urls(flask_app):
     """
     Populate the url table with 2 URLs, at position 1 and 3.
     """
-    from datalad_registry.models import URL, db
 
     dataset_url1 = URL(url="https://example.com")
     dataset_url2 = URL(url="https://docs.datalad.org")
@@ -30,7 +30,6 @@ def populate_with_dataset_urls(flask_app):
     """
     Populate the url table with a list of URLs.
     """
-    from datalad_registry.models import URL, db
 
     urls = [
         URL(
