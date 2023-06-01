@@ -225,6 +225,9 @@ class TestDatasetURLs:
             {"min_git_objects_kb": 40},
             {"max_git_objects_kb": "100"},
             {"processed": True},
+            {"return_metadata": None},
+            {"return_metadata": MetadataReturnOption.reference.value},
+            {"return_metadata": MetadataReturnOption.content.value},
         ],
     )
     def test_valid_query_params(self, flask_client, query_params):
