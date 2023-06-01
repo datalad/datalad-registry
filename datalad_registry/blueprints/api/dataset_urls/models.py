@@ -79,6 +79,15 @@ class QueryParams(BaseModel):
         "on the dataset URL",
     )
 
+    cache_path: Optional[Path] = Field(
+        None,
+        description="The path, relative or full, of the cached clone of the dataset at "
+        "the URL in the local file system, the file system of the "
+        "Celery worker. If the path is relative, it is relative to the base cache path."
+        " If the path is full, only the last three components of the path are used "
+        "in the query.",
+    )
+
     # Validator
     _path_url_must_be_absolute = validator("url", allow_reuse=True)(
         path_url_must_be_absolute
@@ -134,6 +143,7 @@ class DatasetURLRespModel(DatasetURLSubmitModel):
 
     class Config:
         orm_mode = True
+        allow_population_by_field_name = True
 
 
 class DatasetURLs(BaseModel):
