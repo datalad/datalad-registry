@@ -202,6 +202,7 @@ class TestDatasetURLs:
             {"min_git_objects_kb": "lmn"},
             {"max_git_objects_kb": "mno"},
             {"processed": "nop"},
+            {"return_metadata": "all"},
         ],
     )
     def test_invalid_query_params(self, flask_client, query_params):
