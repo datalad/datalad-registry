@@ -3,6 +3,14 @@ from datetime import datetime
 import pytest
 
 from datalad_registry.blueprints.api.dataset_urls import DatasetURLRespModel
+from datalad_registry.blueprints.api.dataset_urls.models import (
+    DatasetURLs,
+    MetadataReturnOption,
+)
+from datalad_registry.blueprints.api.url_metadata.models import (
+    URLMetadataModel,
+    URLMetadataRef,
+)
 from datalad_registry.models import URL, URLMetadata, db
 
 
@@ -342,6 +350,54 @@ class TestDatasetURLs:
         resp_json_body: list = resp.json
 
         assert {i["url"] for i in resp_json_body} == expected_output
+
+    @pytest.mark.usefixtures("populate_with_url_metadata")
+    @pytest.mark.parametrize(
+        "metadata_ret_opt",
+        [
+            None,
+            MetadataReturnOption.reference,
+            MetadataReturnOption.content,
+        ],
+    )
+    def test_metadata_return(self, metadata_ret_opt, flask_client):
+        """
+        Test the return of metadata as a part of the returned list of dataset urls
+        """
+        if metadata_ret_opt is None:
+            query_string = {}
+        else:
+            query_string = {"return_metadata": metadata_ret_opt.value}
+
+        resp = flask_client.get("/api/v2/dataset-urls", query_string=query_string)
+
+        assert resp.status_code == 200
+
+        ds_urls = DatasetURLs.parse_raw(resp.text)
+
+        if metadata_ret_opt is None:
+            # === metadata is not returned ===
+
+            assert all(url.metadata is None for url in ds_urls)
+        else:
+            # === metadata is returned ===
+
+            if metadata_ret_opt is MetadataReturnOption.reference:
+                metadata_ret_type = URLMetadataRef
+            else:
+                metadata_ret_type = URLMetadataModel
+
+            for url in ds_urls:
+                assert type(url.metadata) is list
+
+                if url.id == 1:
+                    assert len(url.metadata) == 2
+                elif url.id == 3:
+                    assert len(url.metadata) == 1
+                else:
+                    assert len(url.metadata) == 0
+
+                assert all(type(m) is metadata_ret_type for m in url.metadata)
 
 
 @pytest.mark.usefixtures("populate_with_2_dataset_urls")
