@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 
 from datalad_registry.blueprints.api.dataset_urls import DatasetURLRespModel
-from datalad_registry.models import URL, db
+from datalad_registry.models import URL, URLMetadata, db
 
 
 @pytest.fixture
@@ -78,6 +78,50 @@ def populate_with_dataset_urls(flask_app):
     with flask_app.app_context():
         for url in urls:
             db.session.add(url)
+        db.session.commit()
+
+
+@pytest.fixture
+def populate_with_url_metadata(
+    populate_with_dataset_urls,  # noqa: U100 (unused argument)
+    flask_app,
+):
+    """
+    Populate the url_metadata table with a list of metadata
+    """
+    metadata_lst = [
+        URLMetadata(
+            dataset_describe="1234",
+            dataset_version="1.0.0",
+            extractor_name="metalad_core",
+            extractor_version="0.14.0",
+            extraction_parameter=dict(a=1, b=2),
+            extracted_metadata=dict(c=3, d=4),
+            url_id=1,
+        ),
+        URLMetadata(
+            dataset_describe="1234",
+            dataset_version="1.0.0",
+            extractor_name="metalad_studyminimet",
+            extractor_version="0.1.0",
+            extraction_parameter=dict(a=1, b=2),
+            extracted_metadata=dict(c=3, d=4),
+            url_id=1,
+        ),
+        URLMetadata(
+            dataset_describe="1234",
+            dataset_version="1.0.0",
+            extractor_name="metalad_core",
+            extractor_version="0.14.0",
+            extraction_parameter=dict(a=1, b=2),
+            extracted_metadata=dict(c=3, d=4),
+            url_id=3,
+        ),
+    ]
+
+    with flask_app.app_context():
+        for metadata in metadata_lst:
+            db.session.add(metadata)
         db.session.commit()
 
 
