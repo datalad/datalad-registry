@@ -148,10 +148,11 @@ def dataset_urls(query: QueryParams):
     if query.return_metadata is None:
         # === No metadata should be returned ===
 
+        # noinspection PyArgumentList
         ds_urls = DatasetURLs.parse_obj(
             [
                 DatasetURLRespModel(
-                    **DatasetURLRespBaseModel.from_orm(i).dict(), metadata=None
+                    **DatasetURLRespBaseModel.from_orm(i).dict(), metadata_=None
                 )
                 for i in orm_ds_urls
             ]
@@ -159,11 +160,12 @@ def dataset_urls(query: QueryParams):
     elif query.return_metadata is MetadataReturnOption.reference:
         # === Metadata should be returned by reference ===
 
+        # noinspection PyArgumentList
         ds_urls = DatasetURLs.parse_obj(
             [
                 DatasetURLRespModel(
                     **DatasetURLRespBaseModel.from_orm(i).dict(),
-                    metadata=[
+                    metadata_=[
                         URLMetadataRef(
                             extractor_name=j.extractor_name,
                             link=url_for(
