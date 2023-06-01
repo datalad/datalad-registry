@@ -195,6 +195,3 @@ class DatasetURLs(BaseModel):
     """
 
     __root__: list[DatasetURLRespModel]
-
-    class Config:
-        orm_mode = True

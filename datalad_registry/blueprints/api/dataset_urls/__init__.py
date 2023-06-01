@@ -179,7 +179,7 @@ def dataset_urls(query: QueryParams):
     else:
         # === Metadata should be returned by content ===
 
-        ds_urls = DatasetURLs.from_orm(orm_ds_urls)
+        ds_urls = DatasetURLs.parse_obj(orm_ds_urls)
 
     return json_resp_from_str(ds_urls.json())
 
