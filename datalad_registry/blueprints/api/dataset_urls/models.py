@@ -194,5 +194,5 @@ class DatasetURLs(BaseModel):
 
     __root__: list[DatasetURLRespModel]
 
-    def __iter__(self) -> Iterator[DatasetURLRespModel]:
+    def __iter__(self) -> Iterator[DatasetURLRespModel]:  # type: ignore[override]
         return iter(self.__root__)
