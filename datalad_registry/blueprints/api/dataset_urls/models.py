@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional, Union
 from uuid import UUID
 
-from pydantic import AnyUrl, BaseModel, Field, FileUrl, validator
+from pydantic import AnyUrl, BaseModel, Field, FileUrl, PositiveInt, validator
 
 from datalad_registry.utils import StrEnum
 
@@ -114,6 +114,18 @@ class QueryParams(BaseModel):
         'If this query parameter is "content", the `metadata` field '
         "of each returned dataset URL object will be a list of objects "
         "each presenting a piece of metadata of the dataset at the URL.",
+    )
+
+    # Pagination parameters
+    page: PositiveInt = Field(
+        1,
+        description="The current page (used to calculate the offset "
+        "of the pagination). Defaults to 1.",
+    )
+    per_page: PositiveInt = Field(
+        20,
+        description="The maximum number of items on a page "
+        "(used to calculate the offset and limit of the pagination). Defaults to 20.",
     )
 
     # Validator
