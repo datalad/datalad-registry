@@ -208,3 +208,12 @@ class DatasetURLs(BaseModel):
 
     def __iter__(self) -> Iterator[DatasetURLRespModel]:  # type: ignore[override]
         return iter(self.__root__)
+
+
+class SortDirOpt(StrEnum):
+    """
+    Enum for representing the sorting direction
+    """
+
+    asc = "asc"
+    desc = "desc"
