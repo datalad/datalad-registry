@@ -4,7 +4,16 @@ from pathlib import Path
 from typing import Optional, Union
 from uuid import UUID
 
-from pydantic import AnyUrl, BaseModel, Field, FileUrl, PositiveInt, validator
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    Field,
+    FileUrl,
+    PositiveInt,
+    StrictInt,
+    StrictStr,
+    validator,
+)
 
 from datalad_registry.utils import StrEnum
 
@@ -239,3 +248,24 @@ class DatasetURLs(BaseModel):
 
     def __iter__(self) -> Iterator[DatasetURLRespModel]:  # type: ignore[override]
         return iter(self.__root__)
+
+
+class DatasetURLPage(BaseModel):
+    """
+    Model for representing a page of dataset URLs in response communication
+    """
+
+    total: StrictInt = Field(
+        description="The total number of dataset URLs across all pages"
+    )
+    cur_pg_num: StrictInt = Field(description="The number of the current page")
+    prev_pg: Optional[StrictStr] = Field(
+        ..., description="The link to the previous page"
+    )
+    next_pg: Optional[StrictStr] = Field(..., description="The link to the next page")
+    first_pg: StrictStr = Field(description="The link to the first page")
+    last_pg: StrictStr = Field(description="The link to the last page")
+
+    dataset_urls: list[DatasetURLRespModel] = Field(
+        description="The list of dataset URLs in the current page"
+    )
