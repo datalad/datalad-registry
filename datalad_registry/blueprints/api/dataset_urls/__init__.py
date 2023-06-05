@@ -1,5 +1,6 @@
 # This file is for defining the API endpoints related to dataset URls
 
+from json import loads
 import operator
 from pathlib import Path
 
@@ -17,7 +18,6 @@ from .models import (
     DatasetURLPage,
     DatasetURLRespBaseModel,
     DatasetURLRespModel,
-    DatasetURLs,
     DatasetURLSubmitModel,
     MetadataReturnOption,
     PathParams,
@@ -140,51 +140,66 @@ def dataset_urls(query: QueryParams):
 
     # ==== Gathering constraints from query parameters ends ====
 
-    orm_ds_urls = (
-        db.session.execute(db.select(URL).filter(and_(True, *constraints)))
-        .scalars()
-        .all()
-    )
+    ep = ".dataset_urls"  # Endpoint of `dataset_urls`
+    base_qry = loads(query.json(exclude={"page"}, exclude_none=True))
+
+    pagination = db.paginate(db.select(URL).filter(and_(True, *constraints)))
+    orm_ds_urls = pagination.items
+    total = pagination.total
+    cur_pg_num = pagination.page
+    last_pg_num = pagination.pages
 
     if query.return_metadata is None:
         # === No metadata should be returned ===
 
         # noinspection PyArgumentList
-        ds_urls = DatasetURLs.parse_obj(
-            [
-                DatasetURLRespModel(
-                    **DatasetURLRespBaseModel.from_orm(i).dict(), metadata_=None
-                )
-                for i in orm_ds_urls
-            ]
-        )
+        ds_urls = [
+            DatasetURLRespModel(
+                **DatasetURLRespBaseModel.from_orm(i).dict(), metadata_=None
+            )
+            for i in orm_ds_urls
+        ]
+
     elif query.return_metadata is MetadataReturnOption.reference:
         # === Metadata should be returned by reference ===
 
         # noinspection PyArgumentList
-        ds_urls = DatasetURLs.parse_obj(
-            [
-                DatasetURLRespModel(
-                    **DatasetURLRespBaseModel.from_orm(i).dict(),
-                    metadata_=[
-                        URLMetadataRef(
-                            extractor_name=j.extractor_name,
-                            link=url_for(
-                                "url_metadata_api.url_metadata", url_metadata_id=j.id
-                            ),
-                        )
-                        for j in i.metadata_
-                    ],
-                )
-                for i in orm_ds_urls
-            ]
-        )
+        ds_urls = [
+            DatasetURLRespModel(
+                **DatasetURLRespBaseModel.from_orm(i).dict(),
+                metadata_=[
+                    URLMetadataRef(
+                        extractor_name=j.extractor_name,
+                        link=url_for(
+                            "url_metadata_api.url_metadata", url_metadata_id=j.id
+                        ),
+                    )
+                    for j in i.metadata_
+                ],
+            )
+            for i in orm_ds_urls
+        ]
+
     else:
         # === Metadata should be returned by content ===
 
-        ds_urls = DatasetURLs.parse_obj(orm_ds_urls)
+        ds_urls = orm_ds_urls
 
-    return json_resp_from_str(ds_urls.json())
+    page = DatasetURLPage(
+        total=total,
+        cur_pg_num=cur_pg_num,
+        prev_pg=url_for(ep, **base_qry, page=cur_pg_num - 1)
+        if pagination.has_prev
+        else None,
+        next_pg=url_for(ep, **base_qry, page=cur_pg_num + 1)
+        if pagination.has_next
+        else None,
+        first_pg=url_for(ep, **base_qry, page=1),
+        last_pg=url_for(ep, **base_qry, page=last_pg_num),
+        dataset_urls=ds_urls,
+    )
+
+    return json_resp_from_str(page.json())
 
 
 @bp.get("/<int:id>", responses={"200": DatasetURLRespModel})
