@@ -203,6 +203,14 @@ class TestDatasetURLs:
             {"max_git_objects_kb": "mno"},
             {"processed": "nop"},
             {"return_metadata": "all"},
+            {"page": 0},
+            {"page": -1},
+            {"page": -100},
+            {"page": "a"},
+            {"per_page": 0},
+            {"per_page": -1},
+            {"per_page": -100},
+            {"per_page": "b"},
         ],
     )
     def test_invalid_query_params(self, flask_client, query_params):
@@ -228,6 +236,9 @@ class TestDatasetURLs:
             {"return_metadata": None},
             {"return_metadata": MetadataReturnOption.reference.value},
             {"return_metadata": MetadataReturnOption.content.value},
+            {"page": 1},
+            {"per_page": 10},
+            {"per_page": 100},
         ],
     )
     def test_valid_query_params(self, flask_client, query_params):
