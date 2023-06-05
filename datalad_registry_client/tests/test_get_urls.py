@@ -8,8 +8,8 @@ import requests
 from yarl import URL
 
 from datalad_registry.blueprints.api.dataset_urls.models import (
+    DatasetURLPage,
     DatasetURLRespModel,
-    DatasetURLs,
 )
 from datalad_registry_client import DEFAULT_BASE_ENDPOINT
 
@@ -76,13 +76,19 @@ class TestRegistryGetURLs:
                 # noinspection PyTypeChecker
                 return MockResponse(
                     200,
-                    DatasetURLs(
-                        __root__=[
+                    DatasetURLPage(
+                        total=200,
+                        cur_pg_num=1,
+                        prev_pg="before",
+                        next_pg="after",
+                        first_pg="origin",
+                        last_pg="infinity",
+                        dataset_urls=[
                             DatasetURLRespModel(
                                 **dataset_url_resp_model_template,
                                 url="https://www.example.com"
                             )
-                        ]
+                        ],
                     ).json(),
                 )
             else:
@@ -121,13 +127,19 @@ class TestRegistryGetURLs:
                 # noinspection PyTypeChecker
                 return MockResponse(
                     200,
-                    DatasetURLs(
-                        __root__=[
+                    DatasetURLPage(
+                        total=100,
+                        cur_pg_num=1,
+                        prev_pg="prev",
+                        next_pg="next",
+                        first_pg="1",
+                        last_pg="100",
+                        dataset_urls=[
                             DatasetURLRespModel(
                                 **dataset_url_resp_model_template,
                                 url="https://www.example.com"
                             )
-                        ]
+                        ],
                     ).json(),
                 )
             else:
@@ -161,13 +173,19 @@ class TestRegistryGetURLs:
             # noinspection PyTypeChecker
             return MockResponse(
                 200,
-                DatasetURLs(
-                    __root__=[
+                DatasetURLPage(
+                    total=len(response_urls),
+                    cur_pg_num=1,
+                    prev_pg=None,
+                    next_pg=None,
+                    first_pg="/api/v2/dataset-urls?page=1",
+                    last_pg="/api/v2/dataset-urls?page=1",
+                    dataset_urls=[
                         DatasetURLRespModel(
                             **dataset_url_resp_model_template, url=response_url
                         )
                         for response_url in response_urls
-                    ]
+                    ],
                 ).json(),
             )
 

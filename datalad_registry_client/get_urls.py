@@ -64,7 +64,7 @@ class RegistryGetURLs(Interface):
     # signature must match parameter list above
     # additional generic arguments are added by decorators
     def __call__(cache_path: Optional[str] = None, base_endpoint: Optional[str] = None):
-        from datalad_registry.blueprints.api.dataset_urls.models import DatasetURLs
+        from datalad_registry.blueprints.api.dataset_urls.models import DatasetURLPage
 
         # Set `base_endpoint` to the default if it is not provided.
         if base_endpoint is None:
@@ -95,11 +95,11 @@ class RegistryGetURLs(Interface):
             resp_status_code = resp.status_code
 
             if resp_status_code == 200:
-                dataset_urls = DatasetURLs.parse_raw(resp.text)
+                ds_url_pg = DatasetURLPage.parse_raw(resp.text)
 
                 yield get_status_dict(
                     status="ok",
-                    message=f"{[str(i.url) for i in dataset_urls.__root__]}",
+                    message=f"{[str(i.url) for i in ds_url_pg.dataset_urls]}",
                     **res_base,
                 )
             elif resp_status_code == 404:

@@ -1,4 +1,3 @@
-from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Union
@@ -237,17 +236,6 @@ class DatasetURLRespModel(DatasetURLRespBaseModel):
     metadata: Optional[Union[list[URLMetadataModel], list[URLMetadataRef]]] = Field(
         ..., alias="metadata_", description="The metadata of the dataset at the URL"
     )
-
-
-class DatasetURLs(BaseModel):
-    """
-    Model for representing a list of dataset URLs in response communication
-    """
-
-    __root__: list[DatasetURLRespModel]
-
-    def __iter__(self) -> Iterator[DatasetURLRespModel]:  # type: ignore[override]
-        return iter(self.__root__)
 
 
 class DatasetURLPage(BaseModel):

@@ -4,7 +4,7 @@ import pytest
 
 from datalad_registry.blueprints.api.dataset_urls import DatasetURLRespModel
 from datalad_registry.blueprints.api.dataset_urls.models import (
-    DatasetURLs,
+    DatasetURLPage,
     MetadataReturnOption,
 )
 from datalad_registry.blueprints.api.url_metadata.models import (
@@ -372,9 +372,9 @@ class TestDatasetURLs:
         resp = flask_client.get("/api/v2/dataset-urls", query_string=query_params)
         assert resp.status_code == 200
 
-        resp_json_body: list = resp.json
+        ds_url_page = DatasetURLPage.parse_raw(resp.text)
 
-        assert {i["url"] for i in resp_json_body} == expected_output
+        assert {i.url for i in ds_url_page.dataset_urls} == expected_output
 
     @pytest.mark.usefixtures("populate_with_url_metadata")
     @pytest.mark.parametrize(
@@ -398,12 +398,12 @@ class TestDatasetURLs:
 
         assert resp.status_code == 200
 
-        ds_urls = DatasetURLs.parse_raw(resp.text)
+        ds_url_pg = DatasetURLPage.parse_raw(resp.text)
 
         if metadata_ret_opt is None:
             # === metadata is not returned ===
 
-            assert all(url.metadata is None for url in ds_urls)
+            assert all(url.metadata is None for url in ds_url_pg.dataset_urls)
         else:
             # === metadata is returned ===
 
@@ -412,7 +412,7 @@ class TestDatasetURLs:
             else:
                 metadata_ret_type = URLMetadataModel
 
-            for url in ds_urls:
+            for url in ds_url_pg.dataset_urls:
                 assert type(url.metadata) is list
 
                 if url.id == 1:
