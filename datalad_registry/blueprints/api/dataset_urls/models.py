@@ -150,6 +150,15 @@ class QueryParams(BaseModel):
         "(used to calculate the offset and limit of the pagination). Defaults to 20.",
     )
 
+    # Sorting parameters
+    sort_key: SortKeyOpt = Field(
+        SortKeyOpt.last_update,
+        description="The key to use to sort the items in the query",
+    )
+    sort_dir: SortDirOpt = Field(
+        SortDirOpt.desc, description="The direction to sort the items in the query"
+    )
+
     # Validator
     _path_url_must_be_absolute = validator("url", allow_reuse=True)(
         path_url_must_be_absolute
