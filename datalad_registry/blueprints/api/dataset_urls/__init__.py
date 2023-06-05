@@ -14,6 +14,7 @@ from datalad_registry.tasks import extract_ds_meta, log_error, process_dataset_u
 from datalad_registry.utils.flask_tools import json_resp_from_str
 
 from .models import (
+    DatasetURLPage,
     DatasetURLRespBaseModel,
     DatasetURLRespModel,
     DatasetURLs,
@@ -72,7 +73,7 @@ def create_dataset_url(body: DatasetURLSubmitModel):
         abort(409, "The URL requested to be created already exists in the database.")
 
 
-@bp.get("", responses={"200": DatasetURLs})
+@bp.get("", responses={"200": DatasetURLPage})
 def dataset_urls(query: QueryParams):
     """
     Get all dataset URLs that satisfy the constraints imposed by the query parameters.
