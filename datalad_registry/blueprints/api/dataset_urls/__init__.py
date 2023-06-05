@@ -143,7 +143,13 @@ def dataset_urls(query: QueryParams):
     ep = ".dataset_urls"  # Endpoint of `dataset_urls`
     base_qry = loads(query.json(exclude={"page"}, exclude_none=True))
 
-    pagination = db.paginate(db.select(URL).filter(and_(True, *constraints)))
+    max_per_page = 100  # The overriding limit to `per_page` provided by the requester
+    pagination = db.paginate(
+        db.select(URL).filter(and_(True, *constraints)),
+        page=query.page,
+        per_page=query.per_page,
+        max_per_page=max_per_page,
+    )
     orm_ds_urls = pagination.items
     total = pagination.total
     cur_pg_num = pagination.page
