@@ -20,6 +20,28 @@ def path_url_must_be_absolute(url):
     return url
 
 
+class SortDirOpt(StrEnum):
+    """
+    Enum for representing the sorting direction
+    """
+
+    asc = "asc"
+    desc = "desc"
+
+
+class SortKeyOpt(StrEnum):
+    """
+    Enum for representing the sorting key
+    """
+
+    url = "url"
+    annex_key_count = "annex_key_count"
+    annexed_files_in_wt_count = "annexed_files_in_wt_count"
+    annexed_files_in_wt_size = "annexed_files_in_wt_size"
+    last_update = "last_update"
+    git_objects_size = "git_objects_size"
+
+
 class MetadataReturnOption(StrEnum):
     """
     Enum for representing the metadata return options
@@ -208,25 +230,3 @@ class DatasetURLs(BaseModel):
 
     def __iter__(self) -> Iterator[DatasetURLRespModel]:  # type: ignore[override]
         return iter(self.__root__)
-
-
-class SortDirOpt(StrEnum):
-    """
-    Enum for representing the sorting direction
-    """
-
-    asc = "asc"
-    desc = "desc"
-
-
-class SortKeyOpt(StrEnum):
-    """
-    Enum for representing the sorting key
-    """
-
-    url = "url"
-    annex_key_count = "annex_key_count"
-    annexed_files_in_wt_count = "annexed_files_in_wt_count"
-    annexed_files_in_wt_size = "annexed_files_in_wt_size"
-    last_update = "last_update"
-    git_objects_size = "git_objects_size"
