@@ -151,7 +151,6 @@ def dataset_urls(query: QueryParams):
         max_per_page=max_per_page,
     )
     orm_ds_urls = pagination.items
-    total = pagination.total
     cur_pg_num = pagination.page
     last_pg_num = pagination.pages
 
@@ -191,8 +190,10 @@ def dataset_urls(query: QueryParams):
 
         ds_urls = orm_ds_urls
 
+    assert pagination.total is not None
+
     page = DatasetURLPage(
-        total=total,
+        total=pagination.total,
         cur_pg_num=cur_pg_num,
         prev_pg=url_for(ep, **base_qry, page=cur_pg_num - 1)
         if pagination.has_prev
