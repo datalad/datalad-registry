@@ -79,10 +79,10 @@ class TestRegistryGetURLs:
                     DatasetURLPage(
                         total=200,
                         cur_pg_num=1,
-                        prev_pg="before",
-                        next_pg="after",
-                        first_pg="origin",
-                        last_pg="infinity",
+                        prev_pg="dummy",
+                        next_pg=None,
+                        first_pg="dummy",
+                        last_pg="dummy",
                         dataset_urls=[
                             DatasetURLRespModel(
                                 **dataset_url_resp_model_template,
@@ -130,10 +130,10 @@ class TestRegistryGetURLs:
                     DatasetURLPage(
                         total=100,
                         cur_pg_num=1,
-                        prev_pg="prev",
-                        next_pg="next",
-                        first_pg="1",
-                        last_pg="100",
+                        prev_pg="dummy",
+                        next_pg=None,
+                        first_pg="dummy",
+                        last_pg="dummy",
                         dataset_urls=[
                             DatasetURLRespModel(
                                 **dataset_url_resp_model_template,
