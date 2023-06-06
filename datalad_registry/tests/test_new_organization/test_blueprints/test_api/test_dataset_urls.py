@@ -34,7 +34,7 @@ def populate_with_2_dataset_urls(flask_app):
 
 
 @pytest.fixture
-def populate_with_dataset_urls(flask_app) -> list[URL]:
+def populate_with_dataset_urls(flask_app) -> list[str]:
     """
     Populate the url table with a list of URLs.
 
@@ -90,7 +90,7 @@ def populate_with_dataset_urls(flask_app) -> list[URL]:
             db.session.add(url)
         db.session.commit()
 
-    return urls
+        return [url.url for url in urls]
 
 
 @pytest.fixture
