@@ -211,8 +211,8 @@ class TestDatasetURLs:
             {"per_page": -1},
             {"per_page": -100},
             {"per_page": "b"},
-            {"sort_key": "abc"},
-            {"sort_dir": "def"},
+            {"order_by": "abc"},
+            {"order_dir": "def"},
         ],
     )
     def test_invalid_query_params(self, flask_client, query_params):
@@ -241,14 +241,14 @@ class TestDatasetURLs:
             {"page": 1},
             {"per_page": 10},
             {"per_page": 100},
-            {"sort_key": "url"},
-            {"sort_key": "annex_key_count"},
-            {"sort_key": "annexed_files_in_wt_count"},
-            {"sort_key": "annexed_files_in_wt_size"},
-            {"sort_key": "last_update"},
-            {"sort_key": "git_objects_size"},
-            {"sort_dir": "asc"},
-            {"sort_dir": "desc"},
+            {"order_by": "url"},
+            {"order_by": "annex_key_count"},
+            {"order_by": "annexed_files_in_wt_count"},
+            {"order_by": "annexed_files_in_wt_size"},
+            {"order_by": "last_update"},
+            {"order_by": "git_objects_size"},
+            {"order_dir": "asc"},
+            {"order_dir": "desc"},
         ],
     )
     def test_valid_query_params(self, flask_client, query_params):
