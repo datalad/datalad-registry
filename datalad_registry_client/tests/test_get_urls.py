@@ -1,4 +1,5 @@
 from datetime import datetime
+from itertools import chain
 
 import datalad.api as dl
 from datalad.support.exceptions import IncompleteResultsError
@@ -153,40 +154,46 @@ class TestRegistryGetURLs:
         assert res[0]["status"] == "ok"
 
     @pytest.mark.parametrize(
-        "response_urls",
+        "resp_pgs",
         [
-            ["https://www.example.com"],
+            [["https://www.example.com"]],
             [
-                "https://www.example.com",
-                "https://centerforopenneuroscience.org/",
-                "https://www.datalad.org/",
+                ["https://www.example.com", "https://centerforopenneuroscience.org/"],
+                ["https://www.datalad.org/"],
             ],
         ],
     )
-    def test_handle_successful_response(self, response_urls: list[str], monkeypatch):
+    def test_handle_successful_response(self, resp_pgs: list[list[str]], monkeypatch):
         """
         Test handling of a successful response from the server
         """
+
+        def ds_url_pgs():
+            total = sum(len(pg) for pg in resp_pgs)
+
+            for i, pg in enumerate(resp_pgs):
+                # noinspection PyTypeChecker
+                yield DatasetURLPage(
+                    total=total,
+                    cur_pg_num=i + 1,
+                    prev_pg=None if i == 0 else "foo",
+                    next_pg=None if i == len(resp_pgs) - 1 else "foo",
+                    first_pg="foo",
+                    last_pg="bar",
+                    dataset_urls=[
+                        DatasetURLRespModel(**dataset_url_resp_model_template, url=url)
+                        for url in pg
+                    ],
+                )
+
+        ds_url_pgs_iter = ds_url_pgs()
 
         # noinspection PyUnusedLocal
         def mock_get(s, url):  # noqa: U100 Unused argument
             # noinspection PyTypeChecker
             return MockResponse(
                 200,
-                DatasetURLPage(
-                    total=len(response_urls),
-                    cur_pg_num=1,
-                    prev_pg=None,
-                    next_pg=None,
-                    first_pg="/api/v2/dataset-urls?page=1",
-                    last_pg="/api/v2/dataset-urls?page=1",
-                    dataset_urls=[
-                        DatasetURLRespModel(
-                            **dataset_url_resp_model_template, url=response_url
-                        )
-                        for response_url in response_urls
-                    ],
-                ).json(),
+                next(ds_url_pgs_iter).json(),
             )
 
         monkeypatch.setattr(requests.Session, "get", mock_get)
@@ -195,7 +202,7 @@ class TestRegistryGetURLs:
 
         assert len(res) == 1
         assert res[0]["status"] == "ok"
-        assert str(response_urls) in res[0]["message"]
+        assert str(list(chain(*resp_pgs))) in res[0]["message"]
         assert "error_message" not in res[0]
 
     @pytest.mark.parametrize(
