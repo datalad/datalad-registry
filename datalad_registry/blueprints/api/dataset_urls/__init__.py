@@ -195,10 +195,10 @@ def dataset_urls(query: QueryParams):
     page = DatasetURLPage(
         total=pagination.total,
         cur_pg_num=cur_pg_num,
-        prev_pg=url_for(ep, **base_qry, page=cur_pg_num - 1)
+        prev_pg=url_for(ep, **base_qry, page=pagination.prev_num)
         if pagination.has_prev
         else None,
-        next_pg=url_for(ep, **base_qry, page=cur_pg_num + 1)
+        next_pg=url_for(ep, **base_qry, page=pagination.next_num)
         if pagination.has_next
         else None,
         first_pg=url_for(ep, **base_qry, page=1),
