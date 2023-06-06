@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import pytest
+from yarl import URL as YURL
 
 from datalad_registry.blueprints.api.dataset_urls import DatasetURLRespModel
 from datalad_registry.blueprints.api.dataset_urls.models import (
@@ -427,6 +428,86 @@ class TestDatasetURLs:
                     assert len(url.metadata) == 0
 
                 assert all(type(m) is metadata_ret_type for m in url.metadata)
+
+    def test_pagination(self, populate_with_dataset_urls, flask_client):
+        """
+        Test the pagination of the results
+        """
+
+        # For storing all dataset URL obtained from all pages
+        ds_urls: set[str] = set()
+
+        # Get the first page
+        resp = flask_client.get("/api/v2/dataset-urls", query_string={"per_page": 2})
+
+        assert resp.status_code == 200
+
+        ds_url_pg = DatasetURLPage.parse_raw(resp.text)
+
+        assert ds_url_pg.total == 4
+        assert ds_url_pg.cur_pg_num == 1
+        assert ds_url_pg.prev_pg is None
+        assert ds_url_pg.next_pg is not None
+
+        next_pg_lk, first_pg_lk, last_pg_lk = (
+            YURL(pg)
+            for pg in (ds_url_pg.next_pg, ds_url_pg.first_pg, ds_url_pg.last_pg)
+        )
+
+        # Check page links
+        assert next_pg_lk.query["page"] == "2"
+        assert first_pg_lk.query["page"] == "1"
+        assert last_pg_lk.query["page"] == "2"
+        for pg_lk in (next_pg_lk, first_pg_lk, last_pg_lk):
+            assert pg_lk.path == "/api/v2/dataset-urls"
+
+            assert len(pg_lk.query) == 4
+            assert pg_lk.query["per_page"] == "2"
+            assert pg_lk.query["order_by"] == "last_update"
+            assert pg_lk.query["order_dir"] == "desc"
+
+        assert len(ds_url_pg.dataset_urls) == 2
+
+        # Gather Dataset URLs from the first page
+        for url in ds_url_pg.dataset_urls:
+            ds_urls.add(str(url.url))
+
+        # Get the second page
+        resp = flask_client.get(ds_url_pg.next_pg)
+
+        assert resp.status_code == 200
+
+        ds_url_pg = DatasetURLPage.parse_raw(resp.text)
+
+        assert ds_url_pg.total == 4
+        assert ds_url_pg.cur_pg_num == 2
+        assert ds_url_pg.prev_pg is not None
+        assert ds_url_pg.next_pg is None
+
+        prev_pg_lk, first_pg_lk, last_pg_lk = (
+            YURL(pg)
+            for pg in (ds_url_pg.prev_pg, ds_url_pg.first_pg, ds_url_pg.last_pg)
+        )
+
+        # Check page links
+        assert prev_pg_lk.query["page"] == "1"
+        assert first_pg_lk.query["page"] == "1"
+        assert last_pg_lk.query["page"] == "2"
+        for pg_lk in (prev_pg_lk, first_pg_lk, last_pg_lk):
+            assert pg_lk.path == "/api/v2/dataset-urls"
+
+            assert len(pg_lk.query) == 4
+            assert pg_lk.query["per_page"] == "2"
+            assert pg_lk.query["order_by"] == "last_update"
+            assert pg_lk.query["order_dir"] == "desc"
+
+        assert len(ds_url_pg.dataset_urls) == 2
+
+        # Gather Dataset URLs from the second page
+        for url in ds_url_pg.dataset_urls:
+            ds_urls.add(str(url.url))
+
+        assert ds_urls == set(populate_with_dataset_urls)
 
 
 @pytest.mark.usefixtures("populate_with_2_dataset_urls")
