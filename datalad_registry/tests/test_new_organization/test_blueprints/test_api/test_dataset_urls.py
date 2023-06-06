@@ -456,6 +456,7 @@ class TestDatasetURLs:
 
         # Check page links
         assert next_pg_lk.query["page"] == "2"
+        # noinspection DuplicatedCode
         assert first_pg_lk.query["page"] == "1"
         assert last_pg_lk.query["page"] == "2"
         for pg_lk in (next_pg_lk, first_pg_lk, last_pg_lk):
@@ -491,6 +492,7 @@ class TestDatasetURLs:
 
         # Check page links
         assert prev_pg_lk.query["page"] == "1"
+        # noinspection DuplicatedCode
         assert first_pg_lk.query["page"] == "1"
         assert last_pg_lk.query["page"] == "2"
         for pg_lk in (prev_pg_lk, first_pg_lk, last_pg_lk):
