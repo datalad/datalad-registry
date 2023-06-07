@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 import pytest
 from yarl import URL as YURL
@@ -510,6 +511,101 @@ class TestDatasetURLs:
             ds_urls.add(str(url.url))
 
         assert ds_urls == set(populate_with_dataset_urls)
+
+    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.parametrize(
+        "query_params, expected_results_by_id_prefix",
+        [
+            (
+                {
+                    "order_by": "url",
+                    "order_dir": "asc",
+                    "per_page": 2,
+                },
+                [2, 3, 4, 1],
+            ),
+            (
+                {
+                    "order_by": "url",
+                    "order_dir": "asc",
+                    "per_page": 1,
+                },
+                [2, 3, 4, 1],
+            ),
+            (
+                {
+                    "per_page": 3,
+                },
+                [2, 1, 3, 4],
+            ),
+            (
+                {
+                    "order_by": "git_objects_size",
+                    "order_dir": "desc",
+                    "per_page": 1,
+                },
+                [3, 2, 1, 4],
+            ),
+            (
+                {
+                    "order_by": "git_objects_size",
+                    "per_page": 1,
+                },
+                [3, 2, 1, 4],
+            ),
+            (
+                {
+                    "order_by": "annex_key_count",
+                    "order_dir": "asc",
+                    "per_page": 3,
+                },
+                [1, 2, 3, 4],
+            ),
+            (
+                {
+                    "order_by": "annex_key_count",
+                    "order_dir": "asc",
+                },
+                [1, 2, 3, 4],
+            ),
+        ],
+    )
+    def test_ordering(self, query_params, expected_results_by_id_prefix, flask_client):
+        """
+        Test the ordering of the results
+        """
+        next_pg: Optional[str] = None
+        results_by_id = []
+
+        while True:
+            if next_pg is None:
+                # Get the first page
+
+                resp = flask_client.get(
+                    "/api/v2/dataset-urls", query_string=query_params
+                )
+            else:
+                # Get a subsequent page
+
+                resp = flask_client.get(next_pg)
+
+            assert resp.status_code == 200
+
+            ds_url_pg = DatasetURLPage.parse_raw(resp.text)
+
+            results_by_id.extend(url.id for url in ds_url_pg.dataset_urls)
+
+            if ds_url_pg.next_pg is not None:
+                # === There is a subsequent page ===
+                next_pg = ds_url_pg.next_pg
+            else:
+                # === There is no subsequent page ===
+                break
+
+        assert (
+            results_by_id[: len(expected_results_by_id_prefix)]
+            == expected_results_by_id_prefix
+        )
 
 
 @pytest.mark.usefixtures("populate_with_2_dataset_urls")
