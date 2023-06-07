@@ -20,11 +20,21 @@ from .models import (
     DatasetURLRespModel,
     DatasetURLSubmitModel,
     MetadataReturnOption,
+    OrderKey,
     PathParams,
     QueryParams,
 )
 from .. import API_URL_PREFIX, COMMON_API_RESPONSES, HTTPExceptionResp
 from ..url_metadata.models import URLMetadataRef
+
+_ORDER_KEY_TO_SQLA_ATTR = {
+    OrderKey.url: URL.url,
+    OrderKey.annex_key_count: URL.annex_key_count,
+    OrderKey.annexed_files_in_wt_count: URL.annexed_files_in_wt_count,
+    OrderKey.annexed_files_in_wt_size: URL.annexed_files_in_wt_size,
+    OrderKey.last_update: URL.info_ts,
+    OrderKey.git_objects_size: URL.git_objects_kb,
+}
 
 bp = APIBlueprint(
     "dataset_urls_api",
@@ -145,7 +155,13 @@ def dataset_urls(query: QueryParams):
 
     max_per_page = 100  # The overriding limit to `per_page` provided by the requester
     pagination = db.paginate(
-        db.select(URL).filter(and_(True, *constraints)),
+        db.select(URL)
+        .filter(and_(True, *constraints))
+        .order_by(
+            getattr(
+                _ORDER_KEY_TO_SQLA_ATTR[query.order_by], query.order_dir.value
+            )().nulls_last()
+        ),
         page=query.page,
         per_page=query.per_page,
         max_per_page=max_per_page,
