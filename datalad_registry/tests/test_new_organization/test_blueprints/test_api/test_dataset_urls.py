@@ -3,6 +3,15 @@ from datetime import datetime
 import pytest
 
 from datalad_registry.blueprints.api.dataset_urls import DatasetURLRespModel
+from datalad_registry.blueprints.api.dataset_urls.models import (
+    DatasetURLs,
+    MetadataReturnOption,
+)
+from datalad_registry.blueprints.api.url_metadata.models import (
+    URLMetadataModel,
+    URLMetadataRef,
+)
+from datalad_registry.models import URL, URLMetadata, db
 
 
 @pytest.fixture
@@ -10,7 +19,6 @@ def populate_with_2_dataset_urls(flask_app):
     """
     Populate the url table with 2 URLs, at position 1 and 3.
     """
-    from datalad_registry.models import URL, db
 
     dataset_url1 = URL(url="https://example.com")
     dataset_url2 = URL(url="https://docs.datalad.org")
@@ -30,7 +38,6 @@ def populate_with_dataset_urls(flask_app):
     """
     Populate the url table with a list of URLs.
     """
-    from datalad_registry.models import URL, db
 
     urls = [
         URL(
@@ -79,6 +86,50 @@ def populate_with_dataset_urls(flask_app):
     with flask_app.app_context():
         for url in urls:
             db.session.add(url)
+        db.session.commit()
+
+
+@pytest.fixture
+def populate_with_url_metadata(
+    populate_with_dataset_urls,  # noqa: U100 (unused argument)
+    flask_app,
+):
+    """
+    Populate the url_metadata table with a list of metadata
+    """
+    metadata_lst = [
+        URLMetadata(
+            dataset_describe="1234",
+            dataset_version="1.0.0",
+            extractor_name="metalad_core",
+            extractor_version="0.14.0",
+            extraction_parameter=dict(a=1, b=2),
+            extracted_metadata=dict(c=3, d=4),
+            url_id=1,
+        ),
+        URLMetadata(
+            dataset_describe="1234",
+            dataset_version="1.0.0",
+            extractor_name="metalad_studyminimet",
+            extractor_version="0.1.0",
+            extraction_parameter=dict(a=1, b=2),
+            extracted_metadata=dict(c=3, d=4),
+            url_id=1,
+        ),
+        URLMetadata(
+            dataset_describe="1234",
+            dataset_version="1.0.0",
+            extractor_name="metalad_core",
+            extractor_version="0.14.0",
+            extraction_parameter=dict(a=1, b=2),
+            extracted_metadata=dict(c=3, d=4),
+            url_id=3,
+        ),
+    ]
+
+    with flask_app.app_context():
+        for metadata in metadata_lst:
+            db.session.add(metadata)
         db.session.commit()
 
 
@@ -151,6 +202,7 @@ class TestDatasetURLs:
             {"min_git_objects_kb": "lmn"},
             {"max_git_objects_kb": "mno"},
             {"processed": "nop"},
+            {"return_metadata": "all"},
         ],
     )
     def test_invalid_query_params(self, flask_client, query_params):
@@ -173,6 +225,9 @@ class TestDatasetURLs:
             {"min_git_objects_kb": 40},
             {"max_git_objects_kb": "100"},
             {"processed": True},
+            {"return_metadata": None},
+            {"return_metadata": MetadataReturnOption.reference.value},
+            {"return_metadata": MetadataReturnOption.content.value},
         ],
     )
     def test_valid_query_params(self, flask_client, query_params):
@@ -299,6 +354,54 @@ class TestDatasetURLs:
         resp_json_body: list = resp.json
 
         assert {i["url"] for i in resp_json_body} == expected_output
+
+    @pytest.mark.usefixtures("populate_with_url_metadata")
+    @pytest.mark.parametrize(
+        "metadata_ret_opt",
+        [
+            None,
+            MetadataReturnOption.reference,
+            MetadataReturnOption.content,
+        ],
+    )
+    def test_metadata_return(self, metadata_ret_opt, flask_client):
+        """
+        Test the return of metadata as a part of the returned list of dataset urls
+        """
+        if metadata_ret_opt is None:
+            query_string = {}
+        else:
+            query_string = {"return_metadata": metadata_ret_opt.value}
+
+        resp = flask_client.get("/api/v2/dataset-urls", query_string=query_string)
+
+        assert resp.status_code == 200
+
+        ds_urls = DatasetURLs.parse_raw(resp.text)
+
+        if metadata_ret_opt is None:
+            # === metadata is not returned ===
+
+            assert all(url.metadata is None for url in ds_urls)
+        else:
+            # === metadata is returned ===
+
+            if metadata_ret_opt is MetadataReturnOption.reference:
+                metadata_ret_type = URLMetadataRef
+            else:
+                metadata_ret_type = URLMetadataModel
+
+            for url in ds_urls:
+                assert type(url.metadata) is list
+
+                if url.id == 1:
+                    assert len(url.metadata) == 2
+                elif url.id == 3:
+                    assert len(url.metadata) == 1
+                else:
+                    assert len(url.metadata) == 0
+
+                assert all(type(m) is metadata_ret_type for m in url.metadata)
 
 
 @pytest.mark.usefixtures("populate_with_2_dataset_urls")

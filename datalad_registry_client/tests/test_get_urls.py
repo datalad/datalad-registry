@@ -35,6 +35,7 @@ dataset_url_resp_model_template = dict(
     last_update=datetime(2008, 7, 18, 18, 34, 32),
     git_objects_kb=1200,
     processed=True,
+    metadata=[],
 )
 
 

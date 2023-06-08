@@ -1,9 +1,14 @@
+from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Union
 from uuid import UUID
 
 from pydantic import AnyUrl, BaseModel, Field, FileUrl, validator
+
+from datalad_registry.utils import StrEnum
+
+from ..url_metadata.models import URLMetadataModel, URLMetadataRef
 
 
 def path_url_must_be_absolute(url):
@@ -13,6 +18,15 @@ def path_url_must_be_absolute(url):
     if isinstance(url, Path) and not url.is_absolute():
         raise ValueError("Path URLs must be absolute")
     return url
+
+
+class MetadataReturnOption(StrEnum):
+    """
+    Enum for representing the metadata return options
+    """
+
+    reference = "reference"
+    content = "content"
 
 
 class PathParams(BaseModel):
@@ -88,6 +102,20 @@ class QueryParams(BaseModel):
         "in the query.",
     )
 
+    return_metadata: Optional[MetadataReturnOption] = Field(
+        None,
+        description="Whether and how to return metadata of the datasets at the URLs. "
+        "If this query parameter is not provided, the `metadata` field "
+        "of each returned dataset URL object will be `null`. "
+        'If this query parameter is "reference", '
+        "the `metadata` field of each returned dataset URL object will be a list of "
+        "objects each presenting a reference link to a piece of metadata "
+        "of the dataset at the URL. "
+        'If this query parameter is "content", the `metadata` field '
+        "of each returned dataset URL object will be a list of objects "
+        "each presenting a piece of metadata of the dataset at the URL.",
+    )
+
     # Validator
     _path_url_must_be_absolute = validator("url", allow_reuse=True)(
         path_url_must_be_absolute
@@ -107,9 +135,12 @@ class DatasetURLSubmitModel(BaseModel):
     )
 
 
-class DatasetURLRespModel(DatasetURLSubmitModel):
+class DatasetURLRespBaseModel(DatasetURLSubmitModel):
     """
-    Model for representing the database model URL in response communication
+    Base model for `DatasetURLRespModel`
+
+    All fields defined in this model are intended to be populated
+    from an orm model object directly.
     """
 
     id: int = Field(..., description="The ID of the dataset URL")
@@ -146,6 +177,16 @@ class DatasetURLRespModel(DatasetURLSubmitModel):
         allow_population_by_field_name = True
 
 
+class DatasetURLRespModel(DatasetURLRespBaseModel):
+    """
+    Model for representing the database model URL in response communication
+    """
+
+    metadata: Optional[Union[list[URLMetadataModel], list[URLMetadataRef]]] = Field(
+        ..., alias="metadata_", description="The metadata of the dataset at the URL"
+    )
+
+
 class DatasetURLs(BaseModel):
     """
     Model for representing a list of dataset URLs in response communication
@@ -153,5 +194,5 @@ class DatasetURLs(BaseModel):
 
     __root__: list[DatasetURLRespModel]
 
-    class Config:
-        orm_mode = True
+    def __iter__(self) -> Iterator[DatasetURLRespModel]:  # type: ignore[override]
+        return iter(self.__root__)

@@ -4,7 +4,7 @@ import operator
 from pathlib import Path
 
 from celery import group
-from flask import abort, current_app
+from flask import abort, current_app, url_for
 from flask_openapi3 import APIBlueprint, Tag
 from sqlalchemy import and_
 from sqlalchemy.sql.elements import BinaryExpression
@@ -14,13 +14,16 @@ from datalad_registry.tasks import extract_ds_meta, log_error, process_dataset_u
 from datalad_registry.utils.flask_tools import json_resp_from_str
 
 from .models import (
+    DatasetURLRespBaseModel,
     DatasetURLRespModel,
     DatasetURLs,
     DatasetURLSubmitModel,
+    MetadataReturnOption,
     PathParams,
     QueryParams,
 )
 from .. import API_URL_PREFIX, COMMON_API_RESPONSES, HTTPExceptionResp
+from ..url_metadata.models import URLMetadataRef
 
 bp = APIBlueprint(
     "dataset_urls_api",
@@ -136,11 +139,50 @@ def dataset_urls(query: QueryParams):
 
     # ==== Gathering constraints from query parameters ends ====
 
-    ds_urls = DatasetURLs.from_orm(
+    orm_ds_urls = (
         db.session.execute(db.select(URL).filter(and_(True, *constraints)))
         .scalars()
         .all()
     )
+
+    if query.return_metadata is None:
+        # === No metadata should be returned ===
+
+        # noinspection PyArgumentList
+        ds_urls = DatasetURLs.parse_obj(
+            [
+                DatasetURLRespModel(
+                    **DatasetURLRespBaseModel.from_orm(i).dict(), metadata_=None
+                )
+                for i in orm_ds_urls
+            ]
+        )
+    elif query.return_metadata is MetadataReturnOption.reference:
+        # === Metadata should be returned by reference ===
+
+        # noinspection PyArgumentList
+        ds_urls = DatasetURLs.parse_obj(
+            [
+                DatasetURLRespModel(
+                    **DatasetURLRespBaseModel.from_orm(i).dict(),
+                    metadata_=[
+                        URLMetadataRef(
+                            extractor_name=j.extractor_name,
+                            link=url_for(
+                                "url_metadata_api.url_metadata", url_metadata_id=j.id
+                            ),
+                        )
+                        for j in i.metadata_
+                    ],
+                )
+                for i in orm_ds_urls
+            ]
+        )
+    else:
+        # === Metadata should be returned by content ===
+
+        ds_urls = DatasetURLs.parse_obj(orm_ds_urls)
+
     return json_resp_from_str(ds_urls.json())
 
 
