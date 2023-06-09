@@ -1,10 +1,12 @@
 from datetime import datetime
+from typing import Optional
 
 import pytest
+from yarl import URL as YURL
 
 from datalad_registry.blueprints.api.dataset_urls import DatasetURLRespModel
 from datalad_registry.blueprints.api.dataset_urls.models import (
-    DatasetURLs,
+    DatasetURLPage,
     MetadataReturnOption,
 )
 from datalad_registry.blueprints.api.url_metadata.models import (
@@ -34,9 +36,11 @@ def populate_with_2_dataset_urls(flask_app):
 
 
 @pytest.fixture
-def populate_with_dataset_urls(flask_app):
+def populate_with_dataset_urls(flask_app) -> list[str]:
     """
     Populate the url table with a list of URLs.
+
+    Returns: The list of URLs that were added to the database
     """
 
     urls = [
@@ -87,6 +91,8 @@ def populate_with_dataset_urls(flask_app):
         for url in urls:
             db.session.add(url)
         db.session.commit()
+
+        return [url.url for url in urls]
 
 
 @pytest.fixture
@@ -203,6 +209,16 @@ class TestDatasetURLs:
             {"max_git_objects_kb": "mno"},
             {"processed": "nop"},
             {"return_metadata": "all"},
+            {"page": 0},
+            {"page": -1},
+            {"page": -100},
+            {"page": "a"},
+            {"per_page": 0},
+            {"per_page": -1},
+            {"per_page": -100},
+            {"per_page": "b"},
+            {"order_by": "abc"},
+            {"order_dir": "def"},
         ],
     )
     def test_invalid_query_params(self, flask_client, query_params):
@@ -228,6 +244,17 @@ class TestDatasetURLs:
             {"return_metadata": None},
             {"return_metadata": MetadataReturnOption.reference.value},
             {"return_metadata": MetadataReturnOption.content.value},
+            {"page": 1},
+            {"per_page": 10},
+            {"per_page": 100},
+            {"order_by": "url"},
+            {"order_by": "annex_key_count"},
+            {"order_by": "annexed_files_in_wt_count"},
+            {"order_by": "annexed_files_in_wt_size"},
+            {"order_by": "last_update"},
+            {"order_by": "git_objects_size"},
+            {"order_dir": "asc"},
+            {"order_dir": "desc"},
         ],
     )
     def test_valid_query_params(self, flask_client, query_params):
@@ -351,9 +378,9 @@ class TestDatasetURLs:
         resp = flask_client.get("/api/v2/dataset-urls", query_string=query_params)
         assert resp.status_code == 200
 
-        resp_json_body: list = resp.json
+        ds_url_page = DatasetURLPage.parse_raw(resp.text)
 
-        assert {i["url"] for i in resp_json_body} == expected_output
+        assert {i.url for i in ds_url_page.dataset_urls} == expected_output
 
     @pytest.mark.usefixtures("populate_with_url_metadata")
     @pytest.mark.parametrize(
@@ -377,12 +404,12 @@ class TestDatasetURLs:
 
         assert resp.status_code == 200
 
-        ds_urls = DatasetURLs.parse_raw(resp.text)
+        ds_url_pg = DatasetURLPage.parse_raw(resp.text)
 
         if metadata_ret_opt is None:
             # === metadata is not returned ===
 
-            assert all(url.metadata is None for url in ds_urls)
+            assert all(url.metadata is None for url in ds_url_pg.dataset_urls)
         else:
             # === metadata is returned ===
 
@@ -391,7 +418,7 @@ class TestDatasetURLs:
             else:
                 metadata_ret_type = URLMetadataModel
 
-            for url in ds_urls:
+            for url in ds_url_pg.dataset_urls:
                 assert type(url.metadata) is list
 
                 if url.id == 1:
@@ -402,6 +429,183 @@ class TestDatasetURLs:
                     assert len(url.metadata) == 0
 
                 assert all(type(m) is metadata_ret_type for m in url.metadata)
+
+    def test_pagination(self, populate_with_dataset_urls, flask_client):
+        """
+        Test the pagination of the results
+        """
+
+        # For storing all dataset URL obtained from all pages
+        ds_urls: set[str] = set()
+
+        # Get the first page
+        resp = flask_client.get("/api/v2/dataset-urls", query_string={"per_page": 2})
+
+        assert resp.status_code == 200
+
+        ds_url_pg = DatasetURLPage.parse_raw(resp.text)
+
+        assert ds_url_pg.total == 4
+        assert ds_url_pg.cur_pg_num == 1
+        assert ds_url_pg.prev_pg is None
+        assert ds_url_pg.next_pg is not None
+
+        next_pg_lk, first_pg_lk, last_pg_lk = (
+            YURL(pg)
+            for pg in (ds_url_pg.next_pg, ds_url_pg.first_pg, ds_url_pg.last_pg)
+        )
+
+        # Check page links
+        assert next_pg_lk.query["page"] == "2"
+        # noinspection DuplicatedCode
+        assert first_pg_lk.query["page"] == "1"
+        assert last_pg_lk.query["page"] == "2"
+        for pg_lk in (next_pg_lk, first_pg_lk, last_pg_lk):
+            assert pg_lk.path == "/api/v2/dataset-urls"
+
+            assert len(pg_lk.query) == 4
+            assert pg_lk.query["per_page"] == "2"
+            assert pg_lk.query["order_by"] == "last_update"
+            assert pg_lk.query["order_dir"] == "desc"
+
+        assert len(ds_url_pg.dataset_urls) == 2
+
+        # Gather Dataset URLs from the first page
+        for url in ds_url_pg.dataset_urls:
+            ds_urls.add(str(url.url))
+
+        # Get the second page
+        resp = flask_client.get(ds_url_pg.next_pg)
+
+        assert resp.status_code == 200
+
+        ds_url_pg = DatasetURLPage.parse_raw(resp.text)
+
+        assert ds_url_pg.total == 4
+        assert ds_url_pg.cur_pg_num == 2
+        assert ds_url_pg.prev_pg is not None
+        assert ds_url_pg.next_pg is None
+
+        prev_pg_lk, first_pg_lk, last_pg_lk = (
+            YURL(pg)
+            for pg in (ds_url_pg.prev_pg, ds_url_pg.first_pg, ds_url_pg.last_pg)
+        )
+
+        # Check page links
+        assert prev_pg_lk.query["page"] == "1"
+        # noinspection DuplicatedCode
+        assert first_pg_lk.query["page"] == "1"
+        assert last_pg_lk.query["page"] == "2"
+        for pg_lk in (prev_pg_lk, first_pg_lk, last_pg_lk):
+            assert pg_lk.path == "/api/v2/dataset-urls"
+
+            assert len(pg_lk.query) == 4
+            assert pg_lk.query["per_page"] == "2"
+            assert pg_lk.query["order_by"] == "last_update"
+            assert pg_lk.query["order_dir"] == "desc"
+
+        assert len(ds_url_pg.dataset_urls) == 2
+
+        # Gather Dataset URLs from the second page
+        for url in ds_url_pg.dataset_urls:
+            ds_urls.add(str(url.url))
+
+        assert ds_urls == set(populate_with_dataset_urls)
+
+    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.parametrize(
+        "query_params, expected_results_by_id_prefix",
+        [
+            (
+                {
+                    "order_by": "url",
+                    "order_dir": "asc",
+                    "per_page": 2,
+                },
+                [2, 3, 4, 1],
+            ),
+            (
+                {
+                    "order_by": "url",
+                    "order_dir": "asc",
+                    "per_page": 1,
+                },
+                [2, 3, 4, 1],
+            ),
+            (
+                {
+                    "per_page": 3,
+                },
+                [2, 1, 3, 4],
+            ),
+            (
+                {
+                    "order_by": "git_objects_size",
+                    "order_dir": "desc",
+                    "per_page": 1,
+                },
+                [3, 2, 1, 4],
+            ),
+            (
+                {
+                    "order_by": "git_objects_size",
+                    "per_page": 1,
+                },
+                [3, 2, 1, 4],
+            ),
+            (
+                {
+                    "order_by": "annex_key_count",
+                    "order_dir": "asc",
+                    "per_page": 3,
+                },
+                [1, 2, 3, 4],
+            ),
+            (
+                {
+                    "order_by": "annex_key_count",
+                    "order_dir": "asc",
+                },
+                [1, 2, 3, 4],
+            ),
+        ],
+    )
+    def test_ordering(self, query_params, expected_results_by_id_prefix, flask_client):
+        """
+        Test the ordering of the results
+        """
+        next_pg: Optional[str] = None
+        results_by_id = []
+
+        while True:
+            if next_pg is None:
+                # Get the first page
+
+                resp = flask_client.get(
+                    "/api/v2/dataset-urls", query_string=query_params
+                )
+            else:
+                # Get a subsequent page
+
+                resp = flask_client.get(next_pg)
+
+            assert resp.status_code == 200
+
+            ds_url_pg = DatasetURLPage.parse_raw(resp.text)
+
+            results_by_id.extend(url.id for url in ds_url_pg.dataset_urls)
+
+            if ds_url_pg.next_pg is not None:
+                # === There is a subsequent page ===
+                next_pg = ds_url_pg.next_pg
+            else:
+                # === There is no subsequent page ===
+                break
+
+        assert (
+            results_by_id[: len(expected_results_by_id_prefix)]
+            == expected_results_by_id_prefix
+        )
 
 
 @pytest.mark.usefixtures("populate_with_2_dataset_urls")

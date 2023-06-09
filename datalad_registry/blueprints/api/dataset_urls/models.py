@@ -1,10 +1,18 @@
-from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Union
 from uuid import UUID
 
-from pydantic import AnyUrl, BaseModel, Field, FileUrl, validator
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    Field,
+    FileUrl,
+    PositiveInt,
+    StrictInt,
+    StrictStr,
+    validator,
+)
 
 from datalad_registry.utils import StrEnum
 
@@ -18,6 +26,28 @@ def path_url_must_be_absolute(url):
     if isinstance(url, Path) and not url.is_absolute():
         raise ValueError("Path URLs must be absolute")
     return url
+
+
+class OrderDir(StrEnum):
+    """
+    Enum for representing the order directions
+    """
+
+    asc = "asc"
+    desc = "desc"
+
+
+class OrderKey(StrEnum):
+    """
+    Enum for representing the ordering keys
+    """
+
+    url = "url"
+    annex_key_count = "annex_key_count"
+    annexed_files_in_wt_count = "annexed_files_in_wt_count"
+    annexed_files_in_wt_size = "annexed_files_in_wt_size"
+    last_update = "last_update"
+    git_objects_size = "git_objects_size"
 
 
 class MetadataReturnOption(StrEnum):
@@ -116,6 +146,27 @@ class QueryParams(BaseModel):
         "each presenting a piece of metadata of the dataset at the URL.",
     )
 
+    # Pagination parameters
+    page: PositiveInt = Field(
+        1,
+        description="The current page (used to calculate the offset "
+        "of the pagination). Defaults to 1.",
+    )
+    per_page: PositiveInt = Field(
+        20,
+        description="The maximum number of items on a page "
+        "(used to calculate the offset and limit of the pagination). Defaults to 20.",
+    )
+
+    # Ordering parameters
+    order_by: OrderKey = Field(
+        OrderKey.last_update,
+        description="The key to use to order the items in the query",
+    )
+    order_dir: OrderDir = Field(
+        OrderDir.desc, description="The direction to order the items in the query"
+    )
+
     # Validator
     _path_url_must_be_absolute = validator("url", allow_reuse=True)(
         path_url_must_be_absolute
@@ -187,12 +238,22 @@ class DatasetURLRespModel(DatasetURLRespBaseModel):
     )
 
 
-class DatasetURLs(BaseModel):
+class DatasetURLPage(BaseModel):
     """
-    Model for representing a list of dataset URLs in response communication
+    Model for representing a page of dataset URLs in response communication
     """
 
-    __root__: list[DatasetURLRespModel]
+    total: StrictInt = Field(
+        description="The total number of dataset URLs across all pages"
+    )
+    cur_pg_num: StrictInt = Field(description="The number of the current page")
+    prev_pg: Optional[StrictStr] = Field(
+        ..., description="The link to the previous page"
+    )
+    next_pg: Optional[StrictStr] = Field(..., description="The link to the next page")
+    first_pg: StrictStr = Field(description="The link to the first page")
+    last_pg: StrictStr = Field(description="The link to the last page")
 
-    def __iter__(self) -> Iterator[DatasetURLRespModel]:  # type: ignore[override]
-        return iter(self.__root__)
+    dataset_urls: list[DatasetURLRespModel] = Field(
+        description="The list of dataset URLs in the current page"
+    )

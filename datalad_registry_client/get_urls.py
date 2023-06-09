@@ -64,7 +64,7 @@ class RegistryGetURLs(Interface):
     # signature must match parameter list above
     # additional generic arguments are added by decorators
     def __call__(cache_path: Optional[str] = None, base_endpoint: Optional[str] = None):
-        from datalad_registry.blueprints.api.dataset_urls.models import DatasetURLs
+        from datalad_registry.blueprints.api.dataset_urls.models import DatasetURLPage
 
         # Set `base_endpoint` to the default if it is not provided.
         if base_endpoint is None:
@@ -86,44 +86,59 @@ class RegistryGetURLs(Interface):
             logger=lgr,
             base_endpoint=base_endpoint,
             endpoint=endpoint.human_repr(),
-            target_url=target_url.human_repr(),
         )
 
+        ds_urls: list[str] = []  # For storing returned dataset URLs from the server
         with requests.Session() as session:
-            resp = session.get(str(target_url))
+            while True:
+                resp = session.get(str(target_url))
 
-            resp_status_code = resp.status_code
+                resp_status_code = resp.status_code
 
-            if resp_status_code == 200:
-                dataset_urls = DatasetURLs.parse_raw(resp.text)
+                if resp_status_code == 200:
+                    ds_url_pg = DatasetURLPage.parse_raw(resp.text)
+                    ds_urls.extend(str(i.url) for i in ds_url_pg.dataset_urls)
 
-                yield get_status_dict(
-                    status="ok",
-                    message=f"{[str(i.url) for i in dataset_urls.__root__]}",
-                    **res_base,
-                )
-            elif resp_status_code == 404:
-                yield get_status_dict(
-                    status="error",
-                    error_message=f"Incorrect target URL {target_url.human_repr()}",
-                    **res_base,
-                )
-            elif resp_status_code == 422:
-                yield get_status_dict(
-                    status="error",
-                    error_message="Unprocessable argument(s)",
-                    **res_base,
-                )
-            elif resp_status_code == 500:
-                yield get_status_dict(
-                    status="error",
-                    error_message="Server error",
-                    **res_base,
-                )
-            else:
-                yield get_status_dict(
-                    status="error",
-                    error_message=f"Server HTTP response code: {resp_status_code}; "
-                    f"Message from server: {resp.text}",
-                    **res_base,
-                )
+                    if ds_url_pg.next_pg is None:
+                        # No more page to fetch
+
+                        yield get_status_dict(
+                            status="ok",
+                            message=str(ds_urls),
+                            **res_base,
+                        )
+                        break
+                    else:
+                        # More pages to fetch
+
+                        target_url = target_url.join(URL(ds_url_pg.next_pg))
+
+                elif resp_status_code == 404:
+                    yield get_status_dict(
+                        status="error",
+                        error_message=f"Incorrect target URL {target_url.human_repr()}",
+                        **res_base,
+                    )
+                    break
+                elif resp_status_code == 422:
+                    yield get_status_dict(
+                        status="error",
+                        error_message="Unprocessable argument(s)",
+                        **res_base,
+                    )
+                    break
+                elif resp_status_code == 500:
+                    yield get_status_dict(
+                        status="error",
+                        error_message="Server error",
+                        **res_base,
+                    )
+                    break
+                else:
+                    yield get_status_dict(
+                        status="error",
+                        error_message=f"Server HTTP response code: {resp_status_code}; "
+                        f"Message from server: {resp.text}",
+                        **res_base,
+                    )
+                    break

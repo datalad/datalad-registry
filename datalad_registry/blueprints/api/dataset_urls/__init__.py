@@ -1,5 +1,6 @@
 # This file is for defining the API endpoints related to dataset URls
 
+from json import loads
 import operator
 from pathlib import Path
 
@@ -14,16 +15,26 @@ from datalad_registry.tasks import extract_ds_meta, log_error, process_dataset_u
 from datalad_registry.utils.flask_tools import json_resp_from_str
 
 from .models import (
+    DatasetURLPage,
     DatasetURLRespBaseModel,
     DatasetURLRespModel,
-    DatasetURLs,
     DatasetURLSubmitModel,
     MetadataReturnOption,
+    OrderKey,
     PathParams,
     QueryParams,
 )
 from .. import API_URL_PREFIX, COMMON_API_RESPONSES, HTTPExceptionResp
 from ..url_metadata.models import URLMetadataRef
+
+_ORDER_KEY_TO_SQLA_ATTR = {
+    OrderKey.url: URL.url,
+    OrderKey.annex_key_count: URL.annex_key_count,
+    OrderKey.annexed_files_in_wt_count: URL.annexed_files_in_wt_count,
+    OrderKey.annexed_files_in_wt_size: URL.annexed_files_in_wt_size,
+    OrderKey.last_update: URL.info_ts,
+    OrderKey.git_objects_size: URL.git_objects_kb,
+}
 
 bp = APIBlueprint(
     "dataset_urls_api",
@@ -72,7 +83,7 @@ def create_dataset_url(body: DatasetURLSubmitModel):
         abort(409, "The URL requested to be created already exists in the database.")
 
 
-@bp.get("", responses={"200": DatasetURLs})
+@bp.get("", responses={"200": DatasetURLPage})
 def dataset_urls(query: QueryParams):
     """
     Get all dataset URLs that satisfy the constraints imposed by the query parameters.
@@ -139,51 +150,79 @@ def dataset_urls(query: QueryParams):
 
     # ==== Gathering constraints from query parameters ends ====
 
-    orm_ds_urls = (
-        db.session.execute(db.select(URL).filter(and_(True, *constraints)))
-        .scalars()
-        .all()
+    ep = ".dataset_urls"  # Endpoint of `dataset_urls`
+    base_qry = loads(query.json(exclude={"page"}, exclude_none=True))
+
+    max_per_page = 100  # The overriding limit to `per_page` provided by the requester
+    pagination = db.paginate(
+        db.select(URL)
+        .filter(and_(True, *constraints))
+        .order_by(
+            getattr(
+                _ORDER_KEY_TO_SQLA_ATTR[query.order_by], query.order_dir.value
+            )().nulls_last()
+        ),
+        page=query.page,
+        per_page=query.per_page,
+        max_per_page=max_per_page,
     )
+    orm_ds_urls = pagination.items
+    cur_pg_num = pagination.page
+    last_pg_num = pagination.pages
 
     if query.return_metadata is None:
         # === No metadata should be returned ===
 
         # noinspection PyArgumentList
-        ds_urls = DatasetURLs.parse_obj(
-            [
-                DatasetURLRespModel(
-                    **DatasetURLRespBaseModel.from_orm(i).dict(), metadata_=None
-                )
-                for i in orm_ds_urls
-            ]
-        )
+        ds_urls = [
+            DatasetURLRespModel(
+                **DatasetURLRespBaseModel.from_orm(i).dict(), metadata_=None
+            )
+            for i in orm_ds_urls
+        ]
+
     elif query.return_metadata is MetadataReturnOption.reference:
         # === Metadata should be returned by reference ===
 
         # noinspection PyArgumentList
-        ds_urls = DatasetURLs.parse_obj(
-            [
-                DatasetURLRespModel(
-                    **DatasetURLRespBaseModel.from_orm(i).dict(),
-                    metadata_=[
-                        URLMetadataRef(
-                            extractor_name=j.extractor_name,
-                            link=url_for(
-                                "url_metadata_api.url_metadata", url_metadata_id=j.id
-                            ),
-                        )
-                        for j in i.metadata_
-                    ],
-                )
-                for i in orm_ds_urls
-            ]
-        )
+        ds_urls = [
+            DatasetURLRespModel(
+                **DatasetURLRespBaseModel.from_orm(i).dict(),
+                metadata_=[
+                    URLMetadataRef(
+                        extractor_name=j.extractor_name,
+                        link=url_for(
+                            "url_metadata_api.url_metadata", url_metadata_id=j.id
+                        ),
+                    )
+                    for j in i.metadata_
+                ],
+            )
+            for i in orm_ds_urls
+        ]
+
     else:
         # === Metadata should be returned by content ===
 
-        ds_urls = DatasetURLs.parse_obj(orm_ds_urls)
+        ds_urls = orm_ds_urls
 
-    return json_resp_from_str(ds_urls.json())
+    assert pagination.total is not None
+
+    page = DatasetURLPage(
+        total=pagination.total,
+        cur_pg_num=cur_pg_num,
+        prev_pg=url_for(ep, **base_qry, page=pagination.prev_num)
+        if pagination.has_prev
+        else None,
+        next_pg=url_for(ep, **base_qry, page=pagination.next_num)
+        if pagination.has_next
+        else None,
+        first_pg=url_for(ep, **base_qry, page=1),
+        last_pg=url_for(ep, **base_qry, page=last_pg_num),
+        dataset_urls=ds_urls,
+    )
+
+    return json_resp_from_str(page.json())
 
 
 @bp.get("/<int:id>", responses={"200": DatasetURLRespModel})
