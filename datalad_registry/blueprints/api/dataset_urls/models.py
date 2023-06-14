@@ -47,7 +47,7 @@ class OrderKey(StrEnum):
     annexed_files_in_wt_count = "annexed_files_in_wt_count"
     annexed_files_in_wt_size = "annexed_files_in_wt_size"
     last_update = "last_update"
-    git_objects_size = "git_objects_size"
+    git_objects_kb = "git_objects_kb"
 
 
 class MetadataReturnOption(StrEnum):

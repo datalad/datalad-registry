@@ -33,7 +33,7 @@ _ORDER_KEY_TO_SQLA_ATTR = {
     OrderKey.annexed_files_in_wt_count: URL.annexed_files_in_wt_count,
     OrderKey.annexed_files_in_wt_size: URL.annexed_files_in_wt_size,
     OrderKey.last_update: URL.info_ts,
-    OrderKey.git_objects_size: URL.git_objects_kb,
+    OrderKey.git_objects_kb: URL.git_objects_kb,
 }
 
 bp = APIBlueprint(
