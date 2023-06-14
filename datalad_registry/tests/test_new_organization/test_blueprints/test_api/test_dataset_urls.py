@@ -252,7 +252,7 @@ class TestDatasetURLs:
             {"order_by": "annexed_files_in_wt_count"},
             {"order_by": "annexed_files_in_wt_size"},
             {"order_by": "last_update"},
-            {"order_by": "git_objects_size"},
+            {"order_by": "git_objects_kb"},
             {"order_dir": "asc"},
             {"order_dir": "desc"},
         ],
@@ -540,7 +540,7 @@ class TestDatasetURLs:
             ),
             (
                 {
-                    "order_by": "git_objects_size",
+                    "order_by": "git_objects_kb",
                     "order_dir": "desc",
                     "per_page": 1,
                 },
@@ -548,7 +548,7 @@ class TestDatasetURLs:
             ),
             (
                 {
-                    "order_by": "git_objects_size",
+                    "order_by": "git_objects_kb",
                     "per_page": 1,
                 },
                 [3, 2, 1, 4],
