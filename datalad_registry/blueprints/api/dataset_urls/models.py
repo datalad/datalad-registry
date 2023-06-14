@@ -196,27 +196,27 @@ class DatasetURLRespBaseModel(DatasetURLSubmitModel):
 
     id: int = Field(..., description="The ID of the dataset URL")
     ds_id: Optional[UUID] = Field(
-        ..., alias="ds_id", description="The ID, a UUID, of the dataset"
+        None, alias="ds_id", description="The ID, a UUID, of the dataset"
     )
     describe: Optional[str] = Field(
-        ...,
+        None,
         alias="head_describe",
         description="The output of `git describe --tags --always` on the dataset",
     )
-    annex_key_count: Optional[int] = Field(..., description="The number of annex keys")
+    annex_key_count: Optional[int] = Field(None, description="The number of annex keys")
     annexed_files_in_wt_count: Optional[int] = Field(
-        ..., description="The number of annexed files in the working tree"
+        None, description="The number of annexed files in the working tree"
     )
     annexed_files_in_wt_size: Optional[int] = Field(
-        ..., description="The size of annexed files in the working tree in bytes"
+        None, description="The size of annexed files in the working tree in bytes"
     )
     last_update: Optional[datetime] = Field(
-        ...,
+        None,
         alias="info_ts",
         description="The last time the local copy of the dataset was updated",
     )
     git_objects_kb: Optional[int] = Field(
-        ..., description="The size of the `.git/objects` in KiB"
+        None, description="The size of the `.git/objects` in KiB"
     )
     processed: bool = Field(
         description="Whether an initial processing has been completed "
@@ -234,7 +234,7 @@ class DatasetURLRespModel(DatasetURLRespBaseModel):
     """
 
     metadata: Optional[Union[list[URLMetadataModel], list[URLMetadataRef]]] = Field(
-        ..., alias="metadata_", description="The metadata of the dataset at the URL"
+        None, alias="metadata_", description="The metadata of the dataset at the URL"
     )
 
 
@@ -248,9 +248,9 @@ class DatasetURLPage(BaseModel):
     )
     cur_pg_num: StrictInt = Field(description="The number of the current page")
     prev_pg: Optional[StrictStr] = Field(
-        ..., description="The link to the previous page"
+        None, description="The link to the previous page"
     )
-    next_pg: Optional[StrictStr] = Field(..., description="The link to the next page")
+    next_pg: Optional[StrictStr] = Field(None, description="The link to the next page")
     first_pg: StrictStr = Field(description="The link to the first page")
     last_pg: StrictStr = Field(description="The link to the last page")
 
