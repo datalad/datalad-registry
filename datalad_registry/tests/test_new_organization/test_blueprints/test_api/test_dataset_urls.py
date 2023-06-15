@@ -434,10 +434,12 @@ class TestDatasetURLs:
 
         assert resp.status_code == 200
 
-        ds_url_pg = DatasetURLPage.parse_raw(resp.text)
+        resp_json = resp.json
+        ds_url_pg = DatasetURLPage.parse_obj(resp_json)
 
         assert ds_url_pg.total == 4
         assert ds_url_pg.cur_pg_num == 1
+        assert "prev_pg" not in resp_json
         assert ds_url_pg.prev_pg is None
         assert ds_url_pg.next_pg is not None
 
@@ -470,11 +472,13 @@ class TestDatasetURLs:
 
         assert resp.status_code == 200
 
-        ds_url_pg = DatasetURLPage.parse_raw(resp.text)
+        resp_json = resp.json
+        ds_url_pg = DatasetURLPage.parse_obj(resp_json)
 
         assert ds_url_pg.total == 4
         assert ds_url_pg.cur_pg_num == 2
         assert ds_url_pg.prev_pg is not None
+        assert "next_pg" not in resp_json
         assert ds_url_pg.next_pg is None
 
         prev_pg_lk, first_pg_lk, last_pg_lk = (
