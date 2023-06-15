@@ -394,12 +394,13 @@ class TestDatasetURLs:
 
         assert resp.status_code == 200
 
-        ds_url_pg = DatasetURLPage.parse_raw(resp.text)
+        resp_json = resp.json
+        ds_url_pg = DatasetURLPage.parse_obj(resp_json)
 
         if metadata_ret_opt is None:
             # === metadata is not returned ===
 
-            assert all(url.metadata is None for url in ds_url_pg.dataset_urls)
+            assert all("metadata" not in url for url in resp_json["dataset_urls"])
         else:
             # === metadata is returned ===
 
