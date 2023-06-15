@@ -90,7 +90,7 @@ class TestRegistryGetURLs:
                                 url="https://www.example.com"
                             )
                         ],
-                    ).json(),
+                    ).json(exclude_none=True),
                 )
             else:
                 return MockResponse(404, "Not Found")
@@ -141,7 +141,7 @@ class TestRegistryGetURLs:
                                 url="https://www.example.com"
                             )
                         ],
-                    ).json(),
+                    ).json(exclude_none=True),
                 )
             else:
                 return MockResponse(404, "Not Found")
@@ -193,7 +193,7 @@ class TestRegistryGetURLs:
             # noinspection PyTypeChecker
             return MockResponse(
                 200,
-                next(ds_url_pgs_iter).json(),
+                next(ds_url_pgs_iter).json(exclude_none=True),
             )
 
         monkeypatch.setattr(requests.Session, "get", mock_get)
@@ -249,7 +249,7 @@ class TestRegistryGetURLs:
                                 url="https://www.example.com"
                             )
                         ],
-                    ).json(),
+                    ).json(exclude_none=True),
                 )
 
         mock_resp_iter = mock_responses()
