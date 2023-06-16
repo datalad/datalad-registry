@@ -12,7 +12,9 @@ class StrEnum(str, Enum):
     A variation of Enum that is also a subclass of str, akin to IntEnum
     """
 
-    pass
+    @staticmethod
+    def _generate_next_value_(name, start, count, last_values):  # noqa: U100 (unused)
+        return name
 
 
 def allocate_ds_path() -> Path:
