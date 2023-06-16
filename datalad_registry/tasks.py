@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from enum import auto
 import errno
 import json
 import logging
@@ -36,9 +37,9 @@ InfoType = Dict[str, Union[str, float, datetime]]
 
 
 class ExtractMetaStatus(StrEnum):
-    SUCCEEDED = "succeeded"
-    ABORTED = "aborted"
-    SKIPPED = "skipped"
+    SUCCEEDED = auto()
+    ABORTED = auto()
+    SKIPPED = auto()
 
 
 def _update_dataset_url_info(dataset_url: URL, ds: Dataset) -> None:

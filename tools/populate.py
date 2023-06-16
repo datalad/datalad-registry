@@ -4,6 +4,7 @@
 # Note: Currently, this script can only populate the datalad-registry instance with
 #       active datasets on GitHub listed in datalad-usage-dashboard.
 
+from enum import auto
 from typing import Optional
 
 import click
@@ -23,8 +24,8 @@ class Status(StrEnum):
     Enum for representing the status of repo
     """
 
-    active = "active"
-    gone = "gone"
+    active = auto()
+    gone = auto()
 
 
 class Repo(BaseModel):
