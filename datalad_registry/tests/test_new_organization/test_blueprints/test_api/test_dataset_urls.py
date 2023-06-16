@@ -166,18 +166,8 @@ class TestCreateDatasetURL:
         resp = flask_client.post("/api/v2/dataset-urls", json=request_json_body)
         assert resp.status_code == 201
 
-        resp_json_body = resp.json
-
-        # Ensure the keys of the JSON body of the response are the field names of
-        # DatasetURLRespModel
-        model_field_names = set(
-            DatasetURLRespModel.schema(by_alias=False)["properties"]
-        )
-        resp_json_body_keys = set(resp_json_body)
-        assert resp_json_body_keys == model_field_names
-
-        # Ensure the `processed` field is the default value of False
-        assert not resp_json_body["processed"]
+        # Ensure the response body is valid
+        DatasetURLRespModel.parse_raw(resp.text)
 
     @pytest.mark.usefixtures("populate_with_2_dataset_urls")
     @pytest.mark.parametrize(
@@ -404,12 +394,13 @@ class TestDatasetURLs:
 
         assert resp.status_code == 200
 
-        ds_url_pg = DatasetURLPage.parse_raw(resp.text)
+        resp_json = resp.json
+        ds_url_pg = DatasetURLPage.parse_obj(resp_json)
 
         if metadata_ret_opt is None:
             # === metadata is not returned ===
 
-            assert all(url.metadata is None for url in ds_url_pg.dataset_urls)
+            assert all("metadata" not in url for url in resp_json["dataset_urls"])
         else:
             # === metadata is returned ===
 
@@ -443,10 +434,12 @@ class TestDatasetURLs:
 
         assert resp.status_code == 200
 
-        ds_url_pg = DatasetURLPage.parse_raw(resp.text)
+        resp_json = resp.json
+        ds_url_pg = DatasetURLPage.parse_obj(resp_json)
 
         assert ds_url_pg.total == 4
         assert ds_url_pg.cur_pg_num == 1
+        assert "prev_pg" not in resp_json
         assert ds_url_pg.prev_pg is None
         assert ds_url_pg.next_pg is not None
 
@@ -479,11 +472,13 @@ class TestDatasetURLs:
 
         assert resp.status_code == 200
 
-        ds_url_pg = DatasetURLPage.parse_raw(resp.text)
+        resp_json = resp.json
+        ds_url_pg = DatasetURLPage.parse_obj(resp_json)
 
         assert ds_url_pg.total == 4
         assert ds_url_pg.cur_pg_num == 2
         assert ds_url_pg.prev_pg is not None
+        assert "next_pg" not in resp_json
         assert ds_url_pg.next_pg is None
 
         prev_pg_lk, first_pg_lk, last_pg_lk = (
@@ -622,15 +617,8 @@ class TestDatasetURL:
         resp = flask_client.get(f"/api/v2/dataset-urls/{dataset_url_id}")
         assert resp.status_code == 200
 
-        resp_json_body = resp.json
-
-        # Ensure the keys of the JSON body of the response are the field names of
-        # DatasetURLRespModel
-        model_field_names = set(
-            DatasetURLRespModel.schema(by_alias=False)["properties"]
-        )
-        resp_json_body_keys = set(resp_json_body)
-        assert resp_json_body_keys == model_field_names
+        # Ensure the response body is valid
+        ds_url = DatasetURLRespModel.parse_raw(resp.text)
 
         # Ensure the correct URL is fetched
-        assert resp_json_body["url"] == url
+        assert str(ds_url.url) == url

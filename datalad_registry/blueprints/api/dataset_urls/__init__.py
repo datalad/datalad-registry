@@ -75,7 +75,9 @@ def create_dataset_url(body: DatasetURLSubmitModel):
         ]
         (url_processing | group(meta_extractions)).apply_async()
 
-        return json_resp_from_str(DatasetURLRespModel.from_orm(url).json(), 201)
+        return json_resp_from_str(
+            DatasetURLRespModel.from_orm(url).json(exclude_none=True), 201
+        )
 
     else:
         # == The URL requested to be created already exists in the database ==
@@ -222,7 +224,7 @@ def dataset_urls(query: QueryParams):
         dataset_urls=ds_urls,
     )
 
-    return json_resp_from_str(page.json())
+    return json_resp_from_str(page.json(exclude_none=True))
 
 
 @bp.get("/<int:id>", responses={"200": DatasetURLRespModel})
@@ -231,4 +233,4 @@ def dataset_url(path: PathParams):
     Get a dataset URL by ID.
     """
     ds_url = DatasetURLRespModel.from_orm(db.get_or_404(URL, path.id))
-    return json_resp_from_str(ds_url.json())
+    return json_resp_from_str(ds_url.json(exclude_none=True))
