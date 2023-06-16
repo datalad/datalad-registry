@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import auto
 from pathlib import Path
 from typing import Optional, Union
 from uuid import UUID
@@ -33,8 +34,8 @@ class OrderDir(StrEnum):
     Enum for representing the order directions
     """
 
-    asc = "asc"
-    desc = "desc"
+    asc = auto()
+    desc = auto()
 
 
 class OrderKey(StrEnum):
@@ -42,12 +43,12 @@ class OrderKey(StrEnum):
     Enum for representing the ordering keys
     """
 
-    url = "url"
-    annex_key_count = "annex_key_count"
-    annexed_files_in_wt_count = "annexed_files_in_wt_count"
-    annexed_files_in_wt_size = "annexed_files_in_wt_size"
-    last_update = "last_update"
-    git_objects_kb = "git_objects_kb"
+    url = auto()
+    annex_key_count = auto()
+    annexed_files_in_wt_count = auto()
+    annexed_files_in_wt_size = auto()
+    last_update = auto()
+    git_objects_kb = auto()
 
 
 class MetadataReturnOption(StrEnum):
@@ -55,8 +56,8 @@ class MetadataReturnOption(StrEnum):
     Enum for representing the metadata return options
     """
 
-    reference = "reference"
-    content = "content"
+    reference = auto()
+    content = auto()
 
 
 class PathParams(BaseModel):
