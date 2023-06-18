@@ -10,3 +10,4 @@ flake8==6.0.0
 isort==5.11.4
 mypy
 types-requests
+beautifulsoup4==4.12.2
