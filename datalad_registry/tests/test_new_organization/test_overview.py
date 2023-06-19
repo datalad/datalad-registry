@@ -176,8 +176,25 @@ class TestOverView:
     def test_pagination(self):
         pass
 
-    def test_metadata(self):
+    @pytest.mark.usefixtures("populate_with_url_metadata")
+    def test_metadata(self, flask_client):
         """
         Test for the present of metadata in the overview page
         """
-        pass
+        resp = flask_client.get("/overview/")
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        metadata_map = {
+            row.td.a.string: {
+                link.string.strip() for link in row.find_all("td")[-1].find_all("a")
+            }
+            for row in soup.body.table.find_all("tr")[1:]
+        }
+
+        assert metadata_map == {
+            "https://www.example.com": {"metalad_core", "metalad_studyminimet"},
+            "http://www.datalad.org": set(),
+            "https://handbook.datalad.org": {"metalad_core"},
+            "https://www.dandiarchive.org": set(),
+        }
