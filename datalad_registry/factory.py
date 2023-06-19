@@ -11,7 +11,7 @@ from flask_openapi3 import Info, OpenAPI
 from kombu.serialization import register
 from werkzeug.exceptions import HTTPException
 
-from datalad_registry import celery, dataset_urls, datasets, overview, root
+from datalad_registry import celery, overview, root
 from datalad_registry.models import db, init_db_command, migrate
 
 from .utils.pydantic_json import pydantic_model_dumps, pydantic_model_loads
@@ -88,8 +88,6 @@ def create_app(test_config: Optional[Dict[str, Any]] = None) -> Flask:
     db.init_app(app)
     migrate.init_app(app, db)
     app.cli.add_command(init_db_command)
-    app.register_blueprint(datasets.bp)
-    app.register_blueprint(dataset_urls.bp)
     app.register_blueprint(overview.bp)
     app.register_blueprint(root.bp)
 

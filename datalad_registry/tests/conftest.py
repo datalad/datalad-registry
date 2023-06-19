@@ -1,134 +1,259 @@
-from collections import namedtuple
+from datetime import datetime
 import os
 from pathlib import Path
-import random
-import shutil
-import string
-from subprocess import PIPE, run
-from time import sleep
 
+from datalad import api as dl
+from datalad.api import Dataset
+from datalad.utils import rmtree as rm_ds_tree
 import pytest
+from pytest import TempPathFactory
 from sqlalchemy.engine.url import URL
 
 from datalad_registry.factory import create_app
-from datalad_registry.models import db
-from datalad_registry.tests.utils import make_ds_id
 
-AppInstance = namedtuple("AppInstance", ["app", "db"])
-
-
-@pytest.fixture
-def ds_id():
-    """Return a random dataset ID."""
-    return make_ds_id()
+# noinspection PyPep8Naming
+from datalad_registry.models import URL as DatasetURL
+from datalad_registry.models import URLMetadata, db
 
 
 @pytest.fixture(scope="session")
-def cache_dir(tmp_path_factory):
-    """Return temporary location of DATALAD_REGISTRY_DATASET_CACHE."""
-    return tmp_path_factory.mktemp("cache_dir")
+def _flask_app(tmp_path_factory):
+    """
+    The fixture of the datalad registry flask app that exists throughout a test session.
 
+    Note: This fixture should only be used by `flask_app` fixture directly.
+    """
 
-LOCAL_DOCKER_DIR = Path(__file__).with_name("data") / "datalad-registry-db"
-LOCAL_DOCKER_ENV = LOCAL_DOCKER_DIR.name
+    instance_path = tmp_path_factory.mktemp("instance")
+    cache_path = tmp_path_factory.mktemp("cache")
 
-
-@pytest.fixture(scope="session")
-def dockerdb(request):
-    if shutil.which("docker-compose") is None:
-        pytest.skip("docker-compose required")
-    if os.name != "posix":
-        pytest.skip("Docker images require Unix host")
-
-    if "DATALAD_REGISTRY_PASSWORD" not in os.environ:
-        os.environ["DATALAD_REGISTRY_PASSWORD"] = "".join(
-            random.choices(string.printable, k=32)
-        )
-
-    dburl = str(
-        URL.create(
-            drivername="postgresql",
-            host="127.0.0.1",
-            port=5432,
-            database="dlreg",
-            username="dlreg",
-            password=os.environ["DATALAD_REGISTRY_PASSWORD"],
-        )
-    )
-
-    if request.config.getoption("--devserver"):
-        yield dburl
-        return
-
-    persist = os.environ.get("DATALAD_REGISTRY_PERSIST_DOCKER_COMPOSE")
-    try:
-        run(["docker-compose", "up", "-d"], cwd=str(LOCAL_DOCKER_DIR), check=True)
-        for _ in range(10):
-            health = run(
-                [
-                    "docker",
-                    "inspect",
-                    "--format={{.State.Health.Status}}",
-                    f"{LOCAL_DOCKER_ENV}_db_1",
-                ],
-                stdout=PIPE,
-                check=True,
-                universal_newlines=True,
-            ).stdout.strip()
-            if health == "healthy":
-                break
-            sleep(3)
-        else:
-            raise RuntimeError("Database container did not initialize in time")
-        yield dburl
-    finally:
-        if persist in (None, "0"):
-            run(["docker-compose", "down", "-v"], cwd=str(LOCAL_DOCKER_DIR), check=True)
-
-
-@pytest.fixture(scope="session")
-def _app_instance(dockerdb, tmp_path_factory, cache_dir):
-    if "DATALAD_REGISTRY_INSTANCE_PATH" not in os.environ:
-        os.environ["DATALAD_REGISTRY_INSTANCE_PATH"] = str(
-            tmp_path_factory.mktemp("instance")
-        )
-    config = {
-        "CELERY_BEAT_SCHEDULE": {},
-        "CELERY_TASK_ALWAYS_EAGER": True,
-        "DATALAD_REGISTRY_DATASET_CACHE": str(cache_dir),
-        "SQLALCHEMY_DATABASE_URI": dockerdb,
+    test_config = {
+        "DATALAD_REGISTRY_INSTANCE_PATH": str(instance_path),
+        "DATALAD_REGISTRY_DATASET_CACHE": str(cache_path),
+        "SQLALCHEMY_DATABASE_URI": str(
+            URL.create(
+                drivername="postgresql",
+                host="127.0.0.1",
+                port=5432,
+                database="dlreg",
+                username="dlreg",
+                password=os.environ["DATALAD_REGISTRY_PASSWORD"],
+            )
+        ),
         "TESTING": True,
     }
-    # crude way to add timeout for connections which might be hanging
-    import socket
 
-    socket.setdefaulttimeout(2)  # seconds
-    app = create_app(config)
-    return AppInstance(app, db)
+    app = create_app(test_config)
+
+    return app
 
 
 @pytest.fixture
-def app_instance(_app_instance):
-    """Fixture that provides the application, database, and client.
-
-    If you just need the client, you can use the `client` fixture
-    instead.
-
-    Returns
-    ------
-    AppInstance namedtuple with app, db, and client fields.
+def flask_app(_flask_app):
     """
-    with _app_instance.app.app_context():
+    The fixture of the datalad_registry Flask app set up with the database of the test
+    environment
+    """
+
+    # Reset the database
+    with _flask_app.app_context():
         db.drop_all()
         db.create_all()
-        return _app_instance
+
+    # Reset the base local cache for datasets
+    cache_path = Path(_flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+    rm_ds_tree(cache_path)
+    cache_path.mkdir()
+
+    return _flask_app
 
 
 @pytest.fixture
-def client(app_instance):
-    """Fixture that provides client.
-
-    If you need to access to the application or database, use the
-    `app_instance` fixture instead.
+def flask_client(flask_app):
     """
-    return app_instance.app.test_client()
+    The fixture of the test client of flask_app
+    """
+    return flask_app.test_client()
+
+
+@pytest.fixture
+def flask_cli_runner(flask_app):
+    """
+    The fixture of the test cli runner of flask_app
+    """
+    return flask_app.test_cli_runner()
+
+
+@pytest.fixture(scope="session")
+def empty_ds_annex(tmp_path_factory) -> Dataset:
+    """
+    An empty dataset that is a git-annex repository
+    """
+    return dl.create(path=tmp_path_factory.mktemp("empty_ds_annex"))
+
+
+@pytest.fixture(scope="session")
+def empty_ds_non_annex(tmp_path_factory) -> Dataset:
+    """
+    An empty dataset that is not a git-annex repository
+    """
+    return dl.create(path=tmp_path_factory.mktemp("empty_ds_non_annex"), annex=False)
+
+
+def two_files_ds(annex: bool, tmp_path_factory: TempPathFactory) -> Dataset:
+    """
+    A dataset with two simple files
+    """
+    ds: Dataset = dl.create(
+        path=tmp_path_factory.mktemp(
+            f"two_files_ds_{'annex' if annex else 'non_annex'}"
+        ),
+        annex=annex,
+    )
+
+    file_names = ["file1.txt", "file2.txt"]
+    for file_name in file_names:
+        with open(ds.pathobj / file_name, "w") as f:
+            f.write(f"Hello in {file_name}\n")
+
+    ds.save(message=f"Add {', '.join(file_names)}")
+    return ds
+
+
+@pytest.fixture(scope="session")
+def two_files_ds_annex(tmp_path_factory) -> Dataset:
+    """
+    A dataset with two simple files that is a git-annex repository
+    """
+    return two_files_ds(annex=True, tmp_path_factory=tmp_path_factory)
+
+
+@pytest.fixture(scope="session")
+def two_files_ds_non_annex(tmp_path_factory) -> Dataset:
+    """
+    A dataset with two simple files that is not a git-annex repository
+    """
+    return two_files_ds(annex=False, tmp_path_factory=tmp_path_factory)
+
+
+@pytest.fixture
+def populate_with_2_dataset_urls(flask_app):
+    """
+    Populate the url table with 2 DatasetURLs, at position 1 and 3.
+    """
+
+    dataset_url1 = DatasetURL(url="https://example.com")
+    dataset_url2 = DatasetURL(url="https://docs.datalad.org")
+    dataset_url3 = DatasetURL(url="/foo/bar")
+
+    with flask_app.app_context():
+        for url in [dataset_url1, dataset_url2, dataset_url3]:
+            db.session.add(url)
+        db.session.commit()
+
+        db.session.delete(dataset_url2)
+        db.session.commit()
+
+
+@pytest.fixture
+def populate_with_dataset_urls(flask_app) -> list[str]:
+    """
+    Populate the url table with a list of DatasetURLs.
+
+    Returns: The list of DatasetURLs that were added to the database
+    """
+
+    urls = [
+        DatasetURL(
+            url="https://www.example.com",
+            ds_id="2a0b7b7b-a984-4c4a-844c-be3132291d7b",
+            head_describe="1234",
+            annex_key_count=20,
+            annexed_files_in_wt_count=200,
+            annexed_files_in_wt_size=1000,
+            git_objects_kb=110,
+            info_ts=datetime(2008, 7, 18, 18, 34, 32),
+            processed=True,
+            cache_path="8c8/fff/e01f2142d88690d92144b00af0",
+        ),
+        DatasetURL(
+            url="http://www.datalad.org",
+            ds_id="2a0b7b7b-a984-4c4a-844c-be3132291d7c",
+            head_describe="1234",
+            annex_key_count=40,
+            annexed_files_in_wt_count=100,
+            annexed_files_in_wt_size=400,
+            git_objects_kb=1100,
+            info_ts=datetime(2009, 6, 18, 18, 34, 32),
+            processed=True,
+            cache_path="72e/cd9/cc10534e2a9f551e32119e0e60",
+        ),
+        DatasetURL(
+            url="https://handbook.datalad.org",
+            ds_id="2a0b7b7b-a984-4c4a-844c-be3132291a7c",
+            head_describe="1234",
+            annex_key_count=90,
+            annexed_files_in_wt_count=490,
+            annexed_files_in_wt_size=1000_000,
+            git_objects_kb=4000,
+            info_ts=datetime(2004, 6, 18, 18, 34, 32),
+            processed=True,
+            cache_path="72e/4e5/4184da47e282c02ae7e568ba74",
+        ),
+        DatasetURL(
+            url="https://www.dandiarchive.org",
+            processed=False,
+            cache_path="a/b/c",
+        ),
+    ]
+
+    with flask_app.app_context():
+        for url in urls:
+            db.session.add(url)
+        db.session.commit()
+
+        return [url.url for url in urls]
+
+
+@pytest.fixture
+def populate_with_url_metadata(
+    populate_with_dataset_urls,  # noqa: U100 (unused argument)
+    flask_app,
+):
+    """
+    Populate the url_metadata table with a list of metadata
+    """
+    metadata_lst = [
+        URLMetadata(
+            dataset_describe="1234",
+            dataset_version="1.0.0",
+            extractor_name="metalad_core",
+            extractor_version="0.14.0",
+            extraction_parameter=dict(a=1, b=2),
+            extracted_metadata=dict(c=3, d=4),
+            url_id=1,
+        ),
+        URLMetadata(
+            dataset_describe="1234",
+            dataset_version="1.0.0",
+            extractor_name="metalad_studyminimet",
+            extractor_version="0.1.0",
+            extraction_parameter=dict(a=1, b=2),
+            extracted_metadata=dict(c=3, d=4),
+            url_id=1,
+        ),
+        URLMetadata(
+            dataset_describe="1234",
+            dataset_version="1.0.0",
+            extractor_name="metalad_core",
+            extractor_version="0.14.0",
+            extraction_parameter=dict(a=1, b=2),
+            extracted_metadata=dict(c=3, d=4),
+            url_id=3,
+        ),
+    ]
+
+    with flask_app.app_context():
+        for metadata in metadata_lst:
+            db.session.add(metadata)
+        db.session.commit()

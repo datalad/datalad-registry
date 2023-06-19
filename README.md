@@ -2,7 +2,6 @@
 
 DataLad registry -- work in progress
 
-  * [docs/openapi.yml](docs/openapi.yml)
   * https://github.com/datalad/datalad/issues/947
 
 ---

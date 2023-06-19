@@ -1,123 +1,266 @@
-import re
-import time
+from typing import Optional
 
+from bs4 import BeautifulSoup
 import pytest
+from yarl import URL as YURL
 
-from datalad_registry.tests.utils import create_and_register_repos, register_dataset
 
-
-def test_overview_pager(client, tmp_path):
-    create_and_register_repos(client, tmp_path, 26)
-
-    resp = client.get("/overview/")
-    assert "1 - 20 of 26" in resp.text
-    assert "<strong>1</strong>" in resp.text
-    assert (
-        '<a href="/overview/?page=2&amp;per_page=20&amp;sort=update-desc">2</a>'
-        in resp.text
+class TestOverView:
+    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.parametrize(
+        "sort_by, expected_order",
+        [
+            (
+                None,
+                [
+                    "http://www.datalad.org",
+                    "https://www.example.com",
+                    "https://handbook.datalad.org",
+                    "https://www.dandiarchive.org",
+                ],
+            ),
+            (
+                "keys-asc",
+                [
+                    "https://www.example.com",
+                    "http://www.datalad.org",
+                    "https://handbook.datalad.org",
+                    "https://www.dandiarchive.org",
+                ],
+            ),
+            (
+                "keys-desc",
+                [
+                    "https://handbook.datalad.org",
+                    "http://www.datalad.org",
+                    "https://www.example.com",
+                    "https://www.dandiarchive.org",
+                ],
+            ),
+            (
+                "update-asc",
+                [
+                    "https://handbook.datalad.org",
+                    "https://www.example.com",
+                    "http://www.datalad.org",
+                    "https://www.dandiarchive.org",
+                ],
+            ),
+            (
+                "update-desc",
+                [
+                    "http://www.datalad.org",
+                    "https://www.example.com",
+                    "https://handbook.datalad.org",
+                    "https://www.dandiarchive.org",
+                ],
+            ),
+            (
+                "url-asc",
+                [
+                    "http://www.datalad.org",
+                    "https://handbook.datalad.org",
+                    "https://www.dandiarchive.org",
+                    "https://www.example.com",
+                ],
+            ),
+            (
+                "url-desc",
+                [
+                    "https://www.example.com",
+                    "https://www.dandiarchive.org",
+                    "https://handbook.datalad.org",
+                    "http://www.datalad.org",
+                ],
+            ),
+            (
+                "annexed_files_in_wt_count-asc",
+                [
+                    "http://www.datalad.org",
+                    "https://www.example.com",
+                    "https://handbook.datalad.org",
+                    "https://www.dandiarchive.org",
+                ],
+            ),
+            (
+                "annexed_files_in_wt_count-desc",
+                [
+                    "https://handbook.datalad.org",
+                    "https://www.example.com",
+                    "http://www.datalad.org",
+                    "https://www.dandiarchive.org",
+                ],
+            ),
+            (
+                "annexed_files_in_wt_size-asc",
+                [
+                    "http://www.datalad.org",
+                    "https://www.example.com",
+                    "https://handbook.datalad.org",
+                    "https://www.dandiarchive.org",
+                ],
+            ),
+            (
+                "annexed_files_in_wt_size-desc",
+                [
+                    "https://handbook.datalad.org",
+                    "https://www.example.com",
+                    "http://www.datalad.org",
+                    "https://www.dandiarchive.org",
+                ],
+            ),
+            (
+                "git_objects_kb-asc",
+                [
+                    "https://www.example.com",
+                    "http://www.datalad.org",
+                    "https://handbook.datalad.org",
+                    "https://www.dandiarchive.org",
+                ],
+            ),
+            (
+                "git_objects_kb-desc",
+                [
+                    "https://handbook.datalad.org",
+                    "http://www.datalad.org",
+                    "https://www.example.com",
+                    "https://www.dandiarchive.org",
+                ],
+            ),
+        ],
     )
-    assert "…" not in resp.text
+    def test_sorting(
+        self, sort_by: Optional[str], expected_order: list[str], flask_client
+    ):
+        """
+        Test for the sorting of dataset URLs in the overview page
+        """
+        resp = flask_client.get("/overview/", query_string={"sort": sort_by})
 
-    resp = client.get("/overview/?page=2&per_page=2")
-    assert "3 - 4 of 26" in resp.text
-    assert "<strong>2</strong>" in resp.text
-    assert (
-        '<a href="/overview/?page=3&amp;per_page=2&amp;sort=update-desc">3</a>'
-        in resp.text
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        url_list = [row.td.a.string for row in soup.body.table.find_all("tr")[1:]]
+
+        assert url_list == expected_order
+
+    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.parametrize(
+        "filter_by, expected_results",
+        [
+            (
+                None,
+                [
+                    "http://www.datalad.org",
+                    "https://www.example.com",
+                    "https://handbook.datalad.org",
+                    "https://www.dandiarchive.org",
+                ],
+            ),
+            ("exa", ["https://www.example.com"]),
+        ],
     )
-    assert resp.text.count("…") == 1
+    def test_filter(
+        self, filter_by: Optional[str], expected_results: list[str], flask_client
+    ):
+        """
+        Test for the filtering of dataset URLs in the overview page
+        """
 
-    resp = client.get("/overview/?page=6&per_page=2")
-    assert "11 - 12 of 26" in resp.text
-    assert "<strong>6</strong>" in resp.text
-    assert (
-        '<a href="/overview/?page=5&amp;per_page=2&amp;sort=update-desc">5</a>'
-        in resp.text
-    )
-    assert resp.text.count("…") == 2
+        resp = flask_client.get("/overview/", query_string={"filter": filter_by})
 
-    # Invalid page numbers
-    resp = client.get("/overview/?page=3")
-    assert resp.status_code == 404
+        soup = BeautifulSoup(resp.text, "html.parser")
 
-    resp = client.get("/overview/?page=0")
-    assert resp.status_code == 404
+        url_list = [row.td.a.string for row in soup.body.table.find_all("tr")[1:]]
 
+        assert url_list == expected_results
 
-@pytest.mark.slow
-def test_overview_sort(client, tmp_path):
-    import datalad.api as dl
+    def test_pagination(self, populate_with_dataset_urls, flask_client):
+        """
+        Test pagination in Web UI
+        """
 
-    from datalad_registry import tasks
+        # For storing all dataset URL obtained from all pages
+        ds_urls: set[str] = set()
 
-    for name in ["ds1", "ds2", "ds3"]:
-        ds = dl.Dataset(tmp_path / name).create()
-        if name == "ds1":
-            repo = ds.repo
-            repo.tag("v1", message="Version 2")
-            repo.call_git(["commit", "--allow-empty", "-mc1"])
-        else:
-            (ds.pathobj / "foo").write_text("foo")
-            if name == "ds2":
-                (ds.pathobj / "bar").write_text("bar")
-            ds.save()
-        url = "file:///" + ds.path
-        register_dataset(ds, url, client)
-        tasks.collect_dataset_info()
-        time.sleep(0.01)
+        # === Get the first page ===
+        resp = flask_client.get("/overview/", query_string={"per_page": 2})
 
-    def assert_ds_order(order, output):
-        match = re.finditer(b"/(ds[123])</a></td>", output)
-        assert match, "regexp unexpectedly didn't match"
-        assert [x.group(1) for x in match] == order
+        # noinspection DuplicatedCode
+        assert resp.status_code == 200
 
-    # By default, most recently updated comes first.
-    r_default = client.get("/overview/")
-    assert_ds_order([b"ds3", b"ds2", b"ds1"], r_default.data)
+        soup = BeautifulSoup(resp.text, "html.parser")
 
-    assert r_default.data == client.get("/overview/?sort=update-desc").data
+        # Get all dataset URLs from the first page
+        page_ds_urls = [row.td.a.string for row in soup.body.table.find_all("tr")[1:]]
+        assert len(page_ds_urls) == 2
 
-    r_update_asc = client.get("/overview/?sort=update-asc")
-    assert_ds_order([b"ds1", b"ds2", b"ds3"], r_update_asc.data)
+        # Store all dataset URLs from the first page
+        for url in page_ds_urls:
+            ds_urls.add(url)
 
-    r_keys_asc = client.get("/overview/?sort=keys-asc")
-    assert_ds_order([b"ds1", b"ds3", b"ds2"], r_keys_asc.data)
+        pagination_element = soup.find("div", {"class": "pagination"})
+        page_1_element = pagination_element.strong
+        page_2_element = pagination_element.a
+        page_2_link = YURL(page_2_element["href"])
 
-    r_keys_desc = client.get("/overview/?sort=keys-desc")
-    assert_ds_order([b"ds2", b"ds3", b"ds1"], r_keys_desc.data)
+        assert page_1_element.string == "1"
+        assert page_2_element.string == "2"
+        assert page_2_link.path == "/overview/"
+        assert len(page_2_link.query) == 3
+        assert page_2_link.query["page"] == "2"
+        assert page_2_link.query["per_page"] == "2"
+        assert page_2_link.query["sort"] == "update-desc"
 
-    r_url_desc = client.get("/overview/?sort=url-desc")
-    assert_ds_order([b"ds3", b"ds2", b"ds1"], r_url_desc.data)
+        # === Get the second page ===
+        resp = flask_client.get(str(page_2_link))
 
-    r_url_asc = client.get("/overview/?sort=url-asc")
-    assert_ds_order([b"ds1", b"ds2", b"ds3"], r_url_asc.data)
+        # noinspection DuplicatedCode
+        assert resp.status_code == 200
 
-    # Unknown falls back to default.
-    assert r_default.data == client.get("/overview/?sort=unknown").data
+        soup = BeautifulSoup(resp.text, "html.parser")
 
+        # Get all dataset URLs from the second page
+        page_ds_urls = [row.td.a.string for row in soup.body.table.find_all("tr")[1:]]
+        assert len(page_ds_urls) == 2
 
-@pytest.mark.slow
-def test_overview_filter(client, tmp_path):
-    import datalad.api as dl
+        # Store all dataset URLs from the second page
+        for url in page_ds_urls:
+            ds_urls.add(url)
 
-    from datalad_registry import tasks
+        pagination_element = soup.find("div", {"class": "pagination"})
+        page_1_element = pagination_element.a
+        page_2_element = pagination_element.strong
+        page_1_link = YURL(page_1_element["href"])
 
-    for name in ["foo", "foobar", "baz"]:
-        ds = dl.Dataset(tmp_path / name).create()
-        url = "file:///" + ds.path
-        register_dataset(ds, url, client)
-        tasks.collect_dataset_info()
+        assert page_1_element.string == "1"
+        assert page_2_element.string == "2"
+        assert page_1_link.path == "/overview/"
+        assert len(page_1_link.query) == 3
+        assert page_1_link.query["page"] == "1"
+        assert page_1_link.query["per_page"] == "2"
+        assert page_1_link.query["sort"] == "update-desc"
 
-    r_no_filter = client.get("/overview/")
-    for name in [b"foo", b"foobar", b"baz"]:
-        assert name in r_no_filter.data
+        assert ds_urls == set(populate_with_dataset_urls)
 
-    r_ba_filter = client.get("/overview/?filter=ba")
-    for name in [b"foobar", b"baz"]:
-        assert name in r_ba_filter.data
-    assert b"foo</td>" not in r_ba_filter.data
+    @pytest.mark.usefixtures("populate_with_url_metadata")
+    def test_metadata(self, flask_client):
+        """
+        Test for the present of metadata in the overview page
+        """
+        resp = flask_client.get("/overview/")
 
-    r_foo_filter = client.get("/overview/?filter=foo")
-    for name in [b"foo", b"foobar"]:
-        assert name in r_foo_filter.data
-    assert b"baz" not in r_foo_filter.data
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        metadata_map = {
+            row.td.a.string: {
+                link.string.strip() for link in row.find_all("td")[-1].find_all("a")
+            }
+            for row in soup.body.table.find_all("tr")[1:]
+        }
+
+        assert metadata_map == {
+            "https://www.example.com": {"metalad_core", "metalad_studyminimet"},
+            "http://www.datalad.org": set(),
+            "https://handbook.datalad.org": {"metalad_core"},
+            "https://www.dandiarchive.org": set(),
+        }
