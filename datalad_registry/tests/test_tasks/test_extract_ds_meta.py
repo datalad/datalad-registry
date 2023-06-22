@@ -101,3 +101,19 @@ class TestExtractDsMeta:
                 "@vocab": "http://schema.org/",
                 "datalad": "http://dx.datalad.org/",
             }
+
+    def test_aborted(self, flask_app, processed_ds_urls):
+        """
+        Test that metadata extraction returns ExtractMetaStatus.ABORTED when
+        some required file is missing for the given extractor
+        """
+
+        test_repo_url_id = processed_ds_urls[0]
+
+        with flask_app.app_context():
+            ret = extract_ds_meta(test_repo_url_id, "metalad_studyminimeta")
+            assert ret == ExtractMetaStatus.ABORTED
+
+            # Ensure no metadata was saved to database
+            metadata = db.session.execute(db.select(URLMetadata)).all()
+            assert len(metadata) == 0
