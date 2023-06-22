@@ -1,3 +1,6 @@
+from pathlib import Path
+
+from datalad.distribution.dataset import require_dataset
 import pytest
 
 from datalad_registry.blueprints.api.url_metadata import URLMetadataModel
@@ -137,3 +140,49 @@ class TestExtractDsMeta:
             # Ensure there is only one piece of metadata saved to database
             metadata = db.session.execute(db.select(URLMetadata)).all()
             assert len(metadata) == 1
+
+    def test_new_dataset_version(self, flask_app, processed_ds_urls):
+        """
+        Test extraction of metadata for a dataset at a new version after the extraction
+        of metadata for the same dataset at an older version
+
+        The extraction should return ExtractMetaStatus.SUCCEEDED, and there should be
+        only one piece of metadata saved to database, the latest one
+        """
+
+        test_repo_url_id = processed_ds_urls[0]
+
+        # Fetch test repo cache path
+        with flask_app.app_context():
+            test_repo_path = str(
+                Path(flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+                / db.session.execute(
+                    db.select(URL.cache_path).where(URL.id == test_repo_url_id)
+                ).scalar_one()
+            )
+
+        test_ds = require_dataset(test_repo_path, check_installed=True, purpose="test")
+
+        # Set dataset one commit before the reference tag for test
+        test_ds.repo.call_git(["checkout", f"{TEST_MIN_REPO_TAG}^"])
+
+        with flask_app.app_context():
+            # Extract metadata for the dataset at the older version
+            ret = extract_ds_meta(test_repo_url_id, _BASIC_EXTRACTOR)
+            assert ret == ExtractMetaStatus.SUCCEEDED
+
+            # There should be only one piece of metadata saved to database
+            dated_metadata = db.session.execute(db.select(URLMetadata)).scalar_one()
+
+            # Set dataset to the reference tag for test
+            test_ds.repo.call_git(["checkout", TEST_MIN_REPO_TAG])
+
+            # Extract metadata for the dataset at the new version
+            ret = extract_ds_meta(test_repo_url_id, _BASIC_EXTRACTOR)
+            assert ret == ExtractMetaStatus.SUCCEEDED
+
+            # There should be only one piece of metadata saved to database
+            current_metadata = db.session.execute(db.select(URLMetadata)).scalar_one()
+
+            assert current_metadata.dataset_version != dated_metadata.dataset_version
+            assert current_metadata.dataset_version == TEST_MIN_REPO_COMMIT_HEXSHA
