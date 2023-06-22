@@ -2,7 +2,7 @@ from datalad import api as dl
 from datalad.distribution.dataset import require_dataset
 import pytest
 
-from datalad_registry.tasks import ExtractMetaStatus, extract_meta
+from datalad_registry.tasks import ExtractMetaStatus, extract_ds_meta, extract_meta
 
 _TEST_REPO_URL = "https://github.com/datalad/testrepo--minimalds.git"
 _TEST_REPO_TAG = "0.1.0"
@@ -34,17 +34,17 @@ def test_repo_path(tmp_path_factory):
 
 
 class TestExtractMeta:
-    def test_aborted(self, flask_app, test_repo_url_id, test_repo_path):
+    def test_aborted(self, flask_app, processed_ds_urls):
         """
         Test that metadata extraction returns ExtractMetaStatus.ABORTED when
         some required file is missing for the given extractor
         """
         from datalad_registry.models import URLMetadata, db
 
+        test_repo_url_id = processed_ds_urls[0]
+
         with flask_app.app_context():
-            ret = extract_meta(
-                test_repo_url_id, test_repo_path, "metalad_studyminimeta"
-            )
+            ret = extract_ds_meta(test_repo_url_id, "metalad_studyminimeta")
             assert ret == ExtractMetaStatus.ABORTED
 
             # Ensure no metadata was saved to database
