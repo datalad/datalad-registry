@@ -51,7 +51,12 @@ class TestExtractMeta:
                 db.select(URL).where(URL.id == test_repo_url_id)
             ).scalar_one()
 
-            metadata = URLMetadataModel.from_orm(url.metadata_[0])
+            metadata_lst = url.metadata_
+
+            # Verify the number of pieces of metadata
+            assert len(metadata_lst) == 1
+
+            metadata = URLMetadataModel.from_orm(metadata_lst[0])
 
             # Verify metadata saved to database
             assert metadata.dataset_describe == _TEST_REPO_TAG
