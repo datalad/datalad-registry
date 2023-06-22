@@ -1,7 +1,10 @@
 import pytest
 
+from datalad_registry.blueprints.api.url_metadata import URLMetadataModel
 from datalad_registry.models import URL, URLMetadata, db
-from datalad_registry.tasks import extract_ds_meta
+from datalad_registry.tasks import ExtractMetaStatus, extract_ds_meta
+
+from . import TEST_MIN_REPO_COMMIT_HEXSHA, TEST_MIN_REPO_TAG
 
 _BASIC_EXTRACTOR = "metalad_core"
 
@@ -62,3 +65,39 @@ class TestExtractDsMeta:
 
                 assert len(res) == 1
                 assert res[0][0] == _BASIC_EXTRACTOR
+
+    def test_succeeded(self, flask_app, processed_ds_urls):
+        """
+        Test that metadata extraction returns ExtractMetaStatus.SUCCEEDED when
+        all provided arguments are valid, and the given extractor doesn't require
+        any special file to be present in the dataset
+        """
+
+        test_repo_url_id = processed_ds_urls[0]
+
+        with flask_app.app_context():
+            ret = extract_ds_meta(test_repo_url_id, _BASIC_EXTRACTOR)
+
+            assert ret == ExtractMetaStatus.SUCCEEDED
+
+            url = db.session.execute(
+                db.select(URL).where(URL.id == test_repo_url_id)
+            ).scalar_one()
+
+            metadata_lst = url.metadata_
+
+            # Verify the number of pieces of metadata
+            assert len(metadata_lst) == 1
+
+            metadata = URLMetadataModel.from_orm(metadata_lst[0])
+
+            # Verify metadata saved to database
+            assert metadata.dataset_describe == TEST_MIN_REPO_TAG
+            assert metadata.dataset_version == TEST_MIN_REPO_COMMIT_HEXSHA
+            assert metadata.extractor_name == _BASIC_EXTRACTOR
+            assert metadata.extraction_parameter == {}
+            # noinspection HttpUrlsUsage
+            assert metadata.extracted_metadata["@context"] == {
+                "@vocab": "http://schema.org/",
+                "datalad": "http://dx.datalad.org/",
+            }
