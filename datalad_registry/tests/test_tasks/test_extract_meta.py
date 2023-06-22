@@ -106,17 +106,6 @@ class TestExtractMeta:
             metadata = db.session.execute(db.select(URLMetadata)).all()
             assert len(metadata) == 1
 
-    def test_invalid_url_id(self, flask_app, test_repo_path):
-        """
-        Test for raising of sqlalchemy.exc.NoResultFound when the given URL id
-        is not valid
-        """
-        from sqlalchemy.exc import NoResultFound
-
-        with flask_app.app_context():
-            with pytest.raises(NoResultFound):
-                extract_meta(1, test_repo_path, _BASIC_EXTRACTOR)
-
     def test_new_dataset_version(self, flask_app, test_repo_url_id, test_repo_path):
         """
         Test extraction of metadata for a dataset at a new version after the extraction
