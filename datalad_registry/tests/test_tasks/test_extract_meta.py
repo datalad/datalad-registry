@@ -3,7 +3,7 @@ from datalad.distribution.dataset import require_dataset
 import pytest
 
 from datalad_registry.blueprints.api.url_metadata import URLMetadataModel
-from datalad_registry.tasks import ExtractMetaStatus, extract_meta
+from datalad_registry.tasks import ExtractMetaStatus, extract_ds_meta, extract_meta
 
 _TEST_REPO_URL = "https://github.com/datalad/testrepo--minimalds.git"
 _TEST_REPO_TAG = "0.1.0"
@@ -35,7 +35,7 @@ def test_repo_path(tmp_path_factory):
 
 
 class TestExtractMeta:
-    def test_succeeded(self, flask_app, test_repo_url_id, test_repo_path):
+    def test_succeeded(self, flask_app, processed_ds_urls):
         """
         Test that metadata extraction returns ExtractMetaStatus.SUCCEEDED when
         all provided arguments are valid, and the given extractor doesn't require
@@ -43,8 +43,10 @@ class TestExtractMeta:
         """
         from datalad_registry.models import URL, db
 
+        test_repo_url_id = processed_ds_urls[0]
+
         with flask_app.app_context():
-            ret = extract_meta(test_repo_url_id, test_repo_path, _BASIC_EXTRACTOR)
+            ret = extract_ds_meta(test_repo_url_id, _BASIC_EXTRACTOR)
 
             assert ret == ExtractMetaStatus.SUCCEEDED
 
