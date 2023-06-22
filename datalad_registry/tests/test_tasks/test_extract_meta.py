@@ -2,7 +2,7 @@ from datalad import api as dl
 from datalad.distribution.dataset import require_dataset
 import pytest
 
-from datalad_registry.tasks import ExtractMetaStatus, extract_meta
+from datalad_registry.tasks import ExtractMetaStatus, extract_ds_meta, extract_meta
 
 _TEST_REPO_URL = "https://github.com/datalad/testrepo--minimalds.git"
 _TEST_REPO_TAG = "0.1.0"
@@ -34,7 +34,7 @@ def test_repo_path(tmp_path_factory):
 
 
 class TestExtractMeta:
-    def test_skipped(self, flask_app, test_repo_url_id, test_repo_path):
+    def test_skipped(self, flask_app, processed_ds_urls):
         """
         Test that metadata extraction returns ExtractMetaStatus.SKIPPED when
         metadata for the given extractor has already been extracted for the
@@ -42,11 +42,13 @@ class TestExtractMeta:
         """
         from datalad_registry.models import URLMetadata, db
 
+        test_repo_url_id = processed_ds_urls[0]
+
         with flask_app.app_context():
             # Extract metadata twice
             # The second one should result in a skipped status
-            extract_meta(test_repo_url_id, test_repo_path, _BASIC_EXTRACTOR)
-            ret = extract_meta(test_repo_url_id, test_repo_path, _BASIC_EXTRACTOR)
+            extract_ds_meta(test_repo_url_id, _BASIC_EXTRACTOR)
+            ret = extract_ds_meta(test_repo_url_id, _BASIC_EXTRACTOR)
             assert ret == ExtractMetaStatus.SKIPPED
 
             # Ensure there is only one piece of metadata saved to database
