@@ -8,6 +8,7 @@ from datalad_registry.tasks import ExtractMetaStatus, extract_meta
 _TEST_REPO_URL = "https://github.com/datalad/testrepo--minimalds.git"
 _TEST_REPO_TAG = "0.1.0"
 _TEST_REPO_COMMIT_HEXSHA = "ac9ba85cf1e8a004e7c24ebb6b5cd861d53e3998"
+_BASIC_EXTRACTOR = "metalad_core"
 
 
 @pytest.fixture
@@ -43,7 +44,7 @@ class TestExtractMeta:
         from datalad_registry.models import URL, db
 
         with flask_app.app_context():
-            ret = extract_meta(test_repo_url_id, test_repo_path, "metalad_core")
+            ret = extract_meta(test_repo_url_id, test_repo_path, _BASIC_EXTRACTOR)
 
             assert ret == ExtractMetaStatus.SUCCEEDED
 
@@ -61,7 +62,7 @@ class TestExtractMeta:
             # Verify metadata saved to database
             assert metadata.dataset_describe == _TEST_REPO_TAG
             assert metadata.dataset_version == _TEST_REPO_COMMIT_HEXSHA
-            assert metadata.extractor_name == "metalad_core"
+            assert metadata.extractor_name == _BASIC_EXTRACTOR
             assert metadata.extraction_parameter == {}
             # noinspection HttpUrlsUsage
             assert metadata.extracted_metadata["@context"] == {
@@ -97,8 +98,8 @@ class TestExtractMeta:
         with flask_app.app_context():
             # Extract metadata twice
             # The second one should result in a skipped status
-            extract_meta(test_repo_url_id, test_repo_path, "metalad_core")
-            ret = extract_meta(test_repo_url_id, test_repo_path, "metalad_core")
+            extract_meta(test_repo_url_id, test_repo_path, _BASIC_EXTRACTOR)
+            ret = extract_meta(test_repo_url_id, test_repo_path, _BASIC_EXTRACTOR)
             assert ret == ExtractMetaStatus.SKIPPED
 
             # Ensure there is only one piece of metadata saved to database
@@ -114,7 +115,7 @@ class TestExtractMeta:
 
         with flask_app.app_context():
             with pytest.raises(NoResultFound):
-                extract_meta(1, test_repo_path, "metalad_core")
+                extract_meta(1, test_repo_path, _BASIC_EXTRACTOR)
 
     def test_new_dataset_version(self, flask_app, test_repo_url_id, test_repo_path):
         """
@@ -133,7 +134,7 @@ class TestExtractMeta:
 
         with flask_app.app_context():
             # Extract metadata for the dataset at the older version
-            ret = extract_meta(test_repo_url_id, test_repo_path, "metalad_core")
+            ret = extract_meta(test_repo_url_id, test_repo_path, _BASIC_EXTRACTOR)
             assert ret == ExtractMetaStatus.SUCCEEDED
 
             # There should be only one piece of metadata saved to database
@@ -143,7 +144,7 @@ class TestExtractMeta:
             test_ds.repo.call_git(["checkout", _TEST_REPO_TAG])
 
             # Extract metadata for the dataset at the new version
-            ret = extract_meta(test_repo_url_id, test_repo_path, "metalad_core")
+            ret = extract_meta(test_repo_url_id, test_repo_path, _BASIC_EXTRACTOR)
             assert ret == ExtractMetaStatus.SUCCEEDED
 
             # There should be only one piece of metadata saved to database
