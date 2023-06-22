@@ -117,3 +117,23 @@ class TestExtractDsMeta:
             # Ensure no metadata was saved to database
             metadata = db.session.execute(db.select(URLMetadata)).all()
             assert len(metadata) == 0
+
+    def test_skipped(self, flask_app, processed_ds_urls):
+        """
+        Test that metadata extraction returns ExtractMetaStatus.SKIPPED when
+        metadata for the given extractor has already been extracted for the
+        given dataset of the given version
+        """
+
+        test_repo_url_id = processed_ds_urls[0]
+
+        with flask_app.app_context():
+            # Extract metadata twice
+            # The second one should result in a skipped status
+            extract_ds_meta(test_repo_url_id, _BASIC_EXTRACTOR)
+            ret = extract_ds_meta(test_repo_url_id, _BASIC_EXTRACTOR)
+            assert ret == ExtractMetaStatus.SKIPPED
+
+            # Ensure there is only one piece of metadata saved to database
+            metadata = db.session.execute(db.select(URLMetadata)).all()
+            assert len(metadata) == 1
