@@ -33,15 +33,13 @@ class Config(object):
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = str(
-        URL.create(
-            drivername="postgresql",
-            host=os.environ.get("DATALAD_REGISTRY_POSTGRES_HOST", "localhost"),
-            port=5432,
-            database="dlreg",
-            username="dlreg",
-            password=os.environ["DATALAD_REGISTRY_PASSWORD"],
-        )
+    SQLALCHEMY_DATABASE_URI = URL.create(
+        drivername="postgresql",
+        host=os.environ.get("DATALAD_REGISTRY_POSTGRES_HOST", "localhost"),
+        port=5432,
+        database="dlreg",
+        username="dlreg",
+        password=os.environ["DATALAD_REGISTRY_PASSWORD"],
     )
 
 
