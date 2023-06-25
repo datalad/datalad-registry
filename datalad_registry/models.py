@@ -32,7 +32,9 @@ class URL(db.Model):  # type: ignore
     # e.g. `/` in *nix
     cache_path = db.Column(db.String(34), nullable=True, default=None)
 
-    metadata_ = db.relationship("URLMetadata", backref="url")
+    metadata_ = db.relationship(
+        "URLMetadata", back_populates="url", cascade_backrefs=False
+    )
 
     def __repr__(self) -> str:
         return f"<URL(url={self.url!r}, ds_id={self.ds_id!r})>"
@@ -59,6 +61,8 @@ class URLMetadata(db.Model):  # type: ignore
 
     # The ID of the associated URL
     url_id = db.Column(db.Integer, db.ForeignKey("url.id"), nullable=False)
+
+    url = db.relationship("URL", back_populates="metadata_", cascade_backrefs=False)
 
     def __repr__(self) -> str:
         return (
