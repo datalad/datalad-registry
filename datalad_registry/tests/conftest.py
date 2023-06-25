@@ -7,7 +7,7 @@ from datalad.api import Dataset
 from datalad.utils import rmtree as rm_ds_tree
 import pytest
 from pytest import TempPathFactory
-from sqlalchemy.engine.url import URL
+from sqlalchemy import URL
 
 from datalad_registry.factory import create_app
 

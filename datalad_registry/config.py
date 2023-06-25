@@ -3,7 +3,7 @@
 import os
 from typing import Union
 
-from sqlalchemy.engine.url import URL
+from sqlalchemy import URL
 
 
 def _log_level() -> Union[str, int]:
