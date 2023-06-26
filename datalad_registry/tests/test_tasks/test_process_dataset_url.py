@@ -34,7 +34,7 @@ def is_dataset_url_unprocessed(dataset_url_id: int) -> bool:
           it has the needed access to the database.
     """
 
-    fields = inspect(URL).columns.keys()
+    fields = inspect(URL).columns.keys()  # type: ignore[union-attr]
     default_none_fields = [
         f
         for f in fields

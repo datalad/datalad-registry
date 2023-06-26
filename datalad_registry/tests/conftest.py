@@ -7,7 +7,7 @@ from datalad.api import Dataset
 from datalad.utils import rmtree as rm_ds_tree
 import pytest
 from pytest import TempPathFactory
-from sqlalchemy.engine.url import URL
+from sqlalchemy import URL
 
 from datalad_registry.factory import create_app
 
@@ -30,15 +30,13 @@ def _flask_app(tmp_path_factory):
     test_config = {
         "DATALAD_REGISTRY_INSTANCE_PATH": str(instance_path),
         "DATALAD_REGISTRY_DATASET_CACHE": str(cache_path),
-        "SQLALCHEMY_DATABASE_URI": str(
-            URL.create(
-                drivername="postgresql",
-                host="127.0.0.1",
-                port=5432,
-                database="dlreg",
-                username="dlreg",
-                password=os.environ["DATALAD_REGISTRY_PASSWORD"],
-            )
+        "SQLALCHEMY_DATABASE_URI": URL.create(
+            drivername="postgresql",
+            host="127.0.0.1",
+            port=5432,
+            database="dlreg",
+            username="dlreg",
+            password=os.environ["DATALAD_REGISTRY_PASSWORD"],
         ),
         "TESTING": True,
     }
