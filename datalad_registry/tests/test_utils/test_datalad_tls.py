@@ -157,6 +157,10 @@ def test_get_origin_branches(ds_name, request, tmp_path):
     origin_branches = get_origin_branches(ds_clone)
 
     assert origin_branches == [
-        {"name": branch_name, "hexsha": ds.repo.get_hexsha(branch_name)}
+        {
+            "name": branch_name,
+            "hexsha": ds.repo.get_hexsha(branch_name),
+            "last_commit_dt": ds.repo.call_git(["log", "-1", "--format=%aI"]).strip(),
+        }
         for branch_name in ds.repo.get_branches()
     ]

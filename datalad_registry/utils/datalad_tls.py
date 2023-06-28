@@ -99,14 +99,22 @@ def get_origin_branches(ds: Dataset) -> list[dict[str, str]]:
 
     :param ds: The given dataset
     :return: A list of dictionaries representing the branches of the origin remote
-             of the given dataset. Each dictionary has two keys, "name" and "hexsha".
-             The value of "name" is the name of the branch and the value of "hexsha"
-             is the commit hash of the branch.
+             of the given dataset. Each dictionary has three keys, "name", "hexsha",
+             and "last_commit_dt".
+             The value of "name" is the name of the branch, the value of "hexsha"
+             is the hash of the last commit in the branch,
+             and the value of "last_commit_dt" is the datetime of the last commit
+             in the branch.
     """
     return [
-        {"name": branch_name, "hexsha": branch_info["objectname"]}
+        {
+            "name": branch_name,
+            "hexsha": branch_info["objectname"],
+            "last_commit_dt": branch_info["authordate:iso8601-strict"],
+        }
         for branch_info in ds.repo.for_each_ref_(
-            pattern="refs/remotes/origin/", fields=["objectname", "refname:strip=3"]
+            pattern="refs/remotes/origin/",
+            fields=["objectname", "refname:strip=3", "authordate:iso8601-strict"],
         )
         if (branch_name := branch_info["refname:strip=3"]) != "HEAD"
     ]
