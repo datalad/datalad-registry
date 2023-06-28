@@ -110,11 +110,11 @@ def get_origin_branches(ds: Dataset) -> list[dict[str, str]]:
         {
             "name": branch_name,
             "hexsha": branch_info["objectname"],
-            "last_commit_dt": branch_info["authordate"],
+            "last_commit_dt": branch_info["authordate:iso8601-strict"],
         }
         for branch_info in ds.repo.for_each_ref_(
             pattern="refs/remotes/origin/",
-            fields=["objectname", "refname:strip=3", "authordate"],
+            fields=["objectname", "refname:strip=3", "authordate:iso8601-strict"],
         )
         if (branch_name := branch_info["refname:strip=3"]) != "HEAD"
     ]
