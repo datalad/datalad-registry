@@ -40,8 +40,8 @@ def _update_dataset_url_info(dataset_url: URL, ds: Dataset) -> None:
     """
     Update a given dataset URL object with the information of a given dataset
 
-    Note: The timestamp regarding the update of this information, `info_ts`, is to be
-          updated as well.
+    Note: The timestamp regarding the update of this information, `last_update_dt`,
+          is to be updated as well.
 
     :param dataset_url: The dataset URL object to be updated
     :param ds: A dataset object representing an up-to-date clone of the dataset
@@ -77,7 +77,7 @@ def _update_dataset_url_info(dataset_url: URL, ds: Dataset) -> None:
         ds.repo.count_objects["size"] + ds.repo.count_objects["size-pack"]
     )
 
-    dataset_url.info_ts = datetime.now(timezone.utc)
+    dataset_url.last_update_dt = datetime.now(timezone.utc)
 
 
 # Map of extractors to their respective required files

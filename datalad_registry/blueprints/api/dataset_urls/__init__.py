@@ -32,7 +32,7 @@ _ORDER_KEY_TO_SQLA_ATTR = {
     OrderKey.annex_key_count: URL.annex_key_count,
     OrderKey.annexed_files_in_wt_count: URL.annexed_files_in_wt_count,
     OrderKey.annexed_files_in_wt_size: URL.annexed_files_in_wt_size,
-    OrderKey.last_update: URL.info_ts,
+    OrderKey.last_update: URL.last_update_dt,
     OrderKey.git_objects_kb: URL.git_objects_kb,
 }
 
@@ -139,8 +139,8 @@ def dataset_urls(query: QueryParams):
         ),
         (URL.annexed_files_in_wt_size, operator.ge, query.min_annexed_files_in_wt_size),
         (URL.annexed_files_in_wt_size, operator.le, query.max_annexed_files_in_wt_size),
-        (URL.info_ts, operator.ge, query.earliest_last_update),
-        (URL.info_ts, operator.le, query.latest_last_update),
+        (URL.last_update_dt, operator.ge, query.earliest_last_update),
+        (URL.last_update_dt, operator.le, query.latest_last_update),
         (URL.git_objects_kb, operator.ge, query.min_git_objects_kb),
         (URL.git_objects_kb, operator.le, query.max_git_objects_kb),
         (URL.processed, operator.eq, query.processed),

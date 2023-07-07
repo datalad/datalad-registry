@@ -85,7 +85,9 @@ class TestProcessDatasetUrl:
             ).scalar()
 
             assert (
-                time_before_processing <= dataset_url.info_ts <= time_after_processing
+                time_before_processing
+                <= dataset_url.last_update_dt
+                <= time_after_processing
             )
             assert dataset_url.processed
             assert dataset_url.cache_path is not None

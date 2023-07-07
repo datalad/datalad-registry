@@ -8,6 +8,8 @@ migrate = Migrate()
 
 
 class URL(db.Model):  # type: ignore
+
+    # ==== Fields mainly for data records ====
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     url = db.Column(db.Text, nullable=False, unique=True)
     ds_id = db.Column(db.Text, nullable=True)
@@ -15,13 +17,19 @@ class URL(db.Model):  # type: ignore
     annex_key_count = db.Column(db.Integer)
     annexed_files_in_wt_count = db.Column(db.Integer)
     annexed_files_in_wt_size = db.Column(db.BigInteger)
-    info_ts = db.Column(db.DateTime(timezone=True))
     update_announced = db.Column(db.Boolean, default=False, nullable=False)
     head = db.Column(db.Text)
     head_describe = db.Column(db.Text)
     branches = db.Column(db.Text)
     tags = db.Column(db.Text)
     git_objects_kb = db.Column(db.BigInteger)
+
+    # ==== Fields mainly for operations ====
+
+    # Time of the last update of the clone of the dataset at the URL in cache
+    # and the data fields in this model
+    last_update_dt = db.Column(db.DateTime(timezone=True))
+
     #: Whether initial data has been collected for this URL
     processed = db.Column(db.Boolean, default=False, nullable=False)
 

@@ -14,8 +14,8 @@ bp = Blueprint("overview", __name__, url_prefix="/overview")
 _SORT_ATTRS = {
     "keys-asc": ("annex_key_count", "asc"),
     "keys-desc": ("annex_key_count", "desc"),
-    "update-asc": ("info_ts", "asc"),
-    "update-desc": ("info_ts", "desc"),
+    "update-asc": ("last_update_dt", "asc"),
+    "update-desc": ("last_update_dt", "desc"),
     "url-asc": ("url", "asc"),
     "url-desc": ("url", "desc"),
     "annexed_files_in_wt_count-asc": ("annexed_files_in_wt_count", "asc"),
