@@ -38,7 +38,7 @@ def is_dataset_url_unprocessed(dataset_url_id: int) -> bool:
     default_none_fields = [
         f
         for f in fields
-        if (f != "id" and f != "url" and f != "update_announced" and f != "processed")
+        if (f != "id" and f != "url" and f != "n_failed_chks" and f != "processed")
     ]
 
     dataset_url: Optional[URL] = db.session.execute(
