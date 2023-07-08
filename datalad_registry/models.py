@@ -53,7 +53,7 @@ class URL(db.Model):  # type: ignore
     # `datalad_registry.utils.allocate_ds_path` in `str` format which is
     # a UUID as hex string, 32 characters long plus two path component separators,
     # e.g. `/` in *nix
-    cache_path = db.Column(db.String(34), nullable=True, default=None)
+    cache_path = db.Column(db.String(34), default=None)
 
     metadata_ = db.relationship(
         "URLMetadata", back_populates="url", cascade_backrefs=False
