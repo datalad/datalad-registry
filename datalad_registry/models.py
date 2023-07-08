@@ -17,9 +17,9 @@ class URL(db.Model):  # type: ignore
     annex_key_count = db.Column(db.Integer)
     annexed_files_in_wt_count = db.Column(db.Integer)
     annexed_files_in_wt_size = db.Column(db.BigInteger)
-    update_announced = db.Column(db.Boolean, default=False, nullable=False)
     head = db.Column(db.Text)
     head_describe = db.Column(db.Text)
+    head_dt = db.Column(db.DateTime(timezone=True))
     branches = db.Column(db.Text)
     tags = db.Column(db.Text)
     git_objects_kb = db.Column(db.BigInteger)
@@ -29,6 +29,21 @@ class URL(db.Model):  # type: ignore
     # Time of the last update of the clone of the dataset at the URL in cache
     # and the data fields in this model
     last_update_dt = db.Column(db.DateTime(timezone=True))
+
+    # The time of the last check for update of the dataset at the URL
+    last_chk_dt = db.Column(db.DateTime(timezone=True))
+
+    # The time of the earliest unhandled request for check for update of the dataset
+    # at the URL. The value of `None` in this field means that there is no unhandled
+    # request for check for update of the dataset at the URL. If a request for check
+    # for update is received when the value of this field is `None`, the value of this
+    # field will be set to the time of the request is received. If a request for check
+    # for update is received when the value of this field is not `None`, the value of
+    # this field will not be changed.
+    chk_req_dt = db.Column(db.DateTime(timezone=True))
+
+    # The number of consecutive check for update operations that have failed
+    n_failed_chks = db.Column(db.Integer, default=0, nullable=False)
 
     #: Whether initial data has been collected for this URL
     processed = db.Column(db.Boolean, default=False, nullable=False)
