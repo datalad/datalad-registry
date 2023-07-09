@@ -176,7 +176,7 @@ class QueryParams(BaseModel):
 
 class DatasetURLSubmitModel(BaseModel):
     """
-    Model for representing the database model URL for submission communication
+    Model for representing the database model RepoUrl for submission communication
     """
 
     url: Union[FileUrl, AnyUrl, Path] = Field(..., description="The URL")
@@ -231,7 +231,7 @@ class DatasetURLRespBaseModel(DatasetURLSubmitModel):
 
 class DatasetURLRespModel(DatasetURLRespBaseModel):
     """
-    Model for representing the database model URL in response communication
+    Model for representing the database model RepoUrl in response communication
     """
 
     metadata: Optional[Union[list[URLMetadataModel], list[URLMetadataRef]]] = Field(

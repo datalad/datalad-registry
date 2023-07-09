@@ -42,7 +42,7 @@ class RegistryGetURLs(Interface):
             args=("-c", "--cache-path"),
             # documentation
             doc="""The full or relative path (relating to the base cache path),
-            of the clone of the dataset of the URL in the local system,
+            of the clone of the dataset at the URL in the local system,
             the system running the Celery worker. If a full path is provided,
             only the last three components are used in the query.""",
             # type checkers, constraint definition is automatically

@@ -301,7 +301,7 @@ class TestDatasetURLs:
         Test the pagination of the results
         """
 
-        # For storing all dataset URL obtained from all pages
+        # For storing all URLs obtained from all pages
         ds_urls: set[str] = set()
 
         # Get the first page

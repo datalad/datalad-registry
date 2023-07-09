@@ -7,7 +7,7 @@ db = SQLAlchemy()
 migrate = Migrate()
 
 
-class URL(db.Model):  # type: ignore
+class RepoUrl(db.Model):  # type: ignore
 
     # ==== Fields mainly for data records ====
     id = db.Column(db.Integer, primary_key=True, nullable=False)
@@ -60,7 +60,7 @@ class URL(db.Model):  # type: ignore
     )
 
     def __repr__(self) -> str:
-        return f"<URL(url={self.url!r}, ds_id={self.ds_id!r})>"
+        return f"<RepoUrl(url={self.url!r}, ds_id={self.ds_id!r})>"
 
 
 class URLMetadata(db.Model):  # type: ignore
@@ -70,7 +70,8 @@ class URLMetadata(db.Model):  # type: ignore
 
     id = db.Column(db.Integer, primary_key=True, nullable=False)
 
-    # The head_describe of the dataset at the associated URL at the time of extraction
+    # The head_describe of the dataset of the associated RepoUrl
+    # at the time of extraction
     dataset_describe = db.Column(db.String(60), nullable=False)
 
     dataset_version = db.Column(db.String(60), nullable=False)
@@ -82,10 +83,10 @@ class URLMetadata(db.Model):  # type: ignore
 
     extracted_metadata = db.Column(db.JSON, nullable=False)
 
-    # The ID of the associated URL
-    url_id = db.Column(db.Integer, db.ForeignKey("url.id"), nullable=False)
+    # The ID of the associated RepoUrl
+    url_id = db.Column(db.Integer, db.ForeignKey("repo_url.id"), nullable=False)
 
-    url = db.relationship("URL", back_populates="metadata_", cascade_backrefs=False)
+    url = db.relationship("RepoUrl", back_populates="metadata_", cascade_backrefs=False)
 
     def __repr__(self) -> str:
         return (

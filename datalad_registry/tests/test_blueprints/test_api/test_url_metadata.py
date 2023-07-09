@@ -5,9 +5,9 @@ from datalad_registry.blueprints.api.url_metadata import URLMetadataModel
 
 @pytest.fixture
 def populate_with_metadata(flask_app):
-    from datalad_registry.models import URL, URLMetadata, db
+    from datalad_registry.models import RepoUrl, URLMetadata, db
 
-    url = URL(url="https://example.com")
+    url = RepoUrl(url="https://example.com")
     url_metadata = URLMetadata(
         dataset_describe="abc",
         dataset_version="cde",

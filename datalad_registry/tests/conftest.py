@@ -12,7 +12,7 @@ from sqlalchemy import URL
 from datalad_registry.factory import create_app
 
 # noinspection PyPep8Naming
-from datalad_registry.models import URL as DatasetURL
+from datalad_registry.models import RepoUrl as DatasetURL
 from datalad_registry.models import URLMetadata, db
 
 

@@ -10,7 +10,7 @@ from flask_openapi3 import APIBlueprint, Tag
 from sqlalchemy import and_
 from sqlalchemy.sql.elements import BinaryExpression
 
-from datalad_registry.models import URL, db
+from datalad_registry.models import RepoUrl, db
 from datalad_registry.tasks import extract_ds_meta, log_error, process_dataset_url
 from datalad_registry.utils.flask_tools import json_resp_from_str
 
@@ -28,12 +28,12 @@ from .. import API_URL_PREFIX, COMMON_API_RESPONSES, HTTPExceptionResp
 from ..url_metadata.models import URLMetadataRef
 
 _ORDER_KEY_TO_SQLA_ATTR = {
-    OrderKey.url: URL.url,
-    OrderKey.annex_key_count: URL.annex_key_count,
-    OrderKey.annexed_files_in_wt_count: URL.annexed_files_in_wt_count,
-    OrderKey.annexed_files_in_wt_size: URL.annexed_files_in_wt_size,
-    OrderKey.last_update: URL.last_update_dt,
-    OrderKey.git_objects_kb: URL.git_objects_kb,
+    OrderKey.url: RepoUrl.url,
+    OrderKey.annex_key_count: RepoUrl.annex_key_count,
+    OrderKey.annexed_files_in_wt_count: RepoUrl.annexed_files_in_wt_count,
+    OrderKey.annexed_files_in_wt_size: RepoUrl.annexed_files_in_wt_size,
+    OrderKey.last_update: RepoUrl.last_update_dt,
+    OrderKey.git_objects_kb: RepoUrl.git_objects_kb,
 }
 
 bp = APIBlueprint(
@@ -52,14 +52,17 @@ def create_dataset_url(body: DatasetURLSubmitModel):
     """
     url_as_str = str(body.url)
 
-    if db.session.execute(db.select(URL.id).filter_by(url=url_as_str)).first() is None:
+    if (
+        db.session.execute(db.select(RepoUrl.id).filter_by(url=url_as_str)).first()
+        is None
+    ):
         # == The URL requested to be created does not exist in the database ==
 
-        url = URL(url=url_as_str)
+        url = RepoUrl(url=url_as_str)
         db.session.add(url)
         db.session.commit()
 
-        # Initiate celery tasks to process the dataset URL
+        # Initiate celery tasks to process the RepoUrl
         # and extract metadata from the corresponding dataset
         url_processing = process_dataset_url.signature(
             (url.id,), ignore_result=True, link_error=log_error.s()
@@ -123,28 +126,36 @@ def dataset_urls(query: QueryParams):
     constraints: list[BinaryExpression] = []
 
     append_constrain_arg_lst = [
-        (URL.url, operator.eq, query.url, str),
-        (URL.ds_id, operator.eq, query.ds_id, str),
-        (URL.annex_key_count, operator.ge, query.min_annex_key_count),
-        (URL.annex_key_count, operator.le, query.max_annex_key_count),
+        (RepoUrl.url, operator.eq, query.url, str),
+        (RepoUrl.ds_id, operator.eq, query.ds_id, str),
+        (RepoUrl.annex_key_count, operator.ge, query.min_annex_key_count),
+        (RepoUrl.annex_key_count, operator.le, query.max_annex_key_count),
         (
-            URL.annexed_files_in_wt_count,
+            RepoUrl.annexed_files_in_wt_count,
             operator.ge,
             query.min_annexed_files_in_wt_count,
         ),
         (
-            URL.annexed_files_in_wt_count,
+            RepoUrl.annexed_files_in_wt_count,
             operator.le,
             query.max_annexed_files_in_wt_count,
         ),
-        (URL.annexed_files_in_wt_size, operator.ge, query.min_annexed_files_in_wt_size),
-        (URL.annexed_files_in_wt_size, operator.le, query.max_annexed_files_in_wt_size),
-        (URL.last_update_dt, operator.ge, query.earliest_last_update),
-        (URL.last_update_dt, operator.le, query.latest_last_update),
-        (URL.git_objects_kb, operator.ge, query.min_git_objects_kb),
-        (URL.git_objects_kb, operator.le, query.max_git_objects_kb),
-        (URL.processed, operator.eq, query.processed),
-        (URL.cache_path, operator.eq, query.cache_path, cache_path_trans),
+        (
+            RepoUrl.annexed_files_in_wt_size,
+            operator.ge,
+            query.min_annexed_files_in_wt_size,
+        ),
+        (
+            RepoUrl.annexed_files_in_wt_size,
+            operator.le,
+            query.max_annexed_files_in_wt_size,
+        ),
+        (RepoUrl.last_update_dt, operator.ge, query.earliest_last_update),
+        (RepoUrl.last_update_dt, operator.le, query.latest_last_update),
+        (RepoUrl.git_objects_kb, operator.ge, query.min_git_objects_kb),
+        (RepoUrl.git_objects_kb, operator.le, query.max_git_objects_kb),
+        (RepoUrl.processed, operator.eq, query.processed),
+        (RepoUrl.cache_path, operator.eq, query.cache_path, cache_path_trans),
     ]
 
     for args in append_constrain_arg_lst:
@@ -157,7 +168,7 @@ def dataset_urls(query: QueryParams):
 
     max_per_page = 100  # The overriding limit to `per_page` provided by the requester
     pagination = db.paginate(
-        db.select(URL)
+        db.select(RepoUrl)
         .filter(and_(True, *constraints))
         .order_by(
             getattr(
@@ -232,5 +243,5 @@ def dataset_url(path: PathParams):
     """
     Get a dataset URL by ID.
     """
-    ds_url = DatasetURLRespModel.from_orm(db.get_or_404(URL, path.id))
+    ds_url = DatasetURLRespModel.from_orm(db.get_or_404(RepoUrl, path.id))
     return json_resp_from_str(ds_url.json(exclude_none=True))
