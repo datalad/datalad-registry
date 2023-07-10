@@ -14,7 +14,7 @@ from datalad_registry.blueprints.api.url_metadata.models import (
 )
 
 
-class TestCreateDatasetURL:
+class TestDeclareDatasetURL:
     def test_without_body(self, flask_client):
         resp = flask_client.post("/api/v2/dataset-urls")
         assert resp.status_code == 422
