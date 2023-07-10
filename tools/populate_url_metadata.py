@@ -1,4 +1,4 @@
-# This script is for populating the metadata of each URL found in the database.
+# This script is for populating the metadata of each RepoUrl found in the database.
 # The population is executed in the context of the Flask application of
 # datalad-registry. Thus, one should run this script in an environment that is suitable
 # for running datalad-registry. Additionally, this script invokes the Celery worker in
@@ -9,7 +9,7 @@
 import click
 
 from datalad_registry.factory import create_app
-from datalad_registry.models import URL, db
+from datalad_registry.models import RepoUrl, db
 from datalad_registry.tasks import extract_ds_meta
 
 flask_app = create_app()
@@ -25,7 +25,7 @@ flask_app = create_app()
 )
 def populate_url_metadata(extractor: str) -> None:
     with flask_app.app_context():
-        urls = db.session.execute(db.select(URL)).scalars().all()
+        urls = db.session.execute(db.select(RepoUrl)).scalars().all()
         print(f"Found {len(urls)} URLs and submitting them for {extractor} extraction.")
 
         for url in urls:

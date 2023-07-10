@@ -12,8 +12,7 @@ from sqlalchemy import URL
 from datalad_registry.factory import create_app
 
 # noinspection PyPep8Naming
-from datalad_registry.models import URL as DatasetURL
-from datalad_registry.models import URLMetadata, db
+from datalad_registry.models import RepoUrl, URLMetadata, db
 
 
 @pytest.fixture(scope="session")
@@ -140,9 +139,9 @@ def populate_with_2_dataset_urls(flask_app):
     Populate the url table with 2 DatasetURLs, at position 1 and 3.
     """
 
-    dataset_url1 = DatasetURL(url="https://example.com")
-    dataset_url2 = DatasetURL(url="https://docs.datalad.org")
-    dataset_url3 = DatasetURL(url="/foo/bar")
+    dataset_url1 = RepoUrl(url="https://example.com")
+    dataset_url2 = RepoUrl(url="https://docs.datalad.org")
+    dataset_url3 = RepoUrl(url="/foo/bar")
 
     with flask_app.app_context():
         for url in [dataset_url1, dataset_url2, dataset_url3]:
@@ -162,7 +161,7 @@ def populate_with_dataset_urls(flask_app) -> list[str]:
     """
 
     urls = [
-        DatasetURL(
+        RepoUrl(
             url="https://www.example.com",
             ds_id="2a0b7b7b-a984-4c4a-844c-be3132291d7b",
             head_describe="1234",
@@ -170,11 +169,12 @@ def populate_with_dataset_urls(flask_app) -> list[str]:
             annexed_files_in_wt_count=200,
             annexed_files_in_wt_size=1000,
             git_objects_kb=110,
-            info_ts=datetime(2008, 7, 18, 18, 34, 32),
+            last_update_dt=datetime(2008, 7, 18, 18, 34, 32),
+            chk_req_dt=datetime(2008, 7, 18, 18, 34, 34),
             processed=True,
             cache_path="8c8/fff/e01f2142d88690d92144b00af0",
         ),
-        DatasetURL(
+        RepoUrl(
             url="http://www.datalad.org",
             ds_id="2a0b7b7b-a984-4c4a-844c-be3132291d7c",
             head_describe="1234",
@@ -182,11 +182,12 @@ def populate_with_dataset_urls(flask_app) -> list[str]:
             annexed_files_in_wt_count=100,
             annexed_files_in_wt_size=400,
             git_objects_kb=1100,
-            info_ts=datetime(2009, 6, 18, 18, 34, 32),
+            last_update_dt=datetime(2009, 6, 18, 18, 34, 32),
+            # chk_req_dt=None, # Commenting this out to allow `chk_req_dt` to default
             processed=True,
             cache_path="72e/cd9/cc10534e2a9f551e32119e0e60",
         ),
-        DatasetURL(
+        RepoUrl(
             url="https://handbook.datalad.org",
             ds_id="2a0b7b7b-a984-4c4a-844c-be3132291a7c",
             head_describe="1234",
@@ -194,11 +195,12 @@ def populate_with_dataset_urls(flask_app) -> list[str]:
             annexed_files_in_wt_count=490,
             annexed_files_in_wt_size=1000_000,
             git_objects_kb=4000,
-            info_ts=datetime(2004, 6, 18, 18, 34, 32),
+            last_update_dt=datetime(2004, 6, 18, 18, 34, 32),
+            chk_req_dt=datetime(2004, 6, 19, 18, 34, 34),
             processed=True,
             cache_path="72e/4e5/4184da47e282c02ae7e568ba74",
         ),
-        DatasetURL(
+        RepoUrl(
             url="https://www.dandiarchive.org",
             processed=False,
             cache_path="a/b/c",

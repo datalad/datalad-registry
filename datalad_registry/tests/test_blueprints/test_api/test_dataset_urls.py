@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Optional
 
 import pytest
@@ -12,9 +13,10 @@ from datalad_registry.blueprints.api.url_metadata.models import (
     URLMetadataModel,
     URLMetadataRef,
 )
+from datalad_registry.models import RepoUrl, db
 
 
-class TestCreateDatasetURL:
+class TestDeclareDatasetURL:
     def test_without_body(self, flask_client):
         resp = flask_client.post("/api/v2/dataset-urls")
         assert resp.status_code == 422
@@ -23,6 +25,7 @@ class TestCreateDatasetURL:
         "request_json_body",
         [
             {},
+            {"abc": "https://example.com"},
             {"url": ""},
             {"url": "hehe"},
             {"url": "haha/hehe"},
@@ -44,16 +47,58 @@ class TestCreateDatasetURL:
         # Ensure the response body is valid
         DatasetURLRespModel.parse_raw(resp.text)
 
-    @pytest.mark.usefixtures("populate_with_2_dataset_urls")
+    @pytest.mark.usefixtures("populate_with_dataset_urls")
     @pytest.mark.parametrize(
-        "request_json_body", [{"url": "https://example.com"}, {"url": "/foo/bar"}]
+        "url, original_chk_req_dt, expecting_chk_req_dt_changed",
+        [
+            (
+                "https://www.example.com",
+                datetime(2008, 7, 18, 18, 34, 34, tzinfo=timezone.utc),
+                False,
+            ),
+            ("http://www.datalad.org", None, True),
+            (
+                "https://handbook.datalad.org",
+                datetime(2004, 6, 19, 18, 34, 34, tzinfo=timezone.utc),
+                False,
+            ),
+            ("https://www.dandiarchive.org", None, False),
+        ],
     )
-    def test_resubmission(self, flask_client, request_json_body):
+    def test_resubmission(
+        self,
+        url,
+        original_chk_req_dt,
+        expecting_chk_req_dt_changed,
+        flask_app,
+        flask_client,
+    ):
         """
         Test resubmitting URLs that already exist in the database
         """
-        resp = flask_client.post("/api/v2/dataset-urls", json=request_json_body)
-        assert resp.status_code == 409
+
+        resp = flask_client.post("/api/v2/dataset-urls", json={"url": url})
+        assert resp.status_code == 202
+
+        # Ensure the response body is valid
+        DatasetURLRespModel.parse_raw(resp.text)
+
+        # Verify the representation of the URL in the DB
+        with flask_app.app_context():
+            repo_url: RepoUrl = db.session.execute(
+                db.select(RepoUrl).where(RepoUrl.url == url)
+            ).scalar_one()
+
+            if expecting_chk_req_dt_changed:
+                if original_chk_req_dt is None:
+                    assert isinstance(repo_url.chk_req_dt, datetime)
+                else:
+                    raise ValueError("This should not happen")
+            else:
+                if original_chk_req_dt is None:
+                    assert repo_url.chk_req_dt is None
+                else:
+                    assert repo_url.chk_req_dt == original_chk_req_dt
 
 
 class TestDatasetURLs:
@@ -301,7 +346,7 @@ class TestDatasetURLs:
         Test the pagination of the results
         """
 
-        # For storing all dataset URL obtained from all pages
+        # For storing all URLs obtained from all pages
         ds_urls: set[str] = set()
 
         # Get the first page

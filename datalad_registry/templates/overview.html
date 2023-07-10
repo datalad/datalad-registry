@@ -86,7 +86,7 @@
           <td>{{ i.annex_key_count if i.annex_key_count is not none }}</td>
           <td>{{ i.annexed_files_in_wt_count if i.annexed_files_in_wt_count is not none }}</td>
           <td>{{ i.annexed_files_in_wt_size if i.annexed_files_in_wt_size is not none }}</td>
-          <td>{{ i.info_ts.strftime("%Y-%m-%dT%H:%M:%S%z") if i.info_ts is not none }}</td>
+          <td>{{ i.last_update_dt.strftime("%Y-%m-%dT%H:%M:%S%z") if i.last_update_dt is not none }}</td>
           <td>{{ i.git_objects_kb if i.git_objects_kb is not none }}</td>
           <td>
             {%- for data in i.metadata_ -%}

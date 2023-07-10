@@ -7,7 +7,9 @@ db = SQLAlchemy()
 migrate = Migrate()
 
 
-class URL(db.Model):  # type: ignore
+class RepoUrl(db.Model):  # type: ignore
+
+    # ==== Fields mainly for data records ====
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     url = db.Column(db.Text, nullable=False, unique=True)
     ds_id = db.Column(db.Text, nullable=True)
@@ -15,13 +17,34 @@ class URL(db.Model):  # type: ignore
     annex_key_count = db.Column(db.Integer)
     annexed_files_in_wt_count = db.Column(db.Integer)
     annexed_files_in_wt_size = db.Column(db.BigInteger)
-    info_ts = db.Column(db.DateTime(timezone=True))
-    update_announced = db.Column(db.Boolean, default=False, nullable=False)
     head = db.Column(db.Text)
     head_describe = db.Column(db.Text)
+    head_dt = db.Column(db.DateTime(timezone=True))
     branches = db.Column(db.Text)
     tags = db.Column(db.Text)
     git_objects_kb = db.Column(db.BigInteger)
+
+    # ==== Fields mainly for operations ====
+
+    # Time of the last update of the clone of the dataset at the URL in cache
+    # and the data fields in this model
+    last_update_dt = db.Column(db.DateTime(timezone=True))
+
+    # The time of the last check for update of the dataset at the URL
+    last_chk_dt = db.Column(db.DateTime(timezone=True))
+
+    # The time of the earliest unhandled request for check for update of the dataset
+    # at the URL. The value of `None` in this field means that there is no unhandled
+    # request for check for update of the dataset at the URL. If a request for check
+    # for update is received when the value of this field is `None`, the value of this
+    # field will be set to the time of the request is received. If a request for check
+    # for update is received when the value of this field is not `None`, the value of
+    # this field will not be changed.
+    chk_req_dt = db.Column(db.DateTime(timezone=True))
+
+    # The number of consecutive check for update operations that have failed
+    n_failed_chks = db.Column(db.Integer, default=0, nullable=False)
+
     #: Whether initial data has been collected for this URL
     processed = db.Column(db.Boolean, default=False, nullable=False)
 
@@ -30,14 +53,14 @@ class URL(db.Model):  # type: ignore
     # `datalad_registry.utils.allocate_ds_path` in `str` format which is
     # a UUID as hex string, 32 characters long plus two path component separators,
     # e.g. `/` in *nix
-    cache_path = db.Column(db.String(34), nullable=True, default=None)
+    cache_path = db.Column(db.String(34), default=None)
 
     metadata_ = db.relationship(
         "URLMetadata", back_populates="url", cascade_backrefs=False
     )
 
     def __repr__(self) -> str:
-        return f"<URL(url={self.url!r}, ds_id={self.ds_id!r})>"
+        return f"<RepoUrl(url={self.url!r}, ds_id={self.ds_id!r})>"
 
 
 class URLMetadata(db.Model):  # type: ignore
@@ -47,7 +70,8 @@ class URLMetadata(db.Model):  # type: ignore
 
     id = db.Column(db.Integer, primary_key=True, nullable=False)
 
-    # The head_describe of the dataset at the associated URL at the time of extraction
+    # The head_describe of the dataset of the associated RepoUrl
+    # at the time of extraction
     dataset_describe = db.Column(db.String(60), nullable=False)
 
     dataset_version = db.Column(db.String(60), nullable=False)
@@ -59,10 +83,10 @@ class URLMetadata(db.Model):  # type: ignore
 
     extracted_metadata = db.Column(db.JSON, nullable=False)
 
-    # The ID of the associated URL
-    url_id = db.Column(db.Integer, db.ForeignKey("url.id"), nullable=False)
+    # The ID of the associated RepoUrl
+    url_id = db.Column(db.Integer, db.ForeignKey("repo_url.id"), nullable=False)
 
-    url = db.relationship("URL", back_populates="metadata_", cascade_backrefs=False)
+    url = db.relationship("RepoUrl", back_populates="metadata_", cascade_backrefs=False)
 
     def __repr__(self) -> str:
         return (

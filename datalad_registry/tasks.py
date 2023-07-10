@@ -15,7 +15,7 @@ from pydantic import StrictInt, StrictStr, parse_obj_as, validate_arguments
 from sqlalchemy.exc import NoResultFound
 
 from datalad_registry import celery
-from datalad_registry.models import URL, URLMetadata, db
+from datalad_registry.models import RepoUrl, URLMetadata, db
 from datalad_registry.utils import StrEnum, allocate_ds_path
 from datalad_registry.utils.datalad_tls import (
     clone,
@@ -36,14 +36,14 @@ class ExtractMetaStatus(StrEnum):
     SKIPPED = auto()
 
 
-def _update_dataset_url_info(dataset_url: URL, ds: Dataset) -> None:
+def _update_dataset_url_info(dataset_url: RepoUrl, ds: Dataset) -> None:
     """
-    Update a given dataset URL object with the information of a given dataset
+    Update a given RepoUrl object with the information of a given dataset
 
-    Note: The timestamp regarding the update of this information, `info_ts`, is to be
-          updated as well.
+    Note: The timestamp regarding the update of this information, `last_update_dt`,
+          is to be updated as well.
 
-    :param dataset_url: The dataset URL object to be updated
+    :param dataset_url: The RepoUrl object to be updated
     :param ds: A dataset object representing an up-to-date clone of the dataset
                in the local cache. Note: The caller of this function is responsible for
                ensuring the clone of the dataset in cache is up-to-date.
@@ -77,7 +77,7 @@ def _update_dataset_url_info(dataset_url: URL, ds: Dataset) -> None:
         ds.repo.count_objects["size"] + ds.repo.count_objects["size-pack"]
     )
 
-    dataset_url.info_ts = datetime.now(timezone.utc)
+    dataset_url.last_update_dt = datetime.now(timezone.utc)
 
 
 # Map of extractors to their respective required files
@@ -107,7 +107,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
     """
     Extract dataset level metadata from a dataset
 
-    :param ds_url_id: The ID (primary key) of the URL of the dataset in the database
+    :param ds_url_id: The ID (primary key) of the RepoUrl of the dataset in the database
     :param extractor: The name of the extractor to use
     :return: `ExtractMetaStatus.SUCCEEDED` if the extraction has produced
                  valid metadata. In this case, the metadata has been recorded to
@@ -118,23 +118,27 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
                  the studyminimeta extractor.
              `ExtractMetaStatus.SKIPPED` if the extraction has been skipped because the
                  metadata to be extracted is already present in the database,
-                 as identified by the extractor name, URL, and dataset version.
-    :raise: ValueError if the dataset URL of the specified ID does not exist or has not
+                 as identified by the extractor name, RepoUrl, and dataset version.
+    :raise: ValueError if the RepoUrl of the specified ID does not exist or has not
                 been processed yet.
             RuntimeError if the extraction has produced no valid metadata.
 
     """
     try:
-        url = db.session.execute(db.select(URL).where(URL.id == ds_url_id)).scalar_one()
+        url = db.session.execute(
+            db.select(RepoUrl).where(RepoUrl.id == ds_url_id)
+        ).scalar_one()
     except NoResultFound:
-        raise ValueError(f"Dataset URL of ID: {ds_url_id} does not exist")
+        raise ValueError(f"RepoUrl of ID: {ds_url_id} does not exist")
 
     if not url.processed:
         raise ValueError(
-            f"Dataset URL {url.url}, of ID: {url.id}, has not been processed yet"
+            f"RepoUrl {url.url}, of ID: {url.id}, has not been processed yet"
         )
 
-    assert url.cache_path is not None, "Encountered a processed URL with no cache path"
+    assert (
+        url.cache_path is not None
+    ), "Encountered a processed RepoUrl with no cache path"
 
     # Absolute path of the dataset clone in cache
     cache_path_abs = (
@@ -228,31 +232,31 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
 @validate_arguments
 def process_dataset_url(dataset_url_id: StrictInt) -> None:
     """
-    Process a dataset URL
+    Process a RepoUrl
 
-    :param dataset_url_id: The ID (primary key) of the dataset URL in the database
+    :param dataset_url_id: The ID (primary key) of the RepoUrl in the database
 
     note:: This function clones the dataset at the specified URL to a new local
            cache directory and extracts information from the cloned copy of the dataset
-           to populate the cells of the given URL row in the URL table. If both
+           to populate the cells of the given RepoUrl row in the RepoUrl table. If both
            the cloning and extraction of information are successful,
-           the `processed` cell of the given URL row will be set to `True`,
+           the `processed` cell of the given RepoUrl row will be set to `True`,
            the other cells of the row will be populated with the up-to-date
-           information, and if the dataset URL has been processed previously, the old
+           information, and if the RepoUrl has been processed previously, the old
            cache directory established by the previous processing will be removed.
-           Otherwise, no cell of the given URL row will be changed,
+           Otherwise, no cell of the given RepoUrl row will be changed,
            and the local cache will be restored to its previous state
            (by deleting the new cache directory for the cloning of the dataset).
     """
 
-    # Get the dataset URL from the database by ID
-    dataset_url: Optional[URL] = db.session.execute(
-        db.select(URL).filter_by(id=dataset_url_id)
+    # Get the RepoUrl from the database by ID
+    dataset_url: Optional[RepoUrl] = db.session.execute(
+        db.select(RepoUrl).filter_by(id=dataset_url_id)
     ).scalar()
 
     if dataset_url is None:
-        # Error out when no dataset URL in the database with the specified ID
-        raise ValueError(f"URL with ID {dataset_url_id} does not exist")
+        # Error out when no RepoUrl in the database with the specified ID
+        raise ValueError(f"RepoUrl with ID {dataset_url_id} does not exist")
 
     base_cache_path = Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
 
@@ -282,7 +286,7 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
         dataset_url.processed = True
         dataset_url.cache_path = str(ds_path_relative)
 
-        # Commit the updated dataset URL object to the database
+        # Commit the updated RepoUrl object to the database
         db.session.commit()
 
     except Exception as e:

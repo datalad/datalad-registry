@@ -4,7 +4,7 @@ from datalad.distribution.dataset import require_dataset
 import pytest
 
 from datalad_registry.blueprints.api.url_metadata import URLMetadataModel
-from datalad_registry.models import URL, URLMetadata, db
+from datalad_registry.models import RepoUrl, URLMetadata, db
 from datalad_registry.tasks import ExtractMetaStatus, extract_ds_meta
 
 from . import TEST_MIN_REPO_COMMIT_HEXSHA, TEST_MIN_REPO_TAG
@@ -17,8 +17,8 @@ class TestExtractDsMeta:
     @pytest.mark.parametrize("url_id", [1, 7, 10])
     def test_nonexistent_ds_url(self, url_id, flask_app):
         """
-        Test the case that the given dataset URL ID argument has no corresponding
-        dataset URL in the database
+        Test the case that the given RepoUrl ID argument has no corresponding
+        RepoUrl in the database
         """
         with flask_app.app_context():
             with pytest.raises(ValueError):
@@ -28,7 +28,7 @@ class TestExtractDsMeta:
     @pytest.mark.parametrize("url_id", [2, 3, 4, 5, 6])
     def test_unprocessed_ds_url(self, url_id, flask_app):
         """
-        Test the case that the specified dataset URL, by ID, has not been processed
+        Test the case that the specified RepoUrl, by ID, has not been processed
         """
         with flask_app.app_context():
             with pytest.raises(ValueError):
@@ -38,12 +38,12 @@ class TestExtractDsMeta:
     @pytest.mark.parametrize("url_id", [2, 3, 4, 5, 6])
     def test_processed_ds_url_without_cache_path(self, url_id, flask_app):
         """
-        Test the case that the specified dataset URL, by ID, has been processed but
+        Test the case that the specified RepoUrl, by ID, has been processed but
         has no cache path
         """
         with flask_app.app_context():
             url = db.session.execute(
-                db.select(URL).where(URL.id == url_id)
+                db.select(RepoUrl).where(RepoUrl.id == url_id)
             ).scalar_one()
             url.processed = True
 
@@ -52,7 +52,7 @@ class TestExtractDsMeta:
 
     def test_valid_ds_url_for_metadata_extraction(self, processed_ds_urls, flask_app):
         """
-        Test the case that the specified dataset URL, by ID, is valid for metadata
+        Test the case that the specified RepoUrl, by ID, is valid for metadata
         extraction
         """
 
@@ -84,7 +84,7 @@ class TestExtractDsMeta:
             assert ret == ExtractMetaStatus.SUCCEEDED
 
             url = db.session.execute(
-                db.select(URL).where(URL.id == test_repo_url_id)
+                db.select(RepoUrl).where(RepoUrl.id == test_repo_url_id)
             ).scalar_one()
 
             metadata_lst = url.metadata_
@@ -157,7 +157,7 @@ class TestExtractDsMeta:
             test_repo_path = str(
                 Path(flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
                 / db.session.execute(
-                    db.select(URL.cache_path).where(URL.id == test_repo_url_id)
+                    db.select(RepoUrl.cache_path).where(RepoUrl.id == test_repo_url_id)
                 ).scalar_one()
             )
 
