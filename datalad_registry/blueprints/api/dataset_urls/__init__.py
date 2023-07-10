@@ -76,18 +76,18 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
     if repo_url_row is None:
         # == The URL requested to be created does not exist in the database ==
 
-        url = RepoUrl(url=url_as_str)
-        db.session.add(url)
+        repo_url = RepoUrl(url=url_as_str)
+        db.session.add(repo_url)
         db.session.commit()
 
         # Initiate celery tasks to process the RepoUrl
         # and extract metadata from the corresponding dataset
         url_processing = process_dataset_url.signature(
-            (url.id,), ignore_result=True, link_error=log_error.s()
+            (repo_url.id,), ignore_result=True, link_error=log_error.s()
         )
         meta_extractions = [
             extract_ds_meta.signature(
-                (url.id, extractor),
+                (repo_url.id, extractor),
                 ignore_result=True,
                 immutable=True,
                 link_error=log_error.s(),
@@ -97,7 +97,7 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
         (url_processing | group(meta_extractions)).apply_async()
 
         return json_resp_from_str(
-            DatasetURLRespModel.from_orm(url).json(exclude_none=True), 201
+            DatasetURLRespModel.from_orm(repo_url).json(exclude_none=True), 201
         )
 
     else:
