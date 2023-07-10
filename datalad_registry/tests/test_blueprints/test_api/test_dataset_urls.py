@@ -23,6 +23,7 @@ class TestDeclareDatasetURL:
         "request_json_body",
         [
             {},
+            {"abc": "https://example.com"},
             {"url": ""},
             {"url": "hehe"},
             {"url": "haha/hehe"},
