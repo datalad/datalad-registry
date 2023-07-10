@@ -103,7 +103,7 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
     else:
         # == The URL requested to be created already exists in the database ==
 
-        repo_url: RepoUrl = repo_url_row[0]
+        repo_url = repo_url_row[0]
 
         # Build the response from the current representation of the URL in the DB
         resp_model = DatasetURLRespModel.from_orm(repo_url).json(exclude_none=True)
