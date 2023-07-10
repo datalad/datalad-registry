@@ -1,11 +1,12 @@
 # This file is for defining the API endpoints related to dataset URls
 
+from datetime import datetime, timezone
 from json import loads
 import operator
 from pathlib import Path
 
 from celery import group
-from flask import abort, current_app, url_for
+from flask import current_app, url_for
 from flask_openapi3 import APIBlueprint, Tag
 from sqlalchemy import and_
 from sqlalchemy.sql.elements import BinaryExpression
@@ -24,7 +25,7 @@ from .models import (
     PathParams,
     QueryParams,
 )
-from .. import API_URL_PREFIX, COMMON_API_RESPONSES, HTTPExceptionResp
+from .. import API_URL_PREFIX, COMMON_API_RESPONSES
 from ..url_metadata.models import URLMetadataRef
 
 _ORDER_KEY_TO_SQLA_ATTR = {
@@ -45,17 +46,34 @@ bp = APIBlueprint(
 )
 
 
-@bp.post("", responses={"201": DatasetURLRespModel, "409": HTTPExceptionResp})
-def create_dataset_url(body: DatasetURLSubmitModel):
+@bp.post("", responses={"201": DatasetURLRespModel, "202": DatasetURLRespModel})
+def declare_dataset_url(body: DatasetURLSubmitModel):
     """
-    Create a new dataset URL.
+    Handle the submission of a dataset URL, adding a new one or updating an existing one
+
+    If the submitted URL does not exist in the database,
+      * create a new RepoUrl to represent it in the database
+      * initiate Celery tasks to process the RepoUrl
+        and extract metadata from the dataset at the URL
+      * return the newly created representation of the URL in the database
+        in the response (with a 201 status code).
+        Note: This newly created representation, most likely, will not contain
+              the results of the initiated Celery tasks, as they will need more time
+              to complete.
+
+    If the submitted URL already exists in the database,
+      * flag the representation of the URL in the database to be updated
+        if the URL has been initially processed by the system. Do nothing otherwise
+        as the URL will be processed by the system the first time.
+      * return the current representation of the URL in the database in the response
+        (with a 202 status code)
     """
     url_as_str = str(body.url)
 
-    if (
-        db.session.execute(db.select(RepoUrl.id).filter_by(url=url_as_str)).first()
-        is None
-    ):
+    repo_url_row = db.session.execute(
+        db.select(RepoUrl).filter_by(url=url_as_str)
+    ).one_or_none()
+    if repo_url_row is None:
         # == The URL requested to be created does not exist in the database ==
 
         url = RepoUrl(url=url_as_str)
@@ -85,7 +103,18 @@ def create_dataset_url(body: DatasetURLSubmitModel):
     else:
         # == The URL requested to be created already exists in the database ==
 
-        abort(409, "The URL requested to be created already exists in the database.")
+        repo_url: RepoUrl = repo_url_row[0]
+
+        # Build the response from the current representation of the URL in the DB
+        resp_model = DatasetURLRespModel.from_orm(repo_url).json(exclude_none=True)
+
+        if repo_url.processed:
+            # Flag the URL to be updated if there is no unhandled update request of it
+            if repo_url.chk_req_dt is None:
+                repo_url.chk_req_dt = datetime.now(timezone.utc)
+                db.session.commit()
+
+        return json_resp_from_str(resp_model, 202)
 
 
 @bp.get("", responses={"200": DatasetURLPage})
