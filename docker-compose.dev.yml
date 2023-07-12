@@ -69,17 +69,22 @@ services:
 #      <<: *env
 
   broker:
-    image: docker.io/rabbitmq:3-alpine
+    image: docker.io/rabbitmq:3-management
+    hostname: dlreg-broker
     environment:
       RABBITMQ_DEFAULT_USER: "user"
       RABBITMQ_DEFAULT_PASS: "$RABBITMQ_DEFAULT_PASS"
     expose:
       - "5672"
-    healthcheck:
-      test: ["CMD", "nc", "-nvz", "127.0.0.1", "5672"]
-      interval: 1s
-      timeout: 3s
-      retries: 30
+    ports:
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - ${DL_REGISTRY_INSTANCE_PATH}/broker/home:/var/lib/rabbitmq
+    healthcheck:  # https://www.rabbitmq.com/monitoring.html#health-checks
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 30s
+      retries: 3
 
   # Result backend for Celery
   backend:
