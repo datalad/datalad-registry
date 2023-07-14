@@ -101,9 +101,8 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: "user"
       RABBITMQ_DEFAULT_PASS: "$RABBITMQ_DEFAULT_PASS"
-    expose:
-      - "5672"
     ports:
+      - "127.0.0.1:5672:5672"
       - "127.0.0.1:15672:15672"
     volumes:
       - ${DL_REGISTRY_INSTANCE_PATH}/broker/home:/var/lib/rabbitmq
@@ -116,8 +115,8 @@ services:
   # Result backend for Celery
   backend:
     image: docker.io/redis:7
-    expose:
-      - "6379"
+    ports:
+      - "127.0.0.1:6379:6379"
 
   db:
     image: docker.io/postgres:latest
@@ -126,8 +125,8 @@ services:
       POSTGRES_USER: dlreg
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
       POSTGRES_INITDB_ARGS: --encoding utf8 --locale C
-    expose:
-        - "5432"
+    ports:
+        - "127.0.0.1:5432:5432"
     userns_mode: "keep-id"  # This has an effect only after podman-compose 1.0.3 possibly
                             # See https://github.com/containers/podman-compose/issues/166
                             # for details.
