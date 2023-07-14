@@ -49,6 +49,33 @@ services:
       timeout: 3s
       retries: 10
 
+  # Monitor for Celery service
+  monitor:
+    build: .
+    depends_on:
+      broker:
+        condition: service_healthy
+      worker:
+        condition: service_healthy
+    environment:
+      <<: *env
+      FLOWER_BROKER_API: "http://user:$RABBITMQ_DEFAULT_PASS@broker:15672/api/"
+      FLOWER_PERSISTENT: "True"
+      FLOWER_DB: "/app/instance/monitor/flower"
+      FLOWER_STATE_SAVE_INTERVAL: "1000"  # In milliseconds
+      FLOWER_ENABLE_EVENTS: "True"
+      FLOWER_BASIC_AUTH: "$FLOWER_BASIC_AUTH"
+    ports:
+      - "127.0.0.1:5555:5555"
+    command: [ "celery", "--app", "datalad_registry.runcelery.celery", "flower" ]
+    volumes:
+      - ${DL_REGISTRY_INSTANCE_PATH}/monitor:/app/instance/monitor
+    healthcheck:
+      test: RESPONSE=$$(curl -s http://localhost:5555/healthcheck); if [ "$$RESPONSE" = "OK" ]; then exit 0; else exit 1; fi
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 # TODO: Currently, there is no job to be scheduled.
 #   Disable this to make debugging easier.
 #   Once there is a job to be scheduled, we can uncomment this to enable the scheduler
