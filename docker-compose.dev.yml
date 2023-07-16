@@ -28,7 +28,7 @@ services:
 
       DATALAD_REGISTRY_POSTGRES_HOST: db
 
-    command: [sh, -c, "flask init-db && flask run --host=0.0.0.0"]
+    command: [ sh, -c, "flask init-db && flask run --host=0.0.0.0" ]
     volumes:
       - ./:/app
       - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
@@ -41,14 +41,14 @@ services:
         condition: service_healthy
       db:
         condition: service_healthy
-    command: [celery, -A, datalad_registry.runcelery.celery, worker, --loglevel, DEBUG, --pool, prefork]
+    command: [ celery, -A, datalad_registry.runcelery.celery, worker, --loglevel, DEBUG, --pool, prefork ]
     volumes:
       - ./:/app
       - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
     environment:
       <<: *env
     healthcheck:
-      test: ["CMD-SHELL", "celery -A datalad_registry.runcelery.celery status --timeout 1 --json | grep -q pong"]
+      test: [ "CMD-SHELL", "celery -A datalad_registry.runcelery.celery status --timeout 1 --json | grep -q pong" ]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -82,24 +82,24 @@ services:
       timeout: 10s
       retries: 3
 
-# TODO: Currently, there is no job to be scheduled.
-#   Disable this to make debugging easier.
-#   Once there is a job to be scheduled, we can uncomment this to enable the scheduler
-#  scheduler:
-#    build: .
-#    depends_on:
-#      broker:
-#        condition: service_healthy
-#    command: [
-#      celery, -A, datalad_registry.runcelery.celery,
-#      beat,
-#      --loglevel, DEBUG,
-#      -s, /app/instance/celerybeat-schedule
-#    ]
-#    volumes:
-#      - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
-#    environment:
-#      <<: *env
+  # TODO: Currently, there is no job to be scheduled.
+  #   Disable this to make debugging easier.
+  #   Once there is a job to be scheduled, we can uncomment this to enable the scheduler
+  #  scheduler:
+  #    build: .
+  #    depends_on:
+  #      broker:
+  #        condition: service_healthy
+  #    command: [
+  #      celery, -A, datalad_registry.runcelery.celery,
+  #      beat,
+  #      --loglevel, DEBUG,
+  #      -s, /app/instance/celerybeat-schedule
+  #    ]
+  #    volumes:
+  #      - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
+  #    environment:
+  #      <<: *env
 
   broker:
     image: docker.io/rabbitmq:3-management
@@ -112,7 +112,7 @@ services:
       - "127.0.0.1:15672:15672"
     volumes:
       - ${DL_REGISTRY_INSTANCE_PATH}/broker/home:/var/lib/rabbitmq
-    healthcheck:  # https://www.rabbitmq.com/monitoring.html#health-checks
+    healthcheck: # https://www.rabbitmq.com/monitoring.html#health-checks
       test: rabbitmq-diagnostics -q ping
       interval: 30s
       timeout: 30s
@@ -132,16 +132,17 @@ services:
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
       POSTGRES_INITDB_ARGS: --encoding utf8 --locale C
     ports:
-        - "127.0.0.1:5432:5432"
+      - "127.0.0.1:5432:5432"
     userns_mode: "keep-id"  # This has an effect only after podman-compose 1.0.3 possibly
-                            # See https://github.com/containers/podman-compose/issues/166
-                            # for details.
-                            # For podman-compose 1.0.3 or earlier, use
-                            # `PODMAN_USERNS=keep-id podman-compose up`
+      # See https://github.com/containers/podman-compose/issues/166
+      # for details.
+      # For podman-compose 1.0.3 or earlier, use
+      # `PODMAN_USERNS=keep-id podman-compose up`
+
     volumes:
       - ${DL_REGISTRY_DB_DATA_PATH}:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "dlreg"]
+      test: [ "CMD", "pg_isready", "-U", "dlreg" ]
       interval: 7s
       timeout: 3s
       retries: 5
