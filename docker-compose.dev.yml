@@ -77,7 +77,6 @@ services:
       FLOWER_PERSISTENT: "True"
       FLOWER_DB: "/app/instance/monitor/flower"
       FLOWER_STATE_SAVE_INTERVAL: "1000"  # In milliseconds
-      FLOWER_ENABLE_EVENTS: "True"
       FLOWER_NATURAL_TIME: "True"
       FLOWER_BASIC_AUTH: "$FLOWER_BASIC_AUTH"
     ports:
