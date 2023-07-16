@@ -1,7 +1,8 @@
 version: "2.1"  # Compose file format v3 does not support health checks
 services:
   web:
-    build: .
+    build:
+      dockerfile: dev.dockerfile
     depends_on:
       broker:
         condition: service_healthy
@@ -33,7 +34,8 @@ services:
       - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
 
   worker:
-    build: .
+    build:
+      dockerfile: dev.dockerfile
     depends_on:
       broker:
         condition: service_healthy
@@ -53,7 +55,8 @@ services:
 
   # Monitor for Celery service
   monitor:
-    build: .
+    build:
+      dockerfile: dev.dockerfile
     depends_on:
       broker:
         condition: service_healthy
