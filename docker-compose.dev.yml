@@ -46,7 +46,7 @@ services:
         condition: service_healthy
     command: [
       "bash", "-c",
-      "pip3 install -e . && celery -A datalad_registry.runcelery.celery worker --loglevel DEBUG --pool, prefork"
+      "pip3 install -e . && celery -A datalad_registry.runcelery.celery worker --loglevel DEBUG --pool prefork"
     ]
     volumes:
       - ./:/app
