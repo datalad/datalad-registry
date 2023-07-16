@@ -29,6 +29,7 @@ services:
 
     command: [sh, -c, "flask init-db && flask run --host=0.0.0.0"]
     volumes:
+      - ./:/app
       - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
 
   worker:
@@ -40,6 +41,7 @@ services:
         condition: service_healthy
     command: [celery, -A, datalad_registry.runcelery.celery, worker, --loglevel, DEBUG, --pool, prefork]
     volumes:
+      - ./:/app
       - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
     environment:
       <<: *env
@@ -69,6 +71,7 @@ services:
       - "127.0.0.1:5555:5555"
     command: [ "celery", "--app", "datalad_registry.runcelery.celery", "flower" ]
     volumes:
+      - ./:/app
       - ${DL_REGISTRY_INSTANCE_PATH}/monitor:/app/instance/monitor
     healthcheck:
       test: RESPONSE=$$(curl -s http://localhost:5555/healthcheck); if [ "$$RESPONSE" = "OK" ]; then exit 0; else exit 1; fi
