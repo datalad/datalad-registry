@@ -3,7 +3,7 @@ services:
   web:
     build:
       dockerfile: dev.dockerfile
-    image: datalad-registry
+    image: datalad-registry:dev
     depends_on:
       broker:
         condition: service_healthy
@@ -38,7 +38,7 @@ services:
       - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
 
   worker:
-    image: datalad-registry
+    image: datalad-registry:dev
     depends_on:
       broker:
         condition: service_healthy
@@ -64,7 +64,7 @@ services:
 
   # Monitor for Celery service
   monitor:
-    image: datalad-registry
+    image: datalad-registry:dev
     depends_on:
       broker:
         condition: service_healthy
