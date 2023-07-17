@@ -54,7 +54,10 @@ services:
     environment:
       <<: *env
     healthcheck:
-      test: [ "CMD-SHELL", "celery -A datalad_registry.runcelery.celery status --timeout 1 --json | grep -q pong" ]
+      test: [
+        "CMD", "bash", "-c",
+        "celery -A datalad_registry.runcelery.celery status --timeout 1 --json | grep -q pong"
+      ]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -86,7 +89,10 @@ services:
       - ./:/app
       - ${DL_REGISTRY_INSTANCE_PATH}/monitor:/app/instance/monitor
     healthcheck:
-      test: RESPONSE=$$(curl -s http://localhost:5555/healthcheck); if [ "$$RESPONSE" = "OK" ]; then exit 0; else exit 1; fi
+      test: [
+        "CMD", "bash", "-c",
+        "RESPONSE=$$(curl -s http://localhost:5555/healthcheck); if [ \"$$RESPONSE\" = \"OK\" ]; then exit 0; else exit 1; fi"
+      ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -122,7 +128,7 @@ services:
     volumes:
       - ${DL_REGISTRY_INSTANCE_PATH}/broker/home:/var/lib/rabbitmq
     healthcheck: # https://www.rabbitmq.com/monitoring.html#health-checks
-      test: rabbitmq-diagnostics -q ping
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 30s
       timeout: 30s
       retries: 3
