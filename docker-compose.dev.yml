@@ -31,7 +31,7 @@ services:
 
     command: [
       "bash", "-c",
-      "pip3 install -e . && flask init-db && flask run --host=0.0.0.0"
+      "pip3 install . && flask init-db && flask run --host=0.0.0.0"
     ]
     volumes:
       - ./:/app
@@ -46,7 +46,7 @@ services:
         condition: service_healthy
     command: [
       "bash", "-c",
-      "pip3 install -e . && celery -A datalad_registry.runcelery.celery worker --loglevel DEBUG --pool prefork"
+      "pip3 install . && celery -A datalad_registry.runcelery.celery worker --loglevel DEBUG --pool prefork"
     ]
     volumes:
       - ./:/app
@@ -82,7 +82,7 @@ services:
       - "127.0.0.1:5555:5555"
     command: [
       "bash", "-c",
-      "pip3 install -e . && celery --app datalad_registry.runcelery.celery flower"
+      "pip3 install . && celery --app datalad_registry.runcelery.celery flower"
     ]
     volumes:
       - ./:/app
