@@ -2,7 +2,7 @@ version: "2.1"  # Compose file format v3 does not support health checks
 services:
   web:
     build:
-      dockerfile: dev.dockerfile
+      dockerfile: dev.Dockerfile
     image: datalad-registry:dev
     depends_on:
       broker:
