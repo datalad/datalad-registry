@@ -22,8 +22,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 RUN git config --system user.name "dl-registry" && \
     git config --system user.email "dl-registry@example.com"
 
-RUN pip3 install wheel
+RUN ["pip3", "install", "--no-cache-dir", "wheel"]
 
 COPY requirements.txt requirements.txt
 
-RUN pip3 install -r requirements.txt
+RUN ["pip3", "install", "--no-cache-dir", "-r", "requirements.txt"]
