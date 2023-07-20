@@ -24,8 +24,6 @@ RUN git config --system user.name "dl-registry" && \
 
 RUN ["pip3", "install", "--no-cache-dir", "-U","pip", "setuptools"]
 
-RUN ["pip3", "install", "--no-cache-dir", "wheel"]
-
 COPY requirements.txt requirements.txt
 
 RUN ["pip3", "install", "--no-cache-dir", "-r", "requirements.txt"]
