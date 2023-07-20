@@ -1,4 +1,18 @@
-**/*.pyc
+# Ignore everything initially
+*
+
+# But include these files/directories
+!.git
+!datalad_registry
+!datalad_registry_client
+!setup.cfg
+!setup.py
+!pyproject.toml
+!requirements.txt
+
+# Ignore these files/directories inside the included directories
 **/*~
+**/*.log
+**/.DS_Store
+**/*.pyc
 **/__pycache__
-instance
