@@ -29,12 +29,8 @@ services:
 
       DATALAD_REGISTRY_POSTGRES_HOST: db
 
-    command: [
-      "bash", "-c",
-      "pip3 install . && flask init-db && flask run --host=0.0.0.0"
-    ]
+    command: [ "bash", "-c", "flask init-db && flask run --host=0.0.0.0" ]
     volumes:
-      - ./:/app
       - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
 
   worker:
@@ -46,10 +42,9 @@ services:
         condition: service_healthy
     command: [
       "bash", "-c",
-      "pip3 install . && celery -A datalad_registry.runcelery.celery worker --loglevel DEBUG --pool prefork"
+      "celery -A datalad_registry.runcelery.celery worker --loglevel DEBUG --pool prefork"
     ]
     volumes:
-      - ./:/app
       - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
     environment:
       <<: *env
@@ -80,12 +75,8 @@ services:
       FLOWER_BASIC_AUTH: "$FLOWER_BASIC_AUTH"
     ports:
       - "127.0.0.1:5555:5555"
-    command: [
-      "bash", "-c",
-      "pip3 install . && celery --app datalad_registry.runcelery.celery flower"
-    ]
+    command: [ "bash", "-c", "celery --app datalad_registry.runcelery.celery flower" ]
     volumes:
-      - ./:/app
       - ${DL_REGISTRY_INSTANCE_PATH}/monitor:/app/instance/monitor
     healthcheck:
       test: [
