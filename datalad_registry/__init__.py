@@ -13,6 +13,23 @@ __version__ = version("datalad-registry")
 celery = Celery("datalad_registry")
 
 
+def create_app() -> Flask:
+    """
+    Factory function for producing Flask app
+    """
+    app = Flask(__name__)
+    app.config.from_mapping(
+        CELERY=dict(
+            broker_url="to be specified",
+            result_backend="to be specified",
+            task_ignore_result=True,
+        ),
+    )
+    app.config.from_prefixed_env()
+    celery_init_app(app)
+    return app
+
+
 def celery_init_app(flask_app: Flask) -> Celery:
     """
     Factory function for producing a Celery app that integrates with a given Flask app
