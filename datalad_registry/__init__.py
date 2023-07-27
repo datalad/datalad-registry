@@ -2,6 +2,9 @@ import sys
 
 from celery import Celery, Task
 from flask import Flask
+from kombu.serialization import register
+
+from .utils.pydantic_json import pydantic_model_dumps, pydantic_model_loads
 
 if sys.version_info[:2] < (3, 8):
     from importlib_metadata import version
@@ -54,6 +57,25 @@ def celery_init_app(flask_app: Flask) -> Celery:
 
     celery_app = Celery(flask_app.name, task_cls=FlaskTask)
     celery_app.config_from_object(flask_app.config["CELERY"])
+
+    # Register JSON encoding and decoding functions with additional support of
+    # Pydantic models as a serializer
+    register(
+        "pydantic_json",
+        pydantic_model_dumps,
+        pydantic_model_loads,
+        content_type="application/x-pydantic-json",
+        content_encoding="utf-8",
+    )
+
+    # Set the Celery app to use the JSON serializer with support for Pydantic models
+    celery_app.conf.update(
+        accept_content=["pydantic_json"],
+        task_serializer="pydantic_json",
+        result_serializer="pydantic_json",
+    )
+
     celery_app.set_default()
+
     flask_app.extensions["celery"] = celery_app
     return celery_app
