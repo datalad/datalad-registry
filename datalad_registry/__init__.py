@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import sys
 
 from celery import Celery, Task
@@ -37,6 +38,10 @@ def create_app() -> Flask:
         ),
     )
     app.config.from_prefixed_env()
+
+    # Ensure instance path exists
+    Path(app.instance_path).mkdir(parents=True, exist_ok=True)
+
     celery_init_app(app)
     return app
 
