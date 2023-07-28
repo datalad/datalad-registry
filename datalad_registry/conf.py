@@ -1,5 +1,5 @@
 class Config:
-    pass
+    CELERY = {}
 
 
 class ProductionConfig(Config):
