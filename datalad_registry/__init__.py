@@ -1,7 +1,9 @@
+import os
 import sys
 
 from celery import Celery, Task
 from flask import Flask
+from flask_openapi3 import Info, OpenAPI
 from kombu.serialization import register
 
 from .utils.pydantic_json import pydantic_model_dumps, pydantic_model_loads
@@ -20,7 +22,13 @@ def create_app() -> Flask:
     """
     Factory function for producing Flask app
     """
-    app = Flask(__name__)
+    app = OpenAPI(
+        __name__,
+        info=(Info(title="Datalad Registry API", version="2.0")),
+        instance_path=os.environ["DATALAD_REGISTRY_INSTANCE_PATH"],
+        instance_relative_config=True,
+    )
+
     app.config.from_mapping(
         CELERY=dict(
             broker_url="to be specified",
