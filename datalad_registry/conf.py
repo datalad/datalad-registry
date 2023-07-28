@@ -1,14 +1,14 @@
-class Config:
+class DefaultConfig:
     CELERY = {}
 
 
-class ProductionConfig(Config):
+class ProductionConfig(DefaultConfig):
     pass
 
 
-class DevelopmentConfig(Config):
+class DevelopmentConfig(DefaultConfig):
     pass
 
 
-class TestingConfig(Config):
+class TestingConfig(DefaultConfig):
     pass
