@@ -32,7 +32,7 @@ def create_app() -> Flask:
     """
     app = OpenAPI(
         __name__,
-        info=(Info(title="Datalad Registry API", version="2.0")),
+        info=Info(title="Datalad Registry API", version="2.0"),
         instance_path=os.environ["DATALAD_REGISTRY_INSTANCE_PATH"],
         instance_relative_config=True,
     )
