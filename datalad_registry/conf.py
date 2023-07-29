@@ -1,4 +1,7 @@
-class DefaultConfig:
+from pydantic import BaseSettings
+
+
+class DefaultConfig(BaseSettings):
     CELERY = {}
 
 
