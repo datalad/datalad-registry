@@ -20,11 +20,19 @@ class BaseConfig(BaseSettings):
 
 
 class ProductionConfig(BaseConfig):
-    pass
+    CELERY = dict(
+        broker_url="",  # TODO: to be specified
+        result_backend="",  # TODO: to be specified
+        task_ignore_result=True,
+    )
 
 
 class DevelopmentConfig(BaseConfig):
-    pass
+    CELERY = dict(
+        broker_url="",  # TODO: to be specified
+        result_backend="",  # TODO: to be specified
+        task_ignore_result=True,
+    )
 
 
 class TestingConfig(BaseConfig):
