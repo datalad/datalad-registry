@@ -7,6 +7,13 @@ from flask import Flask
 from flask_openapi3 import Info, OpenAPI
 from kombu.serialization import register
 
+from .conf import (
+    BaseConfig,
+    DevelopmentConfig,
+    OperationMode,
+    ProductionConfig,
+    TestingConfig,
+)
 from .utils.pydantic_json import pydantic_model_dumps, pydantic_model_loads
 
 if sys.version_info[:2] < (3, 8):
@@ -30,13 +37,22 @@ def create_app() -> Flask:
         instance_relative_config=True,
     )
 
-    app.config.from_mapping(
-        CELERY=dict(
-            broker_url="to be specified",
-            result_backend="to be specified",
-            task_ignore_result=True,
-        ),
-    )
+    operation_mode = BaseConfig().DATALAD_REGISTRY_OPERATION_MODE
+
+    if operation_mode is OperationMode.PRODUCTION:
+        config = ProductionConfig()
+    elif operation_mode is OperationMode.DEVELOPMENT:
+        config = DevelopmentConfig()
+    elif operation_mode is OperationMode.TESTING:
+        config = TestingConfig()
+    else:
+        # This should never happen
+        raise ValueError(f"Unexpected operation mode: {operation_mode!r}")
+
+    app.config.from_object(config)
+
+    # Allows overriding the Flask app config in an ad hoc manner
+    # with the "FLASK_" prefix in env var names
     app.config.from_prefixed_env()
 
     # Ensure instance path exists
