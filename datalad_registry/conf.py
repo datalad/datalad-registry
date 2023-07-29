@@ -11,7 +11,7 @@ class OperationMode(StrEnum):
     TESTING = auto()
 
 
-class DefaultConfig(BaseSettings):
+class BaseConfig(BaseSettings):
     DATALAD_REGISTRY_OPERATION_MODE: OperationMode = OperationMode.PRODUCTION
     CELERY = {}
 
@@ -19,13 +19,13 @@ class DefaultConfig(BaseSettings):
         case_sensitive = True
 
 
-class ProductionConfig(DefaultConfig):
+class ProductionConfig(BaseConfig):
     pass
 
 
-class DevelopmentConfig(DefaultConfig):
+class DevelopmentConfig(BaseConfig):
     pass
 
 
-class TestingConfig(DefaultConfig):
+class TestingConfig(BaseConfig):
     pass
