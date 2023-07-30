@@ -1,6 +1,5 @@
 from enum import auto
 from pathlib import Path
-from typing import Any
 
 from pydantic import BaseSettings, validator
 
@@ -21,7 +20,7 @@ class BaseConfig(BaseSettings):
     DATALAD_REGISTRY_INSTANCE_PATH: Path
     DATALAD_REGISTRY_DATASET_CACHE: Path
 
-    CELERY: dict[str, Any]
+    CELERY: dict
 
     _path_must_be_absolute = validator(
         "DATALAD_REGISTRY_INSTANCE_PATH",
