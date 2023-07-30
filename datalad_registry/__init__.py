@@ -34,12 +34,12 @@ def create_app() -> Flask:
 
     if operation_mode is OperationMode.PRODUCTION:
         config = ProductionConfig()
-    elif operation_mode is OperationMode.READ_ONLY:
-        config = ReadOnlyConfig()
     elif operation_mode is OperationMode.DEVELOPMENT:
         config = DevelopmentConfig()
     elif operation_mode is OperationMode.TESTING:
         config = TestingConfig()
+    elif operation_mode is OperationMode.READ_ONLY:
+        config = ReadOnlyConfig()
     else:
         # This should never happen
         raise ValueError(f"Unexpected operation mode: {operation_mode!r}")
