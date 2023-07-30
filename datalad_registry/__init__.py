@@ -12,6 +12,7 @@ from .conf import (
     DevelopmentConfig,
     OperationMode,
     ProductionConfig,
+    ReadOnlyConfig,
     TestingConfig,
 )
 from .utils.pydantic_json import pydantic_model_dumps, pydantic_model_loads
@@ -41,6 +42,8 @@ def create_app() -> Flask:
 
     if operation_mode is OperationMode.PRODUCTION:
         config = ProductionConfig()
+    elif operation_mode is OperationMode.READ_ONLY:
+        config = ReadOnlyConfig()
     elif operation_mode is OperationMode.DEVELOPMENT:
         config = DevelopmentConfig()
     elif operation_mode is OperationMode.TESTING:

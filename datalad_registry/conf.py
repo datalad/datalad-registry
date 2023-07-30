@@ -10,6 +10,7 @@ class OperationMode(StrEnum):
     PRODUCTION = auto()
     DEVELOPMENT = auto()
     TESTING = auto()
+    READ_ONLY = auto()
 
 
 class BaseConfig(BaseSettings):
@@ -47,4 +48,14 @@ class DevelopmentConfig(BaseConfig):
 
 
 class TestingConfig(BaseConfig):
+    pass
+
+
+class ReadOnlyConfig(BaseConfig):
+    """
+    Configuration for read-only operation mode
+
+    In this mode, the registry only provides read-only access through its web service
+    """
+
     pass
