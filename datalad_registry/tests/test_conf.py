@@ -3,7 +3,7 @@ from pathlib import Path
 from pydantic import ValidationError
 import pytest
 
-from datalad_registry.conf import BaseConfig
+from datalad_registry.conf import BaseConfig, OperationMode
 
 
 class TestBaseConfig:
@@ -19,7 +19,12 @@ class TestBaseConfig:
         monkeypatch.setenv("DATALAD_REGISTRY_INSTANCE_PATH", instance_path)
         monkeypatch.setenv("DATALAD_REGISTRY_DATASET_CACHE", cache_path)
 
-        config = BaseConfig(CELERY={})
+        config = BaseConfig(
+            DATALAD_REGISTRY_OPERATION_MODE=OperationMode.PRODUCTION,
+            CELERY_BROKER_URL="redis://localhost",
+            CELERY_RESULT_BACKEND="redis://localhost",
+            CELERY_TASK_IGNORE_RESULT=True,
+        )
 
         assert config.DATALAD_REGISTRY_INSTANCE_PATH == Path(instance_path)
         assert config.DATALAD_REGISTRY_DATASET_CACHE == Path(cache_path)
@@ -44,4 +49,9 @@ class TestBaseConfig:
         monkeypatch.setenv("DATALAD_REGISTRY_DATASET_CACHE", cache_path)
 
         with pytest.raises(ValidationError):
-            BaseConfig(CELERY={})
+            BaseConfig(
+                DATALAD_REGISTRY_OPERATION_MODE=OperationMode.PRODUCTION,
+                CELERY_BROKER_URL="redis://localhost",
+                CELERY_RESULT_BACKEND="redis://localhost",
+                CELERY_TASK_IGNORE_RESULT=True,
+            )

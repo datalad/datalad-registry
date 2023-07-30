@@ -16,8 +16,11 @@ class OperationMode(StrEnum):
     READ_ONLY = auto()
 
 
-class BaseConfig(BaseSettings):
-    DATALAD_REGISTRY_OPERATION_MODE: OperationMode = OperationMode.PRODUCTION
+class OperationConfig(BaseSettings):
+    DATALAD_REGISTRY_OPERATION_MODE: OperationMode
+
+
+class BaseConfig(OperationConfig):
     DATALAD_REGISTRY_INSTANCE_PATH: Path
     DATALAD_REGISTRY_DATASET_CACHE: Path
 
