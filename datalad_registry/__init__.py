@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 import sys
 
@@ -31,14 +30,16 @@ def create_app() -> Flask:
     """
     Factory function for producing Flask app
     """
+    base_config = BaseConfig()
+
     app = OpenAPI(
         __name__,
         info=Info(title="Datalad Registry API", version="2.0"),
-        instance_path=os.environ["DATALAD_REGISTRY_INSTANCE_PATH"],
+        instance_path=base_config.DATALAD_REGISTRY_INSTANCE_PATH,
         instance_relative_config=True,
     )
 
-    operation_mode = BaseConfig().DATALAD_REGISTRY_OPERATION_MODE
+    operation_mode = base_config.DATALAD_REGISTRY_OPERATION_MODE
 
     if operation_mode is OperationMode.PRODUCTION:
         config = ProductionConfig()
