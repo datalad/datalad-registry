@@ -60,4 +60,8 @@ class ReadOnlyConfig(BaseConfig):
     In this mode, the registry only provides read-only access through its web service
     """
 
-    pass
+    # The Celery service is not available in read-only mode.
+    # The following are just dummy values to serve as defaults to satisfy
+    # the configuration requirements and make the corresponding fields optional.
+    DATALAD_REGISTRY_DATASET_CACHE: Path = Path("/dummy/path")
+    CELERY = {}
