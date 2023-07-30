@@ -19,7 +19,7 @@ class TestBaseConfig:
         monkeypatch.setenv("DATALAD_REGISTRY_INSTANCE_PATH", instance_path)
         monkeypatch.setenv("DATALAD_REGISTRY_DATASET_CACHE", cache_path)
 
-        config = BaseConfig()
+        config = BaseConfig(CELERY={})
 
         assert config.DATALAD_REGISTRY_INSTANCE_PATH == Path(instance_path)
         assert config.DATALAD_REGISTRY_DATASET_CACHE == Path(cache_path)
@@ -44,4 +44,4 @@ class TestBaseConfig:
         monkeypatch.setenv("DATALAD_REGISTRY_DATASET_CACHE", cache_path)
 
         with pytest.raises(ValidationError):
-            BaseConfig()
+            BaseConfig(CELERY={})
