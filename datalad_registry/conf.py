@@ -5,6 +5,8 @@ from pydantic import BaseSettings, validator
 
 from datalad_registry.utils.misc import StrEnum
 
+from .utils.pydantic_tls import path_must_be_absolute
+
 
 class OperationMode(StrEnum):
     PRODUCTION = auto()
@@ -20,12 +22,11 @@ class BaseConfig(BaseSettings):
 
     CELERY = {}
 
-    # U100: Unused argument; B902: Invalid first argument 'cls'
-    @validator("DATALAD_REGISTRY_INSTANCE_PATH", "DATALAD_REGISTRY_DATASET_CACHE")
-    def path_must_be_absolute(cls, v: Path) -> Path:  # noqa: U100,B902
-        if not v.is_absolute():
-            raise ValueError("Path must be absolute")
-        return v
+    _path_must_be_absolute = validator(
+        "DATALAD_REGISTRY_INSTANCE_PATH",
+        "DATALAD_REGISTRY_DATASET_CACHE",
+        allow_reuse=True,
+    )(path_must_be_absolute)
 
     class Config:
         case_sensitive = True
