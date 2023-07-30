@@ -72,4 +72,7 @@ class ReadOnlyConfig(BaseConfig):
     CELERY_BROKER_URL: str = "dummy://"
     CELERY_RESULT_BACKEND: str = "dummy://"
     CELERY_TASK_IGNORE_RESULT: bool = True
-    CELERY = {}
+
+    @property
+    def CELERY(self) -> dict[str, Any]:
+        return {}
