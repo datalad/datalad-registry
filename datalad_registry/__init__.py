@@ -1,11 +1,14 @@
+import json
 from pathlib import Path
 import sys
 
 from celery import Celery, Task
-from flask import Flask
+from flask import Flask, request
 from flask_openapi3 import Info, OpenAPI
 from kombu.serialization import register
+from werkzeug.exceptions import HTTPException
 
+from . import overview, root
 from .conf import (
     DevelopmentConfig,
     OperationConfig,
@@ -14,6 +17,7 @@ from .conf import (
     ReadOnlyConfig,
     TestingConfig,
 )
+from .models import db, init_db_command, migrate
 from .utils.pydantic_json import pydantic_model_dumps, pydantic_model_loads
 
 if sys.version_info[:2] < (3, 8):
@@ -61,6 +65,41 @@ def create_app() -> Flask:
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
 
     celery_init_app(app)
+
+    db.init_app(app)
+    migrate.init_app(app, db)
+    app.cli.add_command(init_db_command)
+    app.register_blueprint(overview.bp)
+    app.register_blueprint(root.bp)
+
+    from .blueprints.api import HTTPExceptionResp
+    from .blueprints.api.dataset_urls import bp as dataset_urls_bp
+    from .blueprints.api.url_metadata import bp as url_metadata_bp
+
+    # Register API blueprints
+    app.register_api(dataset_urls_bp)
+    app.register_api(url_metadata_bp)
+
+    @app.errorhandler(HTTPException)
+    def handle_exception(e):
+        """
+        Convert all HTTPExceptions to JSON responses for the API paths
+        while conforming to the API paths' OpenAPI specification.
+        """
+        if request.path.startswith("/api/"):
+            # start with the correct headers and status code from the error
+            response = e.get_response()
+            # replace the body with JSON
+            response.data = json.dumps(
+                HTTPExceptionResp(
+                    code=e.code, name=e.name, description=e.description
+                ).dict()
+            )
+            response.content_type = "application/json"
+            return response
+        else:
+            return e
+
     return app
 
 
