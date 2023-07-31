@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 from enum import auto
 import json
 import logging
-from pathlib import Path
 from typing import Optional
 
 from celery import shared_task
@@ -142,7 +141,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
 
     # Absolute path of the dataset clone in cache
     cache_path_abs = (
-        Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]) / url.cache_path
+        current_app.config["DATALAD_REGISTRY_DATASET_CACHE"] / url.cache_path
     )
 
     # Check for missing of required files
@@ -258,7 +257,7 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
         # Error out when no RepoUrl in the database with the specified ID
         raise ValueError(f"RepoUrl with ID {dataset_url_id} does not exist")
 
-    base_cache_path = Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+    base_cache_path = current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
 
     old_cache_path_relative = dataset_url.cache_path
 

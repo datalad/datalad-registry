@@ -40,7 +40,5 @@ def allocate_ds_path() -> Path:
         uuid = uuid4().hex
         path = Path(uuid[:3], uuid[3:6], uuid[6:])
 
-        if not (
-            Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]) / path
-        ).is_dir():
+        if not (current_app.config["DATALAD_REGISTRY_DATASET_CACHE"] / path).is_dir():
             return path

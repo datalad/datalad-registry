@@ -1,6 +1,5 @@
 from datetime import datetime
 import os
-from pathlib import Path
 
 from datalad import api as dl
 from datalad.api import Dataset
@@ -58,7 +57,7 @@ def flask_app(_flask_app):
         db.create_all()
 
     # Reset the base local cache for datasets
-    cache_path = Path(_flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+    cache_path = _flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
     rm_ds_tree(cache_path)
     cache_path.mkdir()
 

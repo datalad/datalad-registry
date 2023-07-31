@@ -117,7 +117,7 @@ class TestProcessDatasetUrl:
             # Ensure that there shouldn't be any file in the base cache directory
             # as result of the failed processing
             assert not is_there_file_in_tree(
-                Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+                current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
             )
 
     @pytest.mark.usefixtures("populate_db_with_unprocessed_dataset_urls")
@@ -149,7 +149,7 @@ class TestProcessDatasetUrl:
             # Ensure that there shouldn't be any file in the base cache directory
             # as result of the failed processing
             assert not is_there_file_in_tree(
-                Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+                current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
             )
 
     @pytest.mark.usefixtures("populate_db_with_unprocessed_dataset_urls")
@@ -161,7 +161,7 @@ class TestProcessDatasetUrl:
         url_id = 5  # RepoUrl ID of the `two_files_ds_annex` dataset
 
         with flask_app.app_context():
-            base_cache_path = Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+            base_cache_path = current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
 
             dataset_url: Optional[RepoUrl] = db.session.execute(
                 db.select(RepoUrl).filter_by(id=url_id)

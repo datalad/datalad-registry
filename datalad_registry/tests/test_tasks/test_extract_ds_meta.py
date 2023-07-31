@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from datalad.distribution.dataset import require_dataset
 import pytest
 
@@ -155,7 +153,7 @@ class TestExtractDsMeta:
         # Fetch test repo cache path
         with flask_app.app_context():
             test_repo_path = str(
-                Path(flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+                flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
                 / db.session.execute(
                     db.select(RepoUrl.cache_path).where(RepoUrl.id == test_repo_url_id)
                 ).scalar_one()
