@@ -3,7 +3,16 @@ from pathlib import Path
 from pydantic import ValidationError
 import pytest
 
-from datalad_registry.conf import BaseConfig, OperationMode
+from datalad_registry.conf import (
+    BaseConfig,
+    DevelopmentConfig,
+    OperationMode,
+    ProductionConfig,
+    ReadOnlyConfig,
+)
+from datalad_registry.conf import (
+    TestingConfig as _TestingConfig,  # Requires name transformation because of pytest
+)
 
 
 class TestBaseConfig:
@@ -77,3 +86,75 @@ class TestBaseConfig:
             result_backend=result_backend,
             task_ignore_result=True,
         )
+
+
+class TestUpperLevelConfigs:
+    @pytest.mark.parametrize(
+        "config_cls, operation_mode",
+        [
+            (ProductionConfig, "PRODUCTION"),
+            (DevelopmentConfig, "DEVELOPMENT"),
+            (_TestingConfig, "TESTING"),
+            (ReadOnlyConfig, "READ_ONLY"),
+        ],
+    )
+    def test_operation_mode_restriction_met(
+        self, config_cls, operation_mode, monkeypatch
+    ):
+        # Initialize the config with init kwargs alone
+        config = config_cls(
+            DATALAD_REGISTRY_OPERATION_MODE=OperationMode(operation_mode),
+            DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
+            DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
+            CELERY_BROKER_URL="redis://localhost",
+            CELERY_RESULT_BACKEND="redis://localhost",
+            CELERY_TASK_IGNORE_RESULT=True,
+        )
+        assert config.DATALAD_REGISTRY_OPERATION_MODE is OperationMode(operation_mode)
+
+        # Initialize the config with both init kwargs and environment variables
+        with monkeypatch.context() as m:
+            m.setenv("DATALAD_REGISTRY_OPERATION_MODE", operation_mode)
+            config = config_cls(
+                DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
+                DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
+                CELERY_BROKER_URL="redis://localhost",
+                CELERY_RESULT_BACKEND="redis://localhost",
+                CELERY_TASK_IGNORE_RESULT=True,
+            )
+        assert config.DATALAD_REGISTRY_OPERATION_MODE is OperationMode(operation_mode)
+
+    @pytest.mark.parametrize(
+        "config_cls, operation_mode",
+        [
+            (ProductionConfig, "DEVELOPMENT"),
+            (DevelopmentConfig, "PRODUCTION"),
+            (_TestingConfig, "READ_ONLY"),
+            (ReadOnlyConfig, "TESTING"),
+        ],
+    )
+    def test_operation_mode_restriction_not_met(
+        self, config_cls, operation_mode, monkeypatch
+    ):
+        # Initialize the config with init kwargs alone
+        with pytest.raises(ValidationError):
+            config_cls(
+                DATALAD_REGISTRY_OPERATION_MODE=OperationMode(operation_mode),
+                DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
+                DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
+                CELERY_BROKER_URL="redis://localhost",
+                CELERY_RESULT_BACKEND="redis://localhost",
+                CELERY_TASK_IGNORE_RESULT=True,
+            )
+
+        # Initialize the config with both init kwargs and environment variables
+        with monkeypatch.context() as m:
+            m.setenv("DATALAD_REGISTRY_OPERATION_MODE", operation_mode)
+            with pytest.raises(ValidationError):
+                config_cls(
+                    DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
+                    DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
+                    CELERY_BROKER_URL="redis://localhost",
+                    CELERY_RESULT_BACKEND="redis://localhost",
+                    CELERY_TASK_IGNORE_RESULT=True,
+                )

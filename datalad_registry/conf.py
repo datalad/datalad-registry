@@ -1,6 +1,6 @@
 from enum import auto
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseSettings, validator
 
@@ -49,14 +49,23 @@ class BaseConfig(OperationConfig):
 
 
 class ProductionConfig(BaseConfig):
+    # Restrict to operation mode appropriate for this type of configuration
+    DATALAD_REGISTRY_OPERATION_MODE: Literal[OperationMode.PRODUCTION]
+
     CELERY_TASK_IGNORE_RESULT: bool = True
 
 
 class DevelopmentConfig(BaseConfig):
+    # Restrict to operation mode appropriate for this type of configuration
+    DATALAD_REGISTRY_OPERATION_MODE: Literal[OperationMode.DEVELOPMENT]
+
     CELERY_TASK_IGNORE_RESULT: bool = True
 
 
 class TestingConfig(BaseConfig):
+    # Restrict to operation mode appropriate for this type of configuration
+    DATALAD_REGISTRY_OPERATION_MODE: Literal[OperationMode.TESTING]
+
     CELERY_TASK_IGNORE_RESULT: bool = True
 
 
@@ -66,6 +75,9 @@ class ReadOnlyConfig(BaseConfig):
 
     In this mode, the registry only provides read-only access through its web service
     """
+
+    # Restrict to operation mode appropriate for this type of configuration
+    DATALAD_REGISTRY_OPERATION_MODE: Literal[OperationMode.READ_ONLY]
 
     # The Celery service is not available in read-only mode.
     # The following are just dummy values to serve as defaults to satisfy
