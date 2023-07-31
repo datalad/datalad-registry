@@ -13,6 +13,7 @@ from datalad_registry.conf import (
 from datalad_registry.conf import (
     TestingConfig as _TestingConfig,  # Requires name transformation because of pytest
 )
+from datalad_registry.conf import compile_config_from_env
 
 
 class TestBaseConfig:
@@ -158,3 +159,113 @@ class TestUpperLevelConfigs:
                     CELERY_RESULT_BACKEND="redis://localhost",
                     CELERY_TASK_IGNORE_RESULT=True,
                 )
+
+
+class TestCompileConfigFromEnv:
+    @pytest.mark.parametrize(
+        (
+            "op_mode",
+            "instance_path",
+            "cache_path",
+            "broker_url",
+            "result_backend",
+            "task_ignore_result",
+            "config_cls",
+        ),
+        [
+            (
+                "PRODUCTION",
+                "/a/b",
+                "/c/d",
+                "redis://localhost",
+                "redis://localhost",
+                "True",
+                ProductionConfig,
+            ),
+            (
+                "DEVELOPMENT",
+                "/a",
+                "/",
+                "redis://localhost",
+                "redis://localhost",
+                "1",
+                DevelopmentConfig,
+            ),
+            (
+                "TESTING",
+                "/a/b/c",
+                "/c/d/",
+                "redis://localhost",
+                "redis://localhost",
+                "Yes",
+                _TestingConfig,
+            ),
+            (
+                "READ_ONLY",
+                "/ab",
+                "/cd",
+                "redis://localhost",
+                "redis://localhost",
+                "True",
+                ReadOnlyConfig,
+            ),
+        ],
+    )
+    def test_valid_env(
+        self,
+        op_mode,
+        instance_path,
+        cache_path,
+        broker_url,
+        result_backend,
+        task_ignore_result,
+        config_cls,
+        monkeypatch,
+    ):
+        """
+        Test the case that the environment contains all the required variables
+        with valid values
+        """
+
+        monkeypatch.setenv("DATALAD_REGISTRY_OPERATION_MODE", op_mode)
+        monkeypatch.setenv("DATALAD_REGISTRY_INSTANCE_PATH", instance_path)
+        monkeypatch.setenv("DATALAD_REGISTRY_DATASET_CACHE", cache_path)
+        monkeypatch.setenv("CELERY_BROKER_URL", broker_url)
+        monkeypatch.setenv("CELERY_RESULT_BACKEND", result_backend)
+        monkeypatch.setenv("CELERY_TASK_IGNORE_RESULT", task_ignore_result)
+
+        config = compile_config_from_env()
+
+        assert config.DATALAD_REGISTRY_OPERATION_MODE == OperationMode(op_mode)
+        assert config.DATALAD_REGISTRY_INSTANCE_PATH == Path(instance_path)
+        assert config.DATALAD_REGISTRY_DATASET_CACHE == Path(cache_path)
+        assert config.CELERY_BROKER_URL == broker_url
+        assert config.CELERY_RESULT_BACKEND == result_backend
+        assert config.CELERY_TASK_IGNORE_RESULT
+        assert isinstance(config, config_cls)
+
+    def test_invalid_op_mode(self, monkeypatch):
+        """
+        Test the case that the operation mode fetched from the environment is one
+        that is not valid, one that is not mapped to a config class.
+        """
+        monkeypatch.setenv("DATALAD_REGISTRY_OPERATION_MODE", "DEVELOPMENT")
+        monkeypatch.setenv("DATALAD_REGISTRY_INSTANCE_PATH", "/a/b")
+        monkeypatch.setenv("DATALAD_REGISTRY_DATASET_CACHE", "/c/d")
+        monkeypatch.setenv("CELERY_BROKER_URL", "redis://localhost")
+        monkeypatch.setenv("CELERY_RESULT_BACKEND", "redis://localhost")
+        monkeypatch.setenv("CELERY_TASK_IGNORE_RESULT", "True")
+
+        class MockOperationModeToConfigCls:
+            # noinspection PyMethodMayBeStatic
+            def get(self, *_args, **_kwargs):
+                return None
+
+        from datalad_registry import conf
+
+        monkeypatch.setattr(
+            conf, "operation_mode_to_config_cls", MockOperationModeToConfigCls()
+        )
+
+        with pytest.raises(ValueError):
+            compile_config_from_env()
