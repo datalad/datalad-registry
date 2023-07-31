@@ -91,3 +91,27 @@ class ReadOnlyConfig(BaseConfig):
     @property
     def CELERY(self) -> dict[str, Any]:
         return {}
+
+
+operation_mode_to_config_cls = {
+    OperationMode.PRODUCTION: ProductionConfig,
+    OperationMode.DEVELOPMENT: DevelopmentConfig,
+    OperationMode.TESTING: TestingConfig,
+    OperationMode.READ_ONLY: ReadOnlyConfig,
+}
+
+
+def compile_config_from_env() -> BaseConfig:
+    """
+    Compile a configuration object from the environment variables that contains
+    all and only the attributes (setting options) required to run the application
+    """
+    operation_mode = OperationConfig().DATALAD_REGISTRY_OPERATION_MODE
+
+    config_cls = operation_mode_to_config_cls.get(operation_mode)
+
+    if config_cls is not None:
+        return config_cls()
+    else:
+        # This should never happen
+        raise ValueError(f"Unexpected operation mode: {operation_mode!r}")

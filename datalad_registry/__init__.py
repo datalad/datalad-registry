@@ -9,14 +9,7 @@ from kombu.serialization import register
 from werkzeug.exceptions import HTTPException
 
 from . import overview, root
-from .conf import (
-    DevelopmentConfig,
-    OperationConfig,
-    OperationMode,
-    ProductionConfig,
-    ReadOnlyConfig,
-    TestingConfig,
-)
+from .conf import compile_config_from_env
 from .models import db, init_db_command, migrate
 from .utils.pydantic_json import pydantic_model_dumps, pydantic_model_loads
 
@@ -34,19 +27,8 @@ def create_app() -> Flask:
     """
     Factory function for producing Flask app
     """
-    operation_mode = OperationConfig().DATALAD_REGISTRY_OPERATION_MODE
 
-    if operation_mode is OperationMode.PRODUCTION:
-        config = ProductionConfig()
-    elif operation_mode is OperationMode.DEVELOPMENT:
-        config = DevelopmentConfig()
-    elif operation_mode is OperationMode.TESTING:
-        config = TestingConfig()
-    elif operation_mode is OperationMode.READ_ONLY:
-        config = ReadOnlyConfig()
-    else:
-        # This should never happen
-        raise ValueError(f"Unexpected operation mode: {operation_mode!r}")
+    config = compile_config_from_env()
 
     app = OpenAPI(
         __name__,
