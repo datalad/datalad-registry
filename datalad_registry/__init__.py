@@ -46,11 +46,19 @@ def create_app() -> Flask:
     # Ensure instance path exists
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
 
+    # Integrate a Celery app
     celery_init_app(app)
 
+    # Integrate Flask-SQLAlchemy
     db.init_app(app)
+
+    # Integrate Flask-Migrate
     migrate.init_app(app, db)
+
+    # Register CLI commands
     app.cli.add_command(init_db_command)
+
+    # Register Web UI blueprints
     app.register_blueprint(overview.bp)
     app.register_blueprint(root.bp)
 
