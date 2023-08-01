@@ -249,7 +249,7 @@ class TestCompileConfigFromEnv:
 
         config = compile_config_from_env()
 
-        assert config.DATALAD_REGISTRY_OPERATION_MODE == OperationMode(op_mode)
+        assert config.DATALAD_REGISTRY_OPERATION_MODE is OperationMode(op_mode)
         assert config.DATALAD_REGISTRY_INSTANCE_PATH == Path(instance_path)
         assert config.DATALAD_REGISTRY_DATASET_CACHE == Path(cache_path)
         assert config.CELERY_BROKER_URL == broker_url
