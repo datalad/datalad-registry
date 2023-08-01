@@ -1,6 +1,6 @@
 from enum import auto
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Union
 
 from pydantic import BaseSettings, validator
 
@@ -25,7 +25,7 @@ class BaseConfig(OperationConfig):
     DATALAD_REGISTRY_DATASET_CACHE: Path
 
     # Celery related configuration
-    CELERY_BROKER_URL: str
+    CELERY_BROKER_URL: Union[str, list[str]]
     CELERY_RESULT_BACKEND: str
     CELERY_TASK_IGNORE_RESULT: bool
 
