@@ -254,7 +254,7 @@ class TestCompileConfigFromEnv:
         assert config.DATALAD_REGISTRY_DATASET_CACHE == Path(cache_path)
         assert config.CELERY_BROKER_URL == broker_url
         assert config.CELERY_RESULT_BACKEND == result_backend
-        assert config.CELERY_TASK_IGNORE_RESULT
+        assert config.CELERY_TASK_IGNORE_RESULT is True
         assert isinstance(config, config_cls)
 
     def test_invalid_op_mode(self, monkeypatch):
