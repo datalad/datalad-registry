@@ -67,13 +67,26 @@ class TestBaseConfig:
             )
 
     @pytest.mark.parametrize(
-        "broker_url, result_backend, task_ignore_result",
+        "broker_url, result_backend, task_ignore_result, expected_broker_url",
         [
-            ("redis://localhost", "redis://127.0.0.1", "True"),
-            ("redis://broker", "redis://new", "1"),
+            ("redis://localhost", "redis://127.0.0.1", "True", "redis://localhost"),
+            ("redis://broker", "redis://new", "1", "redis://broker"),
+            (
+                '["redis://localhost", "redis://broker"]',
+                "redis://127.0.0.1",
+                "True",
+                ["redis://localhost", "redis://broker"],
+            ),
         ],
     )
-    def test_celery(self, broker_url, result_backend, task_ignore_result, monkeypatch):
+    def test_celery(
+        self,
+        broker_url,
+        result_backend,
+        task_ignore_result,
+        expected_broker_url,
+        monkeypatch,
+    ):
         monkeypatch.setenv("CELERY_BROKER_URL", broker_url)
         monkeypatch.setenv("CELERY_RESULT_BACKEND", result_backend)
         monkeypatch.setenv("CELERY_TASK_IGNORE_RESULT", task_ignore_result)
@@ -83,7 +96,7 @@ class TestBaseConfig:
             DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
             DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
         ).CELERY == dict(
-            broker_url=broker_url,
+            broker_url=expected_broker_url,
             result_backend=result_backend,
             task_ignore_result=True,
         )
