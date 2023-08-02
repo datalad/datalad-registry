@@ -31,7 +31,7 @@ class BaseConfig(OperationConfig):
         "bids_dataset",
     ]
 
-    # Celery related configuration
+    # === worker, Celery, related configuration  ===
     CELERY_BROKER_URL: Union[str, list[str]]
     CELERY_RESULT_BACKEND: str
     CELERY_TASK_IGNORE_RESULT: bool
@@ -44,6 +44,8 @@ class BaseConfig(OperationConfig):
             result_backend=self.CELERY_RESULT_BACKEND,
             task_ignore_result=self.CELERY_TASK_IGNORE_RESULT,
         )
+
+    # =============================================
 
     _path_must_be_absolute = validator(
         "DATALAD_REGISTRY_INSTANCE_PATH",
