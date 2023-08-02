@@ -34,4 +34,4 @@ COPY setup.py setup.py
 #  === Move the app code into the container ends ===
 
 # Install the app in the container
-RUN pip3 install wheel && pip3 install . && mkdir -p instance
+RUN pip3 install wheel && pip3 install .
