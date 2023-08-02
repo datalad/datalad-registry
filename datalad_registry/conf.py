@@ -23,6 +23,13 @@ class OperationConfig(BaseSettings):
 class BaseConfig(OperationConfig):
     DATALAD_REGISTRY_INSTANCE_PATH: Path
     DATALAD_REGISTRY_DATASET_CACHE: Path
+    # Metadata extractors to use
+    DATALAD_REGISTRY_METADATA_EXTRACTORS: list[str] = [
+        "metalad_core",
+        "metalad_studyminimeta",
+        "datacite_gin",
+        "bids_dataset",
+    ]
 
     # Celery related configuration
     CELERY_BROKER_URL: Union[str, list[str]]
