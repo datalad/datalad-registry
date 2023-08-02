@@ -47,6 +47,8 @@ class BaseConfig(OperationConfig):
 
     # =============================================
 
+    TESTING: bool = False
+
     _path_must_be_absolute = validator(
         "DATALAD_REGISTRY_INSTANCE_PATH",
         "DATALAD_REGISTRY_DATASET_CACHE",
@@ -76,6 +78,8 @@ class TestingConfig(BaseConfig):
     DATALAD_REGISTRY_OPERATION_MODE: Literal[OperationMode.TESTING]
 
     CELERY_TASK_IGNORE_RESULT: bool = True
+
+    TESTING: bool = True
 
 
 class ReadOnlyConfig(BaseConfig):
