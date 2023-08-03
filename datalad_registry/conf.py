@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, Literal, Union
 
 from pydantic import BaseSettings, validator
+from sqlalchemy import URL
 
 from datalad_registry.utils.misc import StrEnum
 
@@ -23,6 +24,7 @@ class OperationConfig(BaseSettings):
 class BaseConfig(OperationConfig):
     DATALAD_REGISTRY_INSTANCE_PATH: Path
     DATALAD_REGISTRY_DATASET_CACHE: Path
+    DATALAD_REGISTRY_POSTGRES_HOST: str
     # Metadata extractors to use
     DATALAD_REGISTRY_METADATA_EXTRACTORS: list[str] = [
         "metalad_core",
@@ -43,6 +45,25 @@ class BaseConfig(OperationConfig):
             broker_url=self.CELERY_BROKER_URL,
             result_backend=self.CELERY_RESULT_BACKEND,
             task_ignore_result=self.CELERY_TASK_IGNORE_RESULT,
+        )
+
+    # =============================================
+
+    # === db, POSTGRES, related configuration ===
+    POSTGRES_DB: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+
+    # noinspection PyPep8Naming
+    @property
+    def SQLALCHEMY_DATABASE_URI(self) -> URL:
+        return URL.create(
+            drivername="postgresql",
+            host=self.DATALAD_REGISTRY_POSTGRES_HOST,
+            port=5432,
+            database=self.POSTGRES_DB,
+            username=self.POSTGRES_USER,
+            password=self.POSTGRES_PASSWORD,
         )
 
     # =============================================
