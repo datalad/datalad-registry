@@ -31,13 +31,9 @@ class TestBaseConfig:
 
         config = BaseConfig(
             DATALAD_REGISTRY_OPERATION_MODE=OperationMode.PRODUCTION,
-            DATALAD_REGISTRY_POSTGRES_HOST="db",
             CELERY_BROKER_URL="redis://localhost",
             CELERY_RESULT_BACKEND="redis://localhost",
             CELERY_TASK_IGNORE_RESULT=True,
-            POSTGRES_DB="db_name",
-            POSTGRES_USER="user",
-            POSTGRES_PASSWORD="password",
         )
 
         assert config.DATALAD_REGISTRY_INSTANCE_PATH == Path(instance_path)
@@ -65,13 +61,9 @@ class TestBaseConfig:
         with pytest.raises(ValidationError):
             BaseConfig(
                 DATALAD_REGISTRY_OPERATION_MODE=OperationMode.PRODUCTION,
-                DATALAD_REGISTRY_POSTGRES_HOST="db",
                 CELERY_BROKER_URL="redis://localhost",
                 CELERY_RESULT_BACKEND="redis://localhost",
                 CELERY_TASK_IGNORE_RESULT=True,
-                POSTGRES_DB="db_name",
-                POSTGRES_USER="user",
-                POSTGRES_PASSWORD="password",
             )
 
     @pytest.mark.parametrize(
@@ -103,10 +95,6 @@ class TestBaseConfig:
             DATALAD_REGISTRY_OPERATION_MODE=OperationMode.PRODUCTION,
             DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
             DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
-            DATALAD_REGISTRY_POSTGRES_HOST="localhost",
-            POSTGRES_DB="db_name",
-            POSTGRES_USER="user",
-            POSTGRES_PASSWORD="password",
         ).CELERY == dict(
             broker_url=expected_broker_url,
             result_backend=result_backend,
@@ -132,13 +120,9 @@ class TestUpperLevelConfigs:
             DATALAD_REGISTRY_OPERATION_MODE=OperationMode(operation_mode),
             DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
             DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
-            DATALAD_REGISTRY_POSTGRES_HOST="localhost",
             CELERY_BROKER_URL="redis://localhost",
             CELERY_RESULT_BACKEND="redis://localhost",
             CELERY_TASK_IGNORE_RESULT=True,
-            POSTGRES_DB="db_name",
-            POSTGRES_USER="user",
-            POSTGRES_PASSWORD="password",
         )
         assert config.DATALAD_REGISTRY_OPERATION_MODE is OperationMode(operation_mode)
 
@@ -148,13 +132,9 @@ class TestUpperLevelConfigs:
             config = config_cls(
                 DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
                 DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
-                DATALAD_REGISTRY_POSTGRES_HOST="localhost",
                 CELERY_BROKER_URL="redis://localhost",
                 CELERY_RESULT_BACKEND="redis://localhost",
                 CELERY_TASK_IGNORE_RESULT=True,
-                POSTGRES_DB="db_name",
-                POSTGRES_USER="user",
-                POSTGRES_PASSWORD="password",
             )
         assert config.DATALAD_REGISTRY_OPERATION_MODE is OperationMode(operation_mode)
 
@@ -176,13 +156,9 @@ class TestUpperLevelConfigs:
                 DATALAD_REGISTRY_OPERATION_MODE=OperationMode(operation_mode),
                 DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
                 DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
-                DATALAD_REGISTRY_POSTGRES_HOST="localhost",
                 CELERY_BROKER_URL="redis://localhost",
                 CELERY_RESULT_BACKEND="redis://localhost",
                 CELERY_TASK_IGNORE_RESULT=True,
-                POSTGRES_DB="db_name",
-                POSTGRES_USER="user",
-                POSTGRES_PASSWORD="password",
             )
 
         # Initialize the config with both init kwargs and environment variables
@@ -192,13 +168,9 @@ class TestUpperLevelConfigs:
                 config_cls(
                     DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
                     DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
-                    DATALAD_REGISTRY_POSTGRES_HOST="localhost",
                     CELERY_BROKER_URL="redis://localhost",
                     CELERY_RESULT_BACKEND="redis://localhost",
                     CELERY_TASK_IGNORE_RESULT=True,
-                    POSTGRES_DB="db_name",
-                    POSTGRES_USER="user",
-                    POSTGRES_PASSWORD="password",
                 )
 
 
@@ -208,13 +180,9 @@ class TestCompileConfigFromEnv:
             "op_mode",
             "instance_path",
             "cache_path",
-            "postgres_host",
             "broker_url",
             "result_backend",
             "task_ignore_result",
-            "postgres_db",
-            "postgres_user",
-            "postgres_password",
             "config_cls",
         ),
         [
@@ -222,52 +190,36 @@ class TestCompileConfigFromEnv:
                 "PRODUCTION",
                 "/a/b",
                 "/c/d",
-                "localhost",
                 "redis://localhost",
                 "redis://localhost",
                 "True",
-                "db_name",
-                "user",
-                "password",
                 ProductionConfig,
             ),
             (
                 "DEVELOPMENT",
                 "/a",
                 "/",
-                "db",
                 "redis://localhost",
                 "redis://localhost",
                 "1",
-                "database_name",
-                "db_user",
-                "db_password",
                 DevelopmentConfig,
             ),
             (
                 "TESTING",
                 "/a/b/c",
                 "/c/d/",
-                "127.0.0.1",
                 "redis://localhost",
                 "redis://localhost",
                 "Yes",
-                "database",
-                "john",
-                "secret",
                 _TestingConfig,
             ),
             (
                 "READ_ONLY",
                 "/ab",
                 "/cd",
-                "remote_host",
                 "redis://localhost",
                 "redis://localhost",
                 "True",
-                "datab",
-                "jane",
-                "hidden",
                 ReadOnlyConfig,
             ),
         ],
@@ -277,13 +229,9 @@ class TestCompileConfigFromEnv:
         op_mode,
         instance_path,
         cache_path,
-        postgres_host,
         broker_url,
         result_backend,
         task_ignore_result,
-        postgres_db,
-        postgres_user,
-        postgres_password,
         config_cls,
         monkeypatch,
     ):
@@ -295,13 +243,9 @@ class TestCompileConfigFromEnv:
         monkeypatch.setenv("DATALAD_REGISTRY_OPERATION_MODE", op_mode)
         monkeypatch.setenv("DATALAD_REGISTRY_INSTANCE_PATH", instance_path)
         monkeypatch.setenv("DATALAD_REGISTRY_DATASET_CACHE", cache_path)
-        monkeypatch.setenv("DATALAD_REGISTRY_POSTGRES_HOST", postgres_host)
         monkeypatch.setenv("CELERY_BROKER_URL", broker_url)
         monkeypatch.setenv("CELERY_RESULT_BACKEND", result_backend)
         monkeypatch.setenv("CELERY_TASK_IGNORE_RESULT", task_ignore_result)
-        monkeypatch.setenv("POSTGRES_DB", postgres_db)
-        monkeypatch.setenv("POSTGRES_USER", postgres_user)
-        monkeypatch.setenv("POSTGRES_PASSWORD", postgres_password)
 
         config = compile_config_from_env()
 
@@ -321,13 +265,9 @@ class TestCompileConfigFromEnv:
         monkeypatch.setenv("DATALAD_REGISTRY_OPERATION_MODE", "DEVELOPMENT")
         monkeypatch.setenv("DATALAD_REGISTRY_INSTANCE_PATH", "/a/b")
         monkeypatch.setenv("DATALAD_REGISTRY_DATASET_CACHE", "/c/d")
-        monkeypatch.setenv("DATALAD_REGISTRY_POSTGRES_HOST", "localhost")
         monkeypatch.setenv("CELERY_BROKER_URL", "redis://localhost")
         monkeypatch.setenv("CELERY_RESULT_BACKEND", "redis://localhost")
         monkeypatch.setenv("CELERY_TASK_IGNORE_RESULT", "True")
-        monkeypatch.setenv("POSTGRES_DB", "db_name")
-        monkeypatch.setenv("POSTGRES_USER", "user")
-        monkeypatch.setenv("POSTGRES_PASSWORD", "password")
 
         class MockOperationModeToConfigCls:
             # noinspection PyMethodMayBeStatic
