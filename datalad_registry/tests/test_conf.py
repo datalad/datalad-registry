@@ -58,7 +58,7 @@ class TestBaseConfig:
         monkeypatch.setenv("DATALAD_REGISTRY_INSTANCE_PATH", instance_path)
         monkeypatch.setenv("DATALAD_REGISTRY_DATASET_CACHE", cache_path)
 
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValidationError, match="Path must be absolute"):
             BaseConfig(
                 DATALAD_REGISTRY_OPERATION_MODE=OperationMode.PRODUCTION,
                 CELERY_BROKER_URL="redis://localhost",
@@ -151,7 +151,7 @@ class TestUpperLevelConfigs:
         self, config_cls, operation_mode, monkeypatch
     ):
         # Initialize the config with init kwargs alone
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValidationError, match="DATALAD_REGISTRY_OPERATION_MODE"):
             config_cls(
                 DATALAD_REGISTRY_OPERATION_MODE=OperationMode(operation_mode),
                 DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
@@ -164,7 +164,9 @@ class TestUpperLevelConfigs:
         # Initialize the config with both init kwargs and environment variables
         with monkeypatch.context() as m:
             m.setenv("DATALAD_REGISTRY_OPERATION_MODE", operation_mode)
-            with pytest.raises(ValidationError):
+            with pytest.raises(
+                ValidationError, match="DATALAD_REGISTRY_OPERATION_MODE"
+            ):
                 config_cls(
                     DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
                     DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
@@ -280,5 +282,5 @@ class TestCompileConfigFromEnv:
             conf, "operation_mode_to_config_cls", MockOperationModeToConfigCls()
         )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Unexpected operation mode"):
             compile_config_from_env()
