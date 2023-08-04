@@ -2,7 +2,7 @@ from enum import auto
 from pathlib import Path
 from typing import Any, Literal, Union
 
-from pydantic import BaseSettings, validator
+from pydantic import BaseSettings, PostgresDsn, validator
 
 from datalad_registry.utils.misc import StrEnum
 
@@ -46,6 +46,8 @@ class BaseConfig(OperationConfig):
         )
 
     # =============================================
+
+    SQLALCHEMY_DATABASE_URI: PostgresDsn
 
     TESTING: bool = False
 

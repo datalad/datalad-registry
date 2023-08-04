@@ -78,6 +78,7 @@ class TestCreateApp:
                 CELERY_BROKER_URL=broker_url,
                 CELERY_RESULT_BACKEND=result_backend,
                 CELERY_TASK_IGNORE_RESULT=task_ignore_result,
+                SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
             )
 
         def dummy_func(*_args, **_kwargs) -> None:
@@ -112,6 +113,10 @@ class TestCreateApp:
             "result_backend": result_backend,
             "task_ignore_result": True,
         }
+        assert (
+            flask_app.config["SQLALCHEMY_DATABASE_URI"]
+            == "postgresql+psycopg2://usr:pd@db:5432/dbn"
+        )
 
         # Verify the loading of configuration to the Celery app
         celery_app: Celery = flask_app.extensions["celery"]
