@@ -12,26 +12,20 @@ services:
     ports:
       - "5000:5000"
     environment: &env
-      DATALAD_REGISTRY_PASSWORD: "$DATALAD_REGISTRY_PASSWORD"
-      DATALAD_REGISTRY_INSTANCE_PATH: "/app/instance"
-      DATALAD_REGISTRY_DATASET_CACHE: "/app/instance/cache"
-      DATALAD_REGISTRY_LOG_LEVEL: "DEBUG"
+      FLASK_APP: "datalad_registry:create_app"
 
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      DATALAD_REGISTRY_OPERATION_MODE: "${DATALAD_REGISTRY_OPERATION_MODE}"
+      DATALAD_REGISTRY_INSTANCE_PATH: "${DATALAD_REGISTRY_INSTANCE_PATH}"
+      DATALAD_REGISTRY_DATASET_CACHE: "${DATALAD_REGISTRY_DATASET_CACHE}"
 
-      RABBITMQ_DEFAULT_USER: "user"
-      RABBITMQ_DEFAULT_PASS: "$RABBITMQ_DEFAULT_PASS"
+      CELERY_BROKER_URL: "${CELERY_BROKER_URL}"
+      CELERY_RESULT_BACKEND: "redis://backend:6379"
 
-      FLASK_APP: "datalad_registry.factory:create_app"
-
-      CELERY_BROKER_URL: "amqp://user:$RABBITMQ_DEFAULT_PASS@broker:5672"
-      CELERY_RESULT_BACKEND_URL: "redis://backend:6379"
-
-      DATALAD_REGISTRY_POSTGRES_HOST: db
-
+      # db service access info
+      SQLALCHEMY_DATABASE_URI: "${SQLALCHEMY_DATABASE_URI}"
     command: [ "bash", "-c", "flask init-db && flask run --host=0.0.0.0" ]
     volumes:
-      - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
+      - ${WEB_PATH_AT_HOST}/instance:${DATALAD_REGISTRY_INSTANCE_PATH}
 
   worker:
     image: datalad-registry:dev
@@ -42,16 +36,16 @@ services:
         condition: service_healthy
     command: [
       "bash", "-c",
-      "celery -A datalad_registry.runcelery.celery worker --loglevel DEBUG --pool prefork"
+      "celery -A datalad_registry.make_celery:celery_app worker --loglevel DEBUG --pool prefork"
     ]
     volumes:
-      - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
+      - ${WORKER_PATH_AT_HOST}/data/cache:${DATALAD_REGISTRY_DATASET_CACHE}
     environment:
       <<: *env
     healthcheck:
       test: [
         "CMD", "bash", "-c",
-        "celery -A datalad_registry.runcelery.celery status --timeout 1 --json | grep -q pong"
+        "celery -A datalad_registry.make_celery:celery_app status --timeout 1 --json | grep -q pong"
       ]
       interval: 5s
       timeout: 3s
@@ -67,17 +61,17 @@ services:
         condition: service_healthy
     environment:
       <<: *env
-      FLOWER_BROKER_API: "http://user:$RABBITMQ_DEFAULT_PASS@broker:15672/api/"
+      FLOWER_BROKER_API: "${FLOWER_BROKER_API}"
       FLOWER_PERSISTENT: "True"
-      FLOWER_DB: "/app/instance/monitor/flower"
+      FLOWER_DB: "/data/flower"
       FLOWER_STATE_SAVE_INTERVAL: "1000"  # In milliseconds
       FLOWER_NATURAL_TIME: "True"
       FLOWER_BASIC_AUTH: "$FLOWER_BASIC_AUTH"
     ports:
       - "127.0.0.1:5555:5555"
-    command: [ "bash", "-c", "celery --app datalad_registry.runcelery.celery flower" ]
+    command: [ "bash", "-c", "celery -A datalad_registry.make_celery:celery_app flower" ]
     volumes:
-      - ${DL_REGISTRY_INSTANCE_PATH}/monitor:/app/instance/monitor
+      - ${MONITOR_PATH_AT_HOST}/data:/data
     healthcheck:
       test: [
         "CMD", "bash", "-c",
@@ -110,13 +104,13 @@ services:
     image: docker.io/rabbitmq:3-management
     hostname: dlreg-broker
     environment:
-      RABBITMQ_DEFAULT_USER: "user"
-      RABBITMQ_DEFAULT_PASS: "$RABBITMQ_DEFAULT_PASS"
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_DEFAULT_USER}"
+      RABBITMQ_DEFAULT_PASS: "{$RABBITMQ_DEFAULT_PASS}"
     ports:
       - "127.0.0.1:5672:5672"
       - "127.0.0.1:15672:15672"
     volumes:
-      - ${DL_REGISTRY_INSTANCE_PATH}/broker/home:/var/lib/rabbitmq
+      - ${BROKER_PATH_AT_HOST}/home:/var/lib/rabbitmq
     healthcheck: # https://www.rabbitmq.com/monitoring.html#health-checks
       test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 30s
@@ -132,8 +126,8 @@ services:
   db:
     image: docker.io/postgres:latest
     environment:
-      POSTGRES_DB: dlreg
-      POSTGRES_USER: dlreg
+      POSTGRES_DB: "${POSTGRES_DB}"
+      POSTGRES_USER: "${POSTGRES_USER}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
       POSTGRES_INITDB_ARGS: --encoding utf8 --locale C
     ports:
@@ -145,9 +139,9 @@ services:
       # `PODMAN_USERNS=keep-id podman-compose up`
 
     volumes:
-      - ${DL_REGISTRY_DB_DATA_PATH}:/var/lib/postgresql/data
+      - ${DB_PATH_AT_HOST}/data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "dlreg" ]
+      test: [ "CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}" ]
       interval: 7s
       timeout: 3s
       retries: 5
