@@ -34,7 +34,6 @@ class BaseConfig(OperationConfig):
     # === worker, Celery, related configuration  ===
     CELERY_BROKER_URL: Union[str, list[str]]
     CELERY_RESULT_BACKEND: str
-    CELERY_TASK_IGNORE_RESULT: bool = True
 
     # noinspection PyPep8Naming
     @property
@@ -42,7 +41,7 @@ class BaseConfig(OperationConfig):
         return dict(
             broker_url=self.CELERY_BROKER_URL,
             result_backend=self.CELERY_RESULT_BACKEND,
-            task_ignore_result=self.CELERY_TASK_IGNORE_RESULT,
+            task_ignore_result=True,
         )
 
     # =============================================

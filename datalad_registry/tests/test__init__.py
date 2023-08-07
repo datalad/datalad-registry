@@ -12,47 +12,12 @@ from datalad_registry.conf import BaseConfig, OperationMode
 
 class TestCreateApp:
     @pytest.mark.parametrize(
-        (
-            "op_mode",
-            "instance_path",
-            "cache_path",
-            "broker_url",
-            "result_backend",
-            "task_ignore_result",
-        ),
+        ("op_mode", "instance_path", "cache_path", "broker_url", "result_backend"),
         [
-            (
-                "PRODUCTION",
-                "/a/b",
-                "/c/d",
-                "redis://localhost",
-                "redis://localhost",
-                "True",
-            ),
-            (
-                "DEVELOPMENT",
-                "/a",
-                "/",
-                "redis://localhost",
-                "redis://localhost",
-                "1",
-            ),
-            (
-                "TESTING",
-                "/a/b/c",
-                "/c/d/",
-                "redis://localhost",
-                "redis://localhost",
-                "Yes",
-            ),
-            (
-                "READ_ONLY",
-                "/ab",
-                "/cd",
-                "redis://localhost",
-                "redis://localhost",
-                "True",
-            ),
+            ("PRODUCTION", "/a/b", "/c/d", "redis://localhost", "redis://localhost"),
+            ("DEVELOPMENT", "/a", "/", "redis://localhost", "redis://localhost"),
+            ("TESTING", "/a/b/c", "/c/d/", "redis://localhost", "redis://localhost"),
+            ("READ_ONLY", "/ab", "/cd", "redis://localhost", "redis://localhost"),
         ],
     )
     def test_configuration(
@@ -62,7 +27,6 @@ class TestCreateApp:
         cache_path,
         broker_url,
         result_backend,
-        task_ignore_result,
         monkeypatch,
     ):
         """
@@ -77,7 +41,6 @@ class TestCreateApp:
                 DATALAD_REGISTRY_DATASET_CACHE=cache_path,
                 CELERY_BROKER_URL=broker_url,
                 CELERY_RESULT_BACKEND=result_backend,
-                CELERY_TASK_IGNORE_RESULT=task_ignore_result,
                 SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
             )
 
@@ -107,7 +70,6 @@ class TestCreateApp:
         assert flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"] == Path(cache_path)
         assert flask_app.config["CELERY_BROKER_URL"] == broker_url
         assert flask_app.config["CELERY_RESULT_BACKEND"] == result_backend
-        assert flask_app.config["CELERY_TASK_IGNORE_RESULT"] is True
         assert flask_app.config["CELERY"] == {
             "broker_url": broker_url,
             "result_backend": result_backend,

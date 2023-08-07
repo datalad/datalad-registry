@@ -34,7 +34,6 @@ class TestBaseConfig:
             DATALAD_REGISTRY_OPERATION_MODE=OperationMode.PRODUCTION,
             CELERY_BROKER_URL="redis://localhost",
             CELERY_RESULT_BACKEND="redis://localhost",
-            CELERY_TASK_IGNORE_RESULT=True,
             SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
         )
 
@@ -66,19 +65,17 @@ class TestBaseConfig:
                 DATALAD_REGISTRY_OPERATION_MODE=OperationMode.PRODUCTION,
                 CELERY_BROKER_URL="redis://localhost",
                 CELERY_RESULT_BACKEND="redis://localhost",
-                CELERY_TASK_IGNORE_RESULT=True,
                 SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
             )
 
     @pytest.mark.parametrize(
-        "broker_url, result_backend, task_ignore_result, expected_broker_url",
+        "broker_url, result_backend, expected_broker_url",
         [
-            ("redis://localhost", "redis://127.0.0.1", "True", "redis://localhost"),
-            ("redis://broker", "redis://new", "1", "redis://broker"),
+            ("redis://localhost", "redis://127.0.0.1", "redis://localhost"),
+            ("redis://broker", "redis://new", "redis://broker"),
             (
                 '["redis://localhost", "redis://broker"]',
                 "redis://127.0.0.1",
-                "True",
                 ["redis://localhost", "redis://broker"],
             ),
         ],
@@ -87,13 +84,11 @@ class TestBaseConfig:
         self,
         broker_url,
         result_backend,
-        task_ignore_result,
         expected_broker_url,
         monkeypatch,
     ):
         monkeypatch.setenv("CELERY_BROKER_URL", broker_url)
         monkeypatch.setenv("CELERY_RESULT_BACKEND", result_backend)
-        monkeypatch.setenv("CELERY_TASK_IGNORE_RESULT", task_ignore_result)
 
         # noinspection PyTypeChecker
         assert BaseConfig(
@@ -128,7 +123,6 @@ class TestUpperLevelConfigs:
             DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
             CELERY_BROKER_URL="redis://localhost",
             CELERY_RESULT_BACKEND="redis://localhost",
-            CELERY_TASK_IGNORE_RESULT=True,
             SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
         )
         assert config.DATALAD_REGISTRY_OPERATION_MODE is OperationMode(operation_mode)
@@ -141,7 +135,6 @@ class TestUpperLevelConfigs:
                 DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
                 CELERY_BROKER_URL="redis://localhost",
                 CELERY_RESULT_BACKEND="redis://localhost",
-                CELERY_TASK_IGNORE_RESULT=True,
                 SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
             )
         assert config.DATALAD_REGISTRY_OPERATION_MODE is OperationMode(operation_mode)
@@ -166,7 +159,6 @@ class TestUpperLevelConfigs:
                 DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
                 CELERY_BROKER_URL="redis://localhost",
                 CELERY_RESULT_BACKEND="redis://localhost",
-                CELERY_TASK_IGNORE_RESULT=True,
                 SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
             )
 
@@ -181,7 +173,6 @@ class TestUpperLevelConfigs:
                     DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
                     CELERY_BROKER_URL="redis://localhost",
                     CELERY_RESULT_BACKEND="redis://localhost",
-                    CELERY_TASK_IGNORE_RESULT=True,
                     SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
                 )
 
@@ -194,7 +185,6 @@ class TestCompileConfigFromEnv:
             "cache_path",
             "broker_url",
             "result_backend",
-            "task_ignore_result",
             "sa_db_uri",
             "config_cls",
         ),
@@ -205,7 +195,6 @@ class TestCompileConfigFromEnv:
                 "/c/d",
                 "redis://localhost",
                 "redis://localhost",
-                "True",
                 "postgresql+psycopg2://user:pd@db:5432/dbn",
                 ProductionConfig,
             ),
@@ -215,7 +204,6 @@ class TestCompileConfigFromEnv:
                 "/",
                 "redis://localhost",
                 "redis://localhost",
-                "1",
                 "postgresql+psycopg2://usr:passd@db:5432/dbn",
                 DevelopmentConfig,
             ),
@@ -225,7 +213,6 @@ class TestCompileConfigFromEnv:
                 "/c/d/",
                 "redis://localhost",
                 "redis://localhost",
-                "Yes",
                 "postgresql+psycopg2://usr:pd@db:5432/db_name",
                 _TestingConfig,
             ),
@@ -235,7 +222,6 @@ class TestCompileConfigFromEnv:
                 "/cd",
                 "redis://localhost",
                 "redis://localhost",
-                "True",
                 "postgresql+psycopg2://usr:pd@db:1111/dbn",
                 ReadOnlyConfig,
             ),
@@ -248,7 +234,6 @@ class TestCompileConfigFromEnv:
         cache_path,
         broker_url,
         result_backend,
-        task_ignore_result,
         sa_db_uri,
         config_cls,
         monkeypatch,
@@ -263,7 +248,6 @@ class TestCompileConfigFromEnv:
         monkeypatch.setenv("DATALAD_REGISTRY_DATASET_CACHE", cache_path)
         monkeypatch.setenv("CELERY_BROKER_URL", broker_url)
         monkeypatch.setenv("CELERY_RESULT_BACKEND", result_backend)
-        monkeypatch.setenv("CELERY_TASK_IGNORE_RESULT", task_ignore_result)
         monkeypatch.setenv("SQLALCHEMY_DATABASE_URI", sa_db_uri)
 
         config = compile_config_from_env()
@@ -273,7 +257,6 @@ class TestCompileConfigFromEnv:
         assert config.DATALAD_REGISTRY_DATASET_CACHE == Path(cache_path)
         assert config.CELERY_BROKER_URL == broker_url
         assert config.CELERY_RESULT_BACKEND == result_backend
-        assert config.CELERY_TASK_IGNORE_RESULT is True
         assert isinstance(config, config_cls)
 
     def test_invalid_op_mode(self, monkeypatch):
@@ -286,7 +269,6 @@ class TestCompileConfigFromEnv:
         monkeypatch.setenv("DATALAD_REGISTRY_DATASET_CACHE", "/c/d")
         monkeypatch.setenv("CELERY_BROKER_URL", "redis://localhost")
         monkeypatch.setenv("CELERY_RESULT_BACKEND", "redis://localhost")
-        monkeypatch.setenv("CELERY_TASK_IGNORE_RESULT", "True")
         monkeypatch.setenv(
             "SQLALCHEMY_DATABASE_URI", "postgresql+psycopg2://usr:pd@db:5432/dbn"
         )
