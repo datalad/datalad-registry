@@ -34,7 +34,7 @@ class BaseConfig(OperationConfig):
     # === worker, Celery, related configuration  ===
     CELERY_BROKER_URL: Union[str, list[str]]
     CELERY_RESULT_BACKEND: str
-    CELERY_TASK_IGNORE_RESULT: bool
+    CELERY_TASK_IGNORE_RESULT: bool = True
 
     # noinspection PyPep8Naming
     @property
@@ -65,21 +65,15 @@ class ProductionConfig(BaseConfig):
     # Restrict to operation mode appropriate for this type of configuration
     DATALAD_REGISTRY_OPERATION_MODE: Literal[OperationMode.PRODUCTION]
 
-    CELERY_TASK_IGNORE_RESULT: bool = True
-
 
 class DevelopmentConfig(BaseConfig):
     # Restrict to operation mode appropriate for this type of configuration
     DATALAD_REGISTRY_OPERATION_MODE: Literal[OperationMode.DEVELOPMENT]
 
-    CELERY_TASK_IGNORE_RESULT: bool = True
-
 
 class TestingConfig(BaseConfig):
     # Restrict to operation mode appropriate for this type of configuration
     DATALAD_REGISTRY_OPERATION_MODE: Literal[OperationMode.TESTING]
-
-    CELERY_TASK_IGNORE_RESULT: bool = True
 
     TESTING: bool = True
 
@@ -101,7 +95,6 @@ class ReadOnlyConfig(BaseConfig):
 
     CELERY_BROKER_URL: str = "dummy://"
     CELERY_RESULT_BACKEND: str = "dummy://"
-    CELERY_TASK_IGNORE_RESULT: bool = True
 
     @property
     def CELERY(self) -> dict[str, Any]:
