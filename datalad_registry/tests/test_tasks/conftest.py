@@ -48,7 +48,9 @@ def processed_ds_urls(flask_app, two_files_ds_annex) -> list[int]:
             db.session.add(url)
         db.session.commit()
 
-        for url in urls:
-            process_dataset_url(url.id)
+        url_ids = [url.id for url in urls]
 
-        return [url.id for url in urls]
+    for url_id in url_ids:
+        process_dataset_url(url_id)
+
+    return url_ids
