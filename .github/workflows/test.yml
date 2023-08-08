@@ -50,6 +50,8 @@ jobs:
       run: docker compose -f docker-compose.testing.yml up -d --build
     - name: Run tests with Coverage
       run: pytest --cov=. --cov-report=xml
+    - name: Stop services provided by Docker Compose
+      run: docker compose -f docker-compose.testing.yml down
     - name: mypy check
       run: mypy datalad_registry datalad_registry_client
     - name: Upload coverage to codecov
