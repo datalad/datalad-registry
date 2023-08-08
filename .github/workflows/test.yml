@@ -46,7 +46,7 @@ jobs:
         pip install wheel
         pip install mypy types-requests
         pip install .[tests]
-    - name: Set up broker, result backend, and database services
+    - name: Start services with Docker Compose
       run: docker compose -f docker-compose.testing.yml up -d --build
     - name: Run tests with coverage
       run: pytest --cov=. --cov-report=xml
