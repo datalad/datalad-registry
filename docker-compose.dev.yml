@@ -16,7 +16,7 @@ services:
 
       DATALAD_REGISTRY_OPERATION_MODE: "${DATALAD_REGISTRY_OPERATION_MODE}"
       DATALAD_REGISTRY_INSTANCE_PATH: /app/instance
-      DATALAD_REGISTRY_DATASET_CACHE: "${DATALAD_REGISTRY_DATASET_CACHE}"
+      DATALAD_REGISTRY_DATASET_CACHE: /data/cache
 
       CELERY_BROKER_URL: "${CELERY_BROKER_URL}"
       CELERY_RESULT_BACKEND: "redis://backend:6379"
@@ -39,7 +39,7 @@ services:
       "celery -A datalad_registry.make_celery:celery_app worker --loglevel DEBUG --pool prefork"
     ]
     volumes:
-      - ${WORKER_PATH_AT_HOST}/data/cache:${DATALAD_REGISTRY_DATASET_CACHE}
+      - ${WORKER_PATH_AT_HOST}/data/cache:/data/cache
     environment:
       <<: *env
     healthcheck:
