@@ -20,8 +20,6 @@ else:
 
 __version__ = version("datalad-registry")
 
-celery = Celery("datalad_registry")
-
 
 def create_app() -> Flask:
     """
