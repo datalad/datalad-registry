@@ -9,8 +9,14 @@ on:
       - master
 
 env:
-  DATALAD_REGISTRY_PASSWORD: foobar123
-  CELERY_BROKER_URL: "amqp://user:foobar123@127.0.0.1:5672"
+  RABBITMQ_DEFAULT_USER: tester
+  RABBITMQ_DEFAULT_PASS: testpass
+  POSTGRES_DB: pgdb
+  POSTGRES_USER: tester
+  POSTGRES_PASSWORD: testpass
+  CELERY_BROKER_URL: "amqp://tester:testpass@localhost:5672"
+  CELERY_RESULT_BACKEND: "redis://localhost:6379"
+  SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://tester:testpass@localhost:5432/pgdb"
 
 jobs:
   test:
@@ -40,13 +46,10 @@ jobs:
         pip install wheel
         pip install mypy types-requests
         pip install .[tests]
-    - name: Set up dev server
-      run: ./up-tests
-    - name: Run tests
-      run: |
-        coverage run -m pytest --devserver
-        coverage combine
-        coverage xml
+    - name: Set up broker, result backend, and database services
+      run: docker compose -f docker-compose.testing.yml up -d --build
+    - name: Run tests with coverage
+      run: pytest --cov=. --cov-report=xml
     - name: mypy check
       run: mypy datalad_registry datalad_registry_client
     - name: Upload coverage to codecov
