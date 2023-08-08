@@ -48,7 +48,7 @@ jobs:
         pip install .[tests]
     - name: Start services with Docker Compose
       run: docker compose -f docker-compose.testing.yml up -d --build
-    - name: Run tests with coverage
+    - name: Run tests with Coverage
       run: pytest --cov=. --cov-report=xml
     - name: mypy check
       run: mypy datalad_registry datalad_registry_client
