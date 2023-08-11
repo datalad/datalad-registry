@@ -2,6 +2,7 @@ import click
 from flask.cli import with_appcontext
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.dialects.postgresql import JSONB
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -20,7 +21,7 @@ class RepoUrl(db.Model):  # type: ignore
     head = db.Column(db.Text)
     head_describe = db.Column(db.Text)
     head_dt = db.Column(db.DateTime(timezone=True))
-    branches = db.Column(db.Text)
+    branches = db.Column(JSONB)
     tags = db.Column(db.Text)
     git_objects_kb = db.Column(db.BigInteger)
 
