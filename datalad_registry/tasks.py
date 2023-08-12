@@ -68,7 +68,7 @@ def _update_dataset_url_info(dataset_url: RepoUrl, ds: Dataset) -> None:
     dataset_url.head = ds.repo.get_hexsha("origin/HEAD")
     dataset_url.head_describe = ds.repo.describe("origin/HEAD", tags=True, always=True)
 
-    dataset_url.branches = json.dumps(get_origin_branches(ds))
+    dataset_url.branches = get_origin_branches(ds)
 
     dataset_url.tags = json.dumps(ds.repo.get_tags())
 
