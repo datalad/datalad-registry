@@ -56,14 +56,14 @@ services:
     depends_on:
       broker:
         condition: service_healthy
-      db:
+      worker:
         condition: service_healthy
     command: [
       "bash", "-c",
-      "celery -A datalad_registry.make_celery:celery_app worker --loglevel DEBUG --pool prefork"
+      "celery -A datalad_registry.make_celery:celery_app beat -s /data/celerybeat-schedule"
     ]
     volumes:
-      - ${WORKER_PATH_AT_HOST}/data/cache:/data/cache
+      - ${SCHEDULER_PATH_AT_HOST}/data:/data
     environment:
       <<: *env
     healthcheck:
@@ -104,25 +104,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
-  # TODO: Currently, there is no job to be scheduled.
-  #   Disable this to make debugging easier.
-  #   Once there is a job to be scheduled, we can uncomment this to enable the scheduler
-  #  scheduler:
-  #    build: .
-  #    depends_on:
-  #      broker:
-  #        condition: service_healthy
-  #    command: [
-  #      celery, -A, datalad_registry.runcelery.celery,
-  #      beat,
-  #      --loglevel, DEBUG,
-  #      -s, /app/instance/celerybeat-schedule
-  #    ]
-  #    volumes:
-  #      - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
-  #    environment:
-  #      <<: *env
 
   broker:
     image: docker.io/rabbitmq:3-management
