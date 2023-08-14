@@ -51,6 +51,30 @@ services:
       timeout: 3s
       retries: 10
 
+  scheduler:
+    image: datalad-registry:dev
+    depends_on:
+      broker:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    command: [
+      "bash", "-c",
+      "celery -A datalad_registry.make_celery:celery_app worker --loglevel DEBUG --pool prefork"
+    ]
+    volumes:
+      - ${WORKER_PATH_AT_HOST}/data/cache:/data/cache
+    environment:
+      <<: *env
+    healthcheck:
+      test: [
+        "CMD", "bash", "-c",
+        "celery -A datalad_registry.make_celery:celery_app status --timeout 1 --json | grep -q pong"
+      ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   # Monitor for Celery service
   monitor:
     image: datalad-registry:dev
