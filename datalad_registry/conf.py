@@ -23,6 +23,12 @@ class OperationConfig(BaseSettings):
 class BaseConfig(OperationConfig):
     DATALAD_REGISTRY_INSTANCE_PATH: Path
     DATALAD_REGISTRY_DATASET_CACHE: Path
+
+    # URL check dispatcher related configuration
+    DATALAD_REGISTRY_MIN_CHK_INTERVAL_PER_URL: int = 3600  # seconds
+    DATALAD_REGISTRY_MAX_FAILED_CHKS_PER_URL: int = 10
+    DATALAD_REGISTRY_MAX_URL_CHKS_IN_PROGRESS: int = 10
+
     # Metadata extractors to use
     DATALAD_REGISTRY_METADATA_EXTRACTORS: list[str] = [
         "metalad_core",
@@ -34,6 +40,12 @@ class BaseConfig(OperationConfig):
     # === worker, Celery, related configuration  ===
     CELERY_BROKER_URL: Union[str, list[str]]
     CELERY_RESULT_BACKEND: str
+    CELERY_BEAT_SCHEDULE: dict[str, dict[str, Any]] = {
+        "url-check-dispatcher": {
+            "task": "datalad_registry.tasks.url_chk_dispatcher",
+            "schedule": 60.0,
+        }
+    }
 
     # noinspection PyPep8Naming
     @property
@@ -41,6 +53,7 @@ class BaseConfig(OperationConfig):
         return dict(
             broker_url=self.CELERY_BROKER_URL,
             result_backend=self.CELERY_RESULT_BACKEND,
+            beat_schedule=self.CELERY_BEAT_SCHEDULE,
             task_ignore_result=True,
         )
 

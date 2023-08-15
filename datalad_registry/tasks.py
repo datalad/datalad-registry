@@ -299,3 +299,8 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
             # Delete the old cache directory for the dataset (the directory that is
             # a previous clone of the dataset)
             rm_ds_tree(base_cache_path / old_cache_path_relative)
+
+
+@shared_task
+def url_chk_dispatcher():
+    pass

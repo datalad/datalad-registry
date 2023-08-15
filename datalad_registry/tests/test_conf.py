@@ -69,14 +69,50 @@ class TestBaseConfig:
             )
 
     @pytest.mark.parametrize(
-        "broker_url, result_backend, expected_broker_url",
+        "broker_url, result_backend, beat_schedule, expected_broker_url, "
+        "expected_beat_schedule",
         [
-            ("redis://localhost", "redis://127.0.0.1", "redis://localhost"),
-            ("redis://broker", "redis://new", "redis://broker"),
+            (
+                "redis://localhost",
+                "redis://127.0.0.1",
+                None,
+                "redis://localhost",
+                {
+                    "url-check-dispatcher": {
+                        "task": "datalad_registry.tasks.url_chk_dispatcher",
+                        "schedule": 60.0,
+                    }
+                },
+            ),
+            (
+                "redis://broker",
+                "redis://new",
+                '{"piece-of-cake": {"task": "take_a_bite", "schedule": 2.0}}',
+                "redis://broker",
+                {"piece-of-cake": {"task": "take_a_bite", "schedule": 2.0}},
+            ),
             (
                 '["redis://localhost", "redis://broker"]',
                 "redis://127.0.0.1",
+                """
+                {
+                    "sisyphus's-job": {
+                        "task": "boulder_up",
+                        "schedule": 87714900,
+                        "kwargs": {
+                            "boulder_weight_in_kg": 100
+                        }
+                    }
+                }
+                """,
                 ["redis://localhost", "redis://broker"],
+                {
+                    "sisyphus's-job": {
+                        "task": "boulder_up",
+                        "schedule": 87_714_900,
+                        "kwargs": {"boulder_weight_in_kg": 100},
+                    }
+                },
             ),
         ],
     )
@@ -84,11 +120,15 @@ class TestBaseConfig:
         self,
         broker_url,
         result_backend,
+        beat_schedule,
         expected_broker_url,
+        expected_beat_schedule,
         monkeypatch,
     ):
         monkeypatch.setenv("CELERY_BROKER_URL", broker_url)
         monkeypatch.setenv("CELERY_RESULT_BACKEND", result_backend)
+        if beat_schedule is not None:
+            monkeypatch.setenv("CELERY_BEAT_SCHEDULE", beat_schedule)
 
         # noinspection PyTypeChecker
         assert BaseConfig(
@@ -99,6 +139,7 @@ class TestBaseConfig:
         ).CELERY == dict(
             broker_url=expected_broker_url,
             result_backend=result_backend,
+            beat_schedule=expected_beat_schedule,
             task_ignore_result=True,
         )
 
