@@ -36,13 +36,7 @@ def flask_app(tmp_path, monkeypatch):
 
     with app.app_context():
         celery_app: Celery = app.extensions["celery"]
-        for pool in (
-            celery_app.pool,
-            celery_app.backend.result_consumer,
-            celery_app.backend.client,
-        ):
-            if pool is not None:
-                pool.close()
+        celery_app.close()
 
 
 @pytest.fixture
