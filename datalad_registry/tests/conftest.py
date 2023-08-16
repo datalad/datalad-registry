@@ -31,7 +31,10 @@ def flask_app(tmp_path, monkeypatch):
         db.drop_all()
         db.create_all()
 
-    return app
+    yield app
+
+    with app.app_context():
+        db.session.remove()
 
 
 @pytest.fixture
