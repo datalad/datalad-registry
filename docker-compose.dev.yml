@@ -60,7 +60,7 @@ services:
         condition: service_healthy
     command: [
       "bash", "-c",
-      "celery -A datalad_registry.make_celery:celery_app beat -s /data/celerybeat-schedule"
+      "celery -A datalad_registry.make_celery:celery_app beat -s /data/celerybeat-schedule -l INFO"
     ]
     volumes:
       - ${SCHEDULER_PATH_AT_HOST}/data:/data
