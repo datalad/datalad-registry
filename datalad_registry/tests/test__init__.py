@@ -40,6 +40,13 @@ class TestCreateApp:
             }
         }
 
+        default_metadata_extractors = [
+            "metalad_core",
+            "metalad_studyminimeta",
+            "datacite_gin",
+            "bids_dataset",
+        ]
+
         def mock_compile_config_from_env(*_args, **_kwargs):
             # noinspection PyTypeChecker
             return BaseConfig(
@@ -75,6 +82,13 @@ class TestCreateApp:
         )
         assert flask_app.config["DATALAD_REGISTRY_INSTANCE_PATH"] == Path(instance_path)
         assert flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"] == Path(cache_path)
+        assert flask_app.config["DATALAD_REGISTRY_MIN_CHK_INTERVAL_PER_URL"] == 3600
+        assert flask_app.config["DATALAD_REGISTRY_MAX_FAILED_CHKS_PER_URL"] == 10
+        assert flask_app.config["DATALAD_REGISTRY_MAX_URL_CHKS_IN_PROGRESS"] == 10
+        assert (
+            flask_app.config["DATALAD_REGISTRY_METADATA_EXTRACTORS"]
+            == default_metadata_extractors
+        )
         assert flask_app.config["CELERY_BROKER_URL"] == broker_url
         assert flask_app.config["CELERY_RESULT_BACKEND"] == result_backend
         assert flask_app.config["CELERY_BEAT_SCHEDULE"] == default_beat_schedule
@@ -88,6 +102,7 @@ class TestCreateApp:
             flask_app.config["SQLALCHEMY_DATABASE_URI"]
             == "postgresql+psycopg2://usr:pd@db:5432/dbn"
         )
+        assert flask_app.config["TESTING"] is False
 
         # Verify the loading of configuration to the Celery app
         celery_app: Celery = flask_app.extensions["celery"]
