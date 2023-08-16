@@ -2,7 +2,6 @@ from datetime import datetime
 
 from datalad import api as dl
 from datalad.api import Dataset
-from datalad.utils import rmtree as rm_ds_tree
 import pytest
 from pytest import TempPathFactory
 
@@ -12,52 +11,27 @@ from datalad_registry import create_app
 from datalad_registry.models import RepoUrl, URLMetadata, db
 
 
-@pytest.fixture(scope="session")
-def set_test_env(tmp_path_factory):
-    """
-    Set up the test environment variables
-    """
-    instance_path = tmp_path_factory.mktemp("instance")
-    cache_path = tmp_path_factory.mktemp("cache")
-
-    with pytest.MonkeyPatch.context() as m:
-        m.setenv("DATALAD_REGISTRY_OPERATION_MODE", "TESTING")
-        m.setenv("DATALAD_REGISTRY_INSTANCE_PATH", str(instance_path))
-        m.setenv("DATALAD_REGISTRY_DATASET_CACHE", str(cache_path))
-
-        yield
-
-
-@pytest.fixture(scope="session")
-def _flask_app(set_test_env):  # noqa: U100 (Unused argument)
-    """
-    The fixture of the datalad registry flask app that exists throughout a test session.
-
-    Note: This fixture should only be used by `flask_app` fixture directly.
-    """
-
-    app = create_app()
-    return app
-
-
 @pytest.fixture
-def flask_app(_flask_app):
+def flask_app(tmp_path, monkeypatch):
     """
     The fixture of the datalad_registry Flask app set up with the database of the test
     environment
     """
+    instance_path = tmp_path / "instance"
+    cache_path = tmp_path / "cache"
+
+    monkeypatch.setenv("DATALAD_REGISTRY_OPERATION_MODE", "TESTING")
+    monkeypatch.setenv("DATALAD_REGISTRY_INSTANCE_PATH", str(instance_path))
+    monkeypatch.setenv("DATALAD_REGISTRY_DATASET_CACHE", str(cache_path))
+
+    app = create_app()
 
     # Reset the database
-    with _flask_app.app_context():
+    with app.app_context():
         db.drop_all()
         db.create_all()
 
-    # Reset the base local cache for datasets
-    cache_path = _flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
-    rm_ds_tree(cache_path)
-    cache_path.mkdir()
-
-    return _flask_app
+    return app
 
 
 @pytest.fixture
