@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from celery import Celery
 from datalad import api as dl
 from datalad.api import Dataset
 from datalad.utils import rmtree as rm_ds_tree
@@ -56,6 +57,13 @@ def flask_app(_flask_app):
     cache_path = _flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
     rm_ds_tree(cache_path)
     cache_path.mkdir()
+
+    celery_app: Celery = _flask_app.extensions["celery"]
+
+    # Set the Celery app attached to this Flask app as the current app for this thread
+    celery_app.set_current()
+    # Set the Celery app attached to this Flask app as the default app for all threads
+    celery_app.set_default()
 
     return _flask_app
 
