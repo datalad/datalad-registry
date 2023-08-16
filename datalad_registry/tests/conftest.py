@@ -38,6 +38,8 @@ def flask_app(tmp_path, monkeypatch):
         celery_app: Celery = app.extensions["celery"]
 
         celery_app.backend.client.close()
+        celery_app.backend.result_consumer.stop()
+
         celery_app.close()
 
 
