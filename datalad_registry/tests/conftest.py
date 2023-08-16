@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from celery import Celery
 from datalad import api as dl
 from datalad.api import Dataset
 import pytest
@@ -31,7 +32,17 @@ def flask_app(tmp_path, monkeypatch):
         db.drop_all()
         db.create_all()
 
-    return app
+    yield app
+
+    with app.app_context():
+        celery_app: Celery = app.extensions["celery"]
+        for pool in (
+            celery_app.pool,
+            celery_app.backend.result_consumer,
+            celery_app.backend.client,
+        ):
+            if pool is not None:
+                pool.close()
 
 
 @pytest.fixture
