@@ -361,7 +361,7 @@ def url_chk_dispatcher():
 
         # Initiate the checking of the urls
         for url_id in urls_to_chk_ids:
-            check_url.delay(url_id)
+            chk_url.delay(url_id)
 
         return
 
@@ -375,7 +375,7 @@ def url_chk_dispatcher():
 
 @shared_task(rate_limit="10/m")  # todo: add a time limit here
 @validate_arguments
-def check_url(url_id: StrictInt):
+def chk_url(url_id: StrictInt):
     # Set `chk_req_dt` to `None` if the check succeeds
     url_id
     import time
