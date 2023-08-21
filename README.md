@@ -6,7 +6,54 @@ DataLad registry -- work in progress
 
 ---
 
-### Development setup
+### NEW Development setup
+
+#### To run tests
+
+On Debian systems install necessary for Python PostgreSQL libs dependencies:
+
+    apt-get install postgresql-common libpq-dev
+
+Create virtual env with e.g.,
+
+    py=3; d=venvs/dev$py; python$py -m venv $d && source $d/bin/activate && python3 -m pip install -e .[tests]
+
+Start the docker instances of postgres, rabbitmq, and redis:
+
+    docker-compose -f docker-compose.testing.yml --env-file template.env.testing up -d --build
+
+Now can run the tests after loading environment variables from the temaplte.env.testing.
+Using the next shell within to avoid polluting current environment:
+
+    ( set -a && source template.env.testing && set -a && python -m pytest -s -v  )
+
+In the future - above logic would migrate into the session-scoped pytest fixture, [issue #224](https://github.com/datalad/datalad-registry/issues/224).
+
+#### To develop
+
+The template file `template.env.dev` provides all environment variables with some default values.
+Copy it to some file and modify secrets (passwords) from the default values, e.g.
+
+    cp template.env.dev .env.dev
+    sed -e 's,pass$,secret123t,g' -i .env.dev
+
+*note*: we git ignore all `.env` files.
+
+Now we have two ways to start instance in a development mode, both of which use common `docker-compose.dev.yml` and provide two overrides files with slightly different invocations and bind mounts
+
+##### Local development mode
+
+which will run with `--debug` and also bind mount local tree so flask would react to changes:
+
+    docker compose -f docker-compose.dev.yml -f docker-compose.dev-local.overrides.yml --env-file .env.dev up -d --build
+
+##### Server development mode
+
+where it will use shipping in a container codebase copy and not react to the changes, and only `/app/instance` would be bound:
+
+    docker compose -f docker-compose.dev.yml -f docker-compose.dev-server.overrides.yml --env-file .env.dev up -d --build
+
+### OLD Development setup
 
 Here are steps for setting up a development environment either 1)
 using a virtual environment for everything but the Celery broker, or 2)
