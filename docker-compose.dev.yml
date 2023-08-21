@@ -3,6 +3,9 @@ services:
   web:
     build:
       dockerfile: dev.Dockerfile
+      ## Old docker-compose asked for context but this was still insufficient
+      ## since it could then "link" the built heere image to be used for the worker
+      # context: .
     image: datalad-registry:dev
     depends_on:
       broker:
@@ -24,8 +27,9 @@ services:
       # db service access info
       SQLALCHEMY_DATABASE_URI: "${SQLALCHEMY_DATABASE_URI}"
     command: [ "bash", "-c", "flask init-db && flask run --host=0.0.0.0" ]
-    volumes:
-      - ${WEB_PATH_AT_HOST}/instance:/app/instance
+    # volumes:
+      # bind mount in .overrides file and chain with it
+      # - ${WEB_PATH_AT_HOST}/instance:/app/instance
 
   worker:
     image: datalad-registry:dev

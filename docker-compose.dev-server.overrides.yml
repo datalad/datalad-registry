@@ -1,0 +1,4 @@
+services:
+  web:
+    volumes:
+      - ${WEB_PATH_AT_HOST}/instance:/app/instance

@@ -1,0 +1,5 @@
+services:
+  web:
+    command: [ "bash", "-c", "pip3 install -U -e . && flask init-db && flask run --host=0.0.0.0 --debug" ]
+    volumes:
+      - .:/app
