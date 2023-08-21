@@ -12,7 +12,7 @@ from datalad.support.exceptions import IncompleteResultsError
 from datalad.utils import rmtree as rm_ds_tree
 from flask import current_app
 from pydantic import StrictInt, StrictStr, parse_obj_as, validate_arguments
-from sqlalchemy import and_
+from sqlalchemy import and_, select
 from sqlalchemy.exc import NoResultFound
 
 from datalad_registry.models import RepoUrl, URLMetadata, db
@@ -317,7 +317,7 @@ def url_chk_dispatcher():
     # too many times
     valid_requested_urls: list[RepoUrl] = (
         db.session.execute(
-            db.select(RepoUrl)
+            select(RepoUrl)
             .filter(
                 and_(
                     RepoUrl.chk_req_dt.isnot(None),
