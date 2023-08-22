@@ -1,3 +1,7 @@
+#
+# Docker file for the container of the web, worker, scheduler, and monitor services
+#
+
 FROM docker.io/debian:11
 WORKDIR /app
 
