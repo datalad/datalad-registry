@@ -4,7 +4,7 @@ services:
     build:
       dockerfile: dev.Dockerfile
       ## Old docker-compose asked for context but this was still insufficient
-      ## since it could then "link" the built heere image to be used for the worker
+      ## since it could then "link" the built image here to be used for the worker
       # context: .
     image: datalad-registry:dev
     depends_on:
