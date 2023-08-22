@@ -20,7 +20,7 @@ Create virtual env with e.g.,
 
 Start the docker instances of postgres, rabbitmq, and redis:
 
-    docker-compose -f docker-compose.testing.yml --env-file template.env.testing up -d --build
+    docker-compose -f docker-compose.testing.yml --env-file template.env.testing up -d
 
 Now can run the tests after loading environment variables from the temaplte.env.testing.
 Using the next shell within to avoid polluting current environment:
