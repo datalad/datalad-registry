@@ -39,7 +39,7 @@ services:
         condition: service_healthy
     command: [
       "bash", "-c",
-      "celery -A datalad_registry.make_celery:celery_app worker --loglevel DEBUG --pool prefork"
+      "celery -A datalad_registry.make_celery:celery_app worker --loglevel INFO --pool prefork"
     ]
     volumes:
       - ${WORKER_PATH_AT_HOST}/data/cache:/data/cache
