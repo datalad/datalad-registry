@@ -39,19 +39,28 @@ Copy it to some file and modify secrets (passwords) from the default values, e.g
 
 *note*: we git ignore all `.env` files.
 
-Now we have two ways to start instance in a development mode, both of which use common `docker-compose.dev.yml` and provide two overrides files with slightly different invocations and bind mounts
-
-##### Local development mode
-
-which will run with `--debug` and also bind mount local tree so flask would react to changes:
-
-    docker compose -f docker-compose.dev.yml -f docker-compose.dev-local.overrides.yml --env-file .env.dev up -d --build
+Now we have two ways to start the services in a development mode, server based and locally based.
+Both ways use the `docker-compose.dev.yml` file, and the local development mode also uses
+the `docker-compose.dev.local.override.yml` file to achieve a bind mount to the current
+directory at the host machine as `/app` within web service container.
 
 ##### Server development mode
 
-where it will use shipping in a container codebase copy and not react to the changes, and only `/app/instance` would be bound:
+where the web service will use the copy of the codebase shipped in the docker image of Datalad-registry and not react to the changes in the codebase at the host machine:
 
-    docker compose -f docker-compose.dev.yml -f docker-compose.dev-server.overrides.yml --env-file .env.dev up -d --build
+    docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build
+
+The `instance` directory for the web service is in the directory allocated for the web service at the host machine as specified in the `.env.dev` file.
+
+##### Local development mode
+
+where the web service will use the codebase at the host machine, react to the changes in this codebase, and operate in debug mode:
+
+    docker compose -f docker-compose.dev.yml -f docker-compose.dev.local.override.yml --env-file .env.dev up -d --build
+
+The `instance` directory for the web service is in the current directory at the host machine, which is also the codebase in the host machine.
+
+*Note*: Other services will not react to the changes in the codebase at the host machine.
 
 ### OLD Development setup
 
