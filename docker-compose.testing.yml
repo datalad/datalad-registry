@@ -1,3 +1,4 @@
+version: "2.1"  # Compose file format v3 does not support health checks
 services:
   broker:
     image: docker.io/rabbitmq:3-management
