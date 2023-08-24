@@ -117,7 +117,7 @@ services:
     volumes:
       - ${BROKER_PATH_AT_HOST}/home:/var/lib/rabbitmq
     healthcheck: # https://www.rabbitmq.com/monitoring.html#health-checks
-      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      test: rabbitmq-diagnostics ping
       interval: 30s
       timeout: 30s
       retries: 3
