@@ -1,6 +1,13 @@
-version: "2.1"  # Compose file format v3 does not support health checks
+x-common-elements: &common-elements
+  userns_mode: "keep-id"  # This has an effect only after podman-compose 1.0.3 possibly
+  # See https://github.com/containers/podman-compose/issues/166
+  # for details.
+  # For podman-compose 1.0.3 or earlier, use
+  # `PODMAN_USERNS=keep-id podman-compose up`
+
 services:
   web:
+    <<: *common-elements
     build:
       dockerfile: dev.Dockerfile
       ## Old docker-compose asked for context but this was still insufficient
@@ -31,6 +38,7 @@ services:
       - ${WEB_PATH_AT_HOST}/instance:/app/instance
 
   worker:
+    <<: *common-elements
     image: datalad-registry:dev
     depends_on:
       broker:
@@ -56,6 +64,7 @@ services:
 
   # Monitor for Celery service
   monitor:
+    <<: *common-elements
     image: datalad-registry:dev
     depends_on:
       broker:
@@ -104,6 +113,7 @@ services:
   #      <<: *env
 
   broker:
+    <<: *common-elements
     image: docker.io/rabbitmq:3-management
     hostname: dlreg-broker
     environment:
@@ -112,11 +122,6 @@ services:
     ports:
       - "127.0.0.1:5672:5672"
       - "127.0.0.1:15672:15672"
-    userns_mode: "keep-id"  # This has an effect only after podman-compose 1.0.3 possibly
-      # See https://github.com/containers/podman-compose/issues/166
-      # for details.
-      # For podman-compose 1.0.3 or earlier, use
-      # `PODMAN_USERNS=keep-id podman-compose up`
     volumes:
       - ${BROKER_PATH_AT_HOST}/home:/var/lib/rabbitmq
     healthcheck: # https://www.rabbitmq.com/monitoring.html#health-checks
@@ -127,11 +132,13 @@ services:
 
   # Result backend for Celery
   backend:
+    <<: *common-elements
     image: docker.io/redis:7
     ports:
       - "127.0.0.1:6379:6379"
 
   db:
+    <<: *common-elements
     image: docker.io/postgres:latest
     environment:
       POSTGRES_DB: "${POSTGRES_DB}"
@@ -140,12 +147,6 @@ services:
       POSTGRES_INITDB_ARGS: --encoding utf8 --locale C
     ports:
       - "127.0.0.1:5432:5432"
-    userns_mode: "keep-id"  # This has an effect only after podman-compose 1.0.3 possibly
-      # See https://github.com/containers/podman-compose/issues/166
-      # for details.
-      # For podman-compose 1.0.3 or earlier, use
-      # `PODMAN_USERNS=keep-id podman-compose up`
-
     volumes:
       - ${DB_PATH_AT_HOST}/data:/var/lib/postgresql/data
     healthcheck:
