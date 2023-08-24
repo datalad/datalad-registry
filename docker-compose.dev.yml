@@ -45,7 +45,7 @@ services:
     environment:
       <<: *env
     healthcheck:
-      test: celery -A datalad_registry.make_celery:celery_app status --timeout 1 --json | grep -q pong
+      test: celery -A datalad_registry.make_celery:celery_app status --timeout 1 --json | grep pong
       interval: 30s
       timeout: 30s
       retries: 3
