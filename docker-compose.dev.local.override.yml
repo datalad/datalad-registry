@@ -1,0 +1,11 @@
+# This file is for overriding docker-compose.dev.yml for local development.
+# Particularly, it enables debug mode for the web service and mounts
+# the current directory at the host to the `/app` directory in the container.
+
+services:
+  web:
+    command: [ "bash", "-c",
+               "pip3 install -U -e . && flask init-db && flask run --host=0.0.0.0 --debug" ]
+    volumes:
+      - ./:/app
+      - ./instance:/app/instance

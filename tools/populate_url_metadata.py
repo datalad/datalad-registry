@@ -8,7 +8,7 @@
 
 import click
 
-from datalad_registry.factory import create_app
+from datalad_registry import create_app
 from datalad_registry.models import RepoUrl, db
 from datalad_registry.tasks import extract_ds_meta
 

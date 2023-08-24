@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from datalad.distribution.dataset import require_dataset
 import pytest
 
@@ -12,27 +10,28 @@ from . import TEST_MIN_REPO_COMMIT_HEXSHA, TEST_MIN_REPO_TAG
 _BASIC_EXTRACTOR = "metalad_core"
 
 
+# Use fixture `flask_app` to ensure that the Celery app is initialized,
+# and the db and the cache are clean
+@pytest.mark.usefixtures("flask_app")
 class TestExtractDsMeta:
     @pytest.mark.usefixtures("populate_db_with_unprocessed_dataset_urls")
     @pytest.mark.parametrize("url_id", [1, 7, 10])
-    def test_nonexistent_ds_url(self, url_id, flask_app):
+    def test_nonexistent_ds_url(self, url_id):
         """
         Test the case that the given RepoUrl ID argument has no corresponding
         RepoUrl in the database
         """
-        with flask_app.app_context():
-            with pytest.raises(ValueError):
-                extract_ds_meta(url_id, _BASIC_EXTRACTOR)
+        with pytest.raises(ValueError):
+            extract_ds_meta(url_id, _BASIC_EXTRACTOR)
 
     @pytest.mark.usefixtures("populate_db_with_unprocessed_dataset_urls")
     @pytest.mark.parametrize("url_id", [2, 3, 4, 5, 6])
-    def test_unprocessed_ds_url(self, url_id, flask_app):
+    def test_unprocessed_ds_url(self, url_id):
         """
         Test the case that the specified RepoUrl, by ID, has not been processed
         """
-        with flask_app.app_context():
-            with pytest.raises(ValueError):
-                extract_ds_meta(url_id, _BASIC_EXTRACTOR)
+        with pytest.raises(ValueError):
+            extract_ds_meta(url_id, _BASIC_EXTRACTOR)
 
     @pytest.mark.usefixtures("populate_db_with_unprocessed_dataset_urls")
     @pytest.mark.parametrize("url_id", [2, 3, 4, 5, 6])
@@ -46,20 +45,20 @@ class TestExtractDsMeta:
                 db.select(RepoUrl).where(RepoUrl.id == url_id)
             ).scalar_one()
             url.processed = True
+            db.session.commit()
 
-            with pytest.raises(AssertionError):
-                extract_ds_meta(url_id, _BASIC_EXTRACTOR)
+        with pytest.raises(AssertionError):
+            extract_ds_meta(url_id, _BASIC_EXTRACTOR)
 
     def test_valid_ds_url_for_metadata_extraction(self, processed_ds_urls, flask_app):
         """
         Test the case that the specified RepoUrl, by ID, is valid for metadata
         extraction
         """
+        for url_id in processed_ds_urls:
+            extract_ds_meta(url_id, _BASIC_EXTRACTOR)
 
         with flask_app.app_context():
-            for url_id in processed_ds_urls:
-                extract_ds_meta(url_id, _BASIC_EXTRACTOR)
-
             # Confirm that the dataset URLs metadata have been extracted
             for url_id in processed_ds_urls:
                 res = db.session.execute(
@@ -78,11 +77,12 @@ class TestExtractDsMeta:
 
         test_repo_url_id = processed_ds_urls[0]
 
+        assert (
+            extract_ds_meta(test_repo_url_id, _BASIC_EXTRACTOR)
+            is ExtractMetaStatus.SUCCEEDED
+        )
+
         with flask_app.app_context():
-            ret = extract_ds_meta(test_repo_url_id, _BASIC_EXTRACTOR)
-
-            assert ret == ExtractMetaStatus.SUCCEEDED
-
             url = db.session.execute(
                 db.select(RepoUrl).where(RepoUrl.id == test_repo_url_id)
             ).scalar_one()
@@ -113,10 +113,12 @@ class TestExtractDsMeta:
 
         test_repo_url_id = processed_ds_urls[0]
 
-        with flask_app.app_context():
-            ret = extract_ds_meta(test_repo_url_id, "metalad_studyminimeta")
-            assert ret == ExtractMetaStatus.ABORTED
+        assert (
+            extract_ds_meta(test_repo_url_id, "metalad_studyminimeta")
+            is ExtractMetaStatus.ABORTED
+        )
 
+        with flask_app.app_context():
             # Ensure no metadata was saved to database
             metadata = db.session.execute(db.select(URLMetadata)).all()
             assert len(metadata) == 0
@@ -130,13 +132,19 @@ class TestExtractDsMeta:
 
         test_repo_url_id = processed_ds_urls[0]
 
-        with flask_app.app_context():
-            # Extract metadata twice
-            # The second one should result in a skipped status
+        # Extract metadata twice
+        # The first one should result in a succeeded status
+        # The second one should result in a skipped status
+        assert (
             extract_ds_meta(test_repo_url_id, _BASIC_EXTRACTOR)
-            ret = extract_ds_meta(test_repo_url_id, _BASIC_EXTRACTOR)
-            assert ret == ExtractMetaStatus.SKIPPED
+            is ExtractMetaStatus.SUCCEEDED
+        )
+        assert (
+            extract_ds_meta(test_repo_url_id, _BASIC_EXTRACTOR)
+            is ExtractMetaStatus.SKIPPED
+        )
 
+        with flask_app.app_context():
             # Ensure there is only one piece of metadata saved to database
             metadata = db.session.execute(db.select(URLMetadata)).all()
             assert len(metadata) == 1
@@ -155,7 +163,7 @@ class TestExtractDsMeta:
         # Fetch test repo cache path
         with flask_app.app_context():
             test_repo_path = str(
-                Path(flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+                flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
                 / db.session.execute(
                     db.select(RepoUrl.cache_path).where(RepoUrl.id == test_repo_url_id)
                 ).scalar_one()
@@ -163,26 +171,33 @@ class TestExtractDsMeta:
 
         test_ds = require_dataset(test_repo_path, check_installed=True, purpose="test")
 
-        # Set dataset one commit before the reference tag for test
+        # Set dataset one commit before the reference tag
         test_ds.repo.call_git(["checkout", f"{TEST_MIN_REPO_TAG}^"])
 
+        # Extract metadata for the dataset at the older version
+        assert (
+            extract_ds_meta(test_repo_url_id, _BASIC_EXTRACTOR)
+            is ExtractMetaStatus.SUCCEEDED
+        )
+
         with flask_app.app_context():
-            # Extract metadata for the dataset at the older version
-            ret = extract_ds_meta(test_repo_url_id, _BASIC_EXTRACTOR)
-            assert ret == ExtractMetaStatus.SUCCEEDED
-
             # There should be only one piece of metadata saved to database
-            dated_metadata = db.session.execute(db.select(URLMetadata)).scalar_one()
+            dated_metadata_ds_version = (
+                db.session.execute(db.select(URLMetadata)).scalar_one().dataset_version
+            )
 
-            # Set dataset to the reference tag for test
-            test_ds.repo.call_git(["checkout", TEST_MIN_REPO_TAG])
+        # Set dataset to the reference tag
+        test_ds.repo.call_git(["checkout", TEST_MIN_REPO_TAG])
 
-            # Extract metadata for the dataset at the new version
-            ret = extract_ds_meta(test_repo_url_id, _BASIC_EXTRACTOR)
-            assert ret == ExtractMetaStatus.SUCCEEDED
+        # Extract metadata for the dataset at the new version
+        assert (
+            extract_ds_meta(test_repo_url_id, _BASIC_EXTRACTOR)
+            is ExtractMetaStatus.SUCCEEDED
+        )
 
+        with flask_app.app_context():
             # There should be only one piece of metadata saved to database
             current_metadata = db.session.execute(db.select(URLMetadata)).scalar_one()
 
-            assert current_metadata.dataset_version != dated_metadata.dataset_version
+            assert current_metadata.dataset_version != dated_metadata_ds_version
             assert current_metadata.dataset_version == TEST_MIN_REPO_COMMIT_HEXSHA

@@ -53,17 +53,19 @@ def is_dataset_url_unprocessed(dataset_url_id: int) -> bool:
     )
 
 
+# Use fixture `flask_app` to ensure that the Celery app is initialized,
+# and the db and the cache are clean
+@pytest.mark.usefixtures("flask_app")
 class TestProcessDatasetUrl:
     @pytest.mark.usefixtures("populate_db_with_unprocessed_dataset_urls")
     @pytest.mark.parametrize("invalid_dataset_url_id", [-100, -1, 0, 1, 7, 8, 99])
-    def test_invalid_dataset_url_id(self, invalid_dataset_url_id, flask_app):
+    def test_invalid_dataset_url_id(self, invalid_dataset_url_id):
         """
         Test the case that the given RepoUrl id is not valid, i.e. no RepoUrl
         having the given id exists in the database
         """
-        with flask_app.app_context():
-            with pytest.raises(ValueError):
-                process_dataset_url(invalid_dataset_url_id)
+        with pytest.raises(ValueError):
+            process_dataset_url(invalid_dataset_url_id)
 
     @pytest.mark.usefixtures("populate_db_with_unprocessed_dataset_urls")
     @pytest.mark.parametrize("dataset_url_id", [2, 3, 4, 5, 6])
@@ -72,13 +74,11 @@ class TestProcessDatasetUrl:
         Test the case that the given RepoUrl by id is valid, i.e. there is indeed such
         a RepoUrl with the given id in the database
         """
+        time_before_processing = datetime.now(timezone.utc)
+        process_dataset_url(dataset_url_id)
+        time_after_processing = datetime.now(timezone.utc)
+
         with flask_app.app_context():
-            time_before_processing = datetime.now(timezone.utc)
-
-            process_dataset_url(dataset_url_id)
-
-            time_after_processing = datetime.now(timezone.utc)
-
             # Retrieve the RepoUrl after processing
             dataset_url: Optional[RepoUrl] = db.session.execute(
                 db.select(RepoUrl).filter_by(id=dataset_url_id)
@@ -107,17 +107,17 @@ class TestProcessDatasetUrl:
 
         monkeypatch.setattr(datalad_registry_tasks, "clone", mock_clone)
 
-        with flask_app.app_context():
-            with pytest.raises(RuntimeError):
-                process_dataset_url(dataset_url_id)
+        with pytest.raises(RuntimeError):
+            process_dataset_url(dataset_url_id)
 
+        with flask_app.app_context():
             # Check that the RepoUrl not been modified in the database
             assert is_dataset_url_unprocessed(dataset_url_id)
 
             # Ensure that there shouldn't be any file in the base cache directory
             # as result of the failed processing
             assert not is_there_file_in_tree(
-                Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+                current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
             )
 
     @pytest.mark.usefixtures("populate_db_with_unprocessed_dataset_urls")
@@ -139,17 +139,17 @@ class TestProcessDatasetUrl:
             tasks, "_update_dataset_url_info", mock_update_dataset_url_info
         )
 
-        with flask_app.app_context():
-            with pytest.raises(RuntimeError):
-                process_dataset_url(dataset_url_id)
+        with pytest.raises(RuntimeError):
+            process_dataset_url(dataset_url_id)
 
+        with flask_app.app_context():
             # Check that the RepoUrl not been modified in the database
             assert is_dataset_url_unprocessed(dataset_url_id)
 
             # Ensure that there shouldn't be any file in the base cache directory
             # as result of the failed processing
             assert not is_there_file_in_tree(
-                Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+                current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
             )
 
     @pytest.mark.usefixtures("populate_db_with_unprocessed_dataset_urls")
@@ -161,21 +161,31 @@ class TestProcessDatasetUrl:
         url_id = 5  # RepoUrl ID of the `two_files_ds_annex` dataset
 
         with flask_app.app_context():
-            base_cache_path = Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+            base_cache_path = current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
 
+        def get_cache_path():
+            with flask_app.app_context():
+                _dataset_url: Optional[RepoUrl] = db.session.execute(
+                    db.select(RepoUrl).filter_by(id=url_id)
+                ).scalar()
+
+                return base_cache_path / Path(_dataset_url.cache_path)
+
+        ds_cache_paths: list[Path] = []
+        for _ in range(3):
+            process_dataset_url(url_id)
+            ds_cache_paths.append(get_cache_path())
+
+        # Verify that only the cache directory created
+        # by the last processing remains
+        assert not ds_cache_paths[0].is_dir()
+        assert not ds_cache_paths[1].is_dir()
+        assert ds_cache_paths[2].is_dir()
+
+        # Verified that the dataset URL has been processed
+        with flask_app.app_context():
             dataset_url: Optional[RepoUrl] = db.session.execute(
                 db.select(RepoUrl).filter_by(id=url_id)
             ).scalar()
-
-            ds_cache_paths: list[Path] = []
-            for _ in range(3):
-                process_dataset_url(url_id)
-                ds_cache_paths.append(base_cache_path / Path(dataset_url.cache_path))
-
-            # Verify that only the cache directory created
-            # by the last processing remains
-            assert not ds_cache_paths[0].is_dir()
-            assert not ds_cache_paths[1].is_dir()
-            assert ds_cache_paths[2].is_dir()
 
             assert dataset_url.processed

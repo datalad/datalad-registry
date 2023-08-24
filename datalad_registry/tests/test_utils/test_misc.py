@@ -54,9 +54,9 @@ class TestAllocateDsPath:
 
         with flask_app.app_context():
             # Create a directory with the same name as the one that would be generated
-            (
-                Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]) / ref_path
-            ).mkdir(parents=True, exist_ok=False)
+            (current_app.config["DATALAD_REGISTRY_DATASET_CACHE"] / ref_path).mkdir(
+                parents=True, exist_ok=False
+            )
 
             from datalad_registry.utils import misc
 

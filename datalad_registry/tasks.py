@@ -2,9 +2,9 @@ from datetime import datetime, timezone
 from enum import auto
 import json
 import logging
-from pathlib import Path
 from typing import Optional
 
+from celery import shared_task
 from datalad import api as dl
 from datalad.api import Dataset
 from datalad.distribution.dataset import require_dataset
@@ -14,7 +14,6 @@ from flask import current_app
 from pydantic import StrictInt, StrictStr, parse_obj_as, validate_arguments
 from sqlalchemy.exc import NoResultFound
 
-from datalad_registry import celery
 from datalad_registry.models import RepoUrl, URLMetadata, db
 from datalad_registry.utils import StrEnum, allocate_ds_path
 from datalad_registry.utils.datalad_tls import (
@@ -89,7 +88,7 @@ _EXTRACTOR_REQUIRED_FILES = {
 }
 
 
-@celery.task
+@shared_task
 def log_error(request, exc, traceback) -> None:
     """
     An error handler for logging errors in tasks
@@ -101,7 +100,7 @@ def log_error(request, exc, traceback) -> None:
 
 
 # `acks_late` is set. Make sure this task is always idempotent
-@celery.task(acks_late=True)
+@shared_task(acks_late=True)
 @validate_arguments
 def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaStatus:
     """
@@ -142,7 +141,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
 
     # Absolute path of the dataset clone in cache
     cache_path_abs = (
-        Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]) / url.cache_path
+        current_app.config["DATALAD_REGISTRY_DATASET_CACHE"] / url.cache_path
     )
 
     # Check for missing of required files
@@ -223,7 +222,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
         )
 
 
-@celery.task(
+@shared_task(
     acks_late=True,  # `acks_late` is set. Make sure this task is always idempotent
     autoretry_for=(IncompleteResultsError,),
     max_retries=4,
@@ -258,7 +257,7 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
         # Error out when no RepoUrl in the database with the specified ID
         raise ValueError(f"RepoUrl with ID {dataset_url_id} does not exist")
 
-    base_cache_path = Path(current_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+    base_cache_path = current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
 
     old_cache_path_relative = dataset_url.cache_path
 

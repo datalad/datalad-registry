@@ -6,7 +6,63 @@ DataLad registry -- work in progress
 
 ---
 
-### Development setup
+### NEW Development setup
+
+#### To run tests
+
+On Debian systems install necessary for Python PostgreSQL libs dependencies:
+
+    apt-get install postgresql-common libpq-dev
+
+Create virtual env with e.g.,
+
+    py=3; d=venvs/dev$py; python$py -m venv $d && source $d/bin/activate && python3 -m pip install -e .[tests]
+
+Start the docker instances of postgres, rabbitmq, and redis:
+
+    docker-compose -f docker-compose.testing.yml --env-file template.env.testing up -d
+
+Now can run the tests after loading environment variables from the temaplte.env.testing.
+Using the next shell within to avoid polluting current environment:
+
+    ( set -a && source template.env.testing && set -a && python -m pytest -s -v  )
+
+In the future - above logic would migrate into the session-scoped pytest fixture, [issue #224](https://github.com/datalad/datalad-registry/issues/224).
+
+#### To develop
+
+The template file `template.env.dev` provides all environment variables with some default values.
+Copy it to some file and modify secrets (passwords) from the default values, e.g.
+
+    cp template.env.dev .env.dev
+    sed -e 's,pass$,secret123t,g' -i .env.dev
+
+*note*: we git ignore all `.env` files.
+
+Now we have two ways to start the services in a development mode, server based and locally based.
+Both ways use the `docker-compose.dev.yml` file, and the local development mode also uses
+the `docker-compose.dev.local.override.yml` file to achieve a bind mount to the current
+directory at the host machine as `/app` within web service container.
+
+##### Server development mode
+
+where the web service will use the copy of the codebase shipped in the docker image of Datalad-registry and not react to the changes in the codebase at the host machine:
+
+    docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build
+
+The `instance` directory for the web service is in the directory allocated for the web service at the host machine as specified in the `.env.dev` file.
+
+##### Local development mode
+
+where the web service will use the codebase at the host machine, react to the changes in this codebase, and operate in debug mode:
+
+    docker compose -f docker-compose.dev.yml -f docker-compose.dev.local.override.yml --env-file .env.dev up -d --build
+
+The `instance` directory for the web service is in the current directory at the host machine, which is also the codebase in the host machine.
+
+*Note*: Other services will not react to the changes in the codebase at the host machine.
+
+### OLD Development setup
 
 Here are steps for setting up a development environment either 1)
 using a virtual environment for everything but the Celery broker, or 2)

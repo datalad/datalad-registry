@@ -83,12 +83,11 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
         # Initiate celery tasks to process the RepoUrl
         # and extract metadata from the corresponding dataset
         url_processing = process_dataset_url.signature(
-            (repo_url.id,), ignore_result=True, link_error=log_error.s()
+            (repo_url.id,), link_error=log_error.s()
         )
         meta_extractions = [
             extract_ds_meta.signature(
                 (repo_url.id, extractor),
-                ignore_result=True,
                 immutable=True,
                 link_error=log_error.s(),
             )

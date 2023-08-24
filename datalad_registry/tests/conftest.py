@@ -1,47 +1,42 @@
 from datetime import datetime
-import os
-from pathlib import Path
 
 from datalad import api as dl
 from datalad.api import Dataset
 from datalad.utils import rmtree as rm_ds_tree
 import pytest
 from pytest import TempPathFactory
-from sqlalchemy import URL
 
-from datalad_registry.factory import create_app
+from datalad_registry import create_app
 
 # noinspection PyPep8Naming
 from datalad_registry.models import RepoUrl, URLMetadata, db
 
 
 @pytest.fixture(scope="session")
-def _flask_app(tmp_path_factory):
+def set_test_env(tmp_path_factory):
+    """
+    Set up the test environment variables
+    """
+    instance_path = tmp_path_factory.mktemp("instance")
+    cache_path = tmp_path_factory.mktemp("cache")
+
+    with pytest.MonkeyPatch.context() as m:
+        m.setenv("DATALAD_REGISTRY_OPERATION_MODE", "TESTING")
+        m.setenv("DATALAD_REGISTRY_INSTANCE_PATH", str(instance_path))
+        m.setenv("DATALAD_REGISTRY_DATASET_CACHE", str(cache_path))
+
+        yield
+
+
+@pytest.fixture(scope="session")
+def _flask_app(set_test_env):  # noqa: U100 (Unused argument)
     """
     The fixture of the datalad registry flask app that exists throughout a test session.
 
     Note: This fixture should only be used by `flask_app` fixture directly.
     """
 
-    instance_path = tmp_path_factory.mktemp("instance")
-    cache_path = tmp_path_factory.mktemp("cache")
-
-    test_config = {
-        "DATALAD_REGISTRY_INSTANCE_PATH": str(instance_path),
-        "DATALAD_REGISTRY_DATASET_CACHE": str(cache_path),
-        "SQLALCHEMY_DATABASE_URI": URL.create(
-            drivername="postgresql",
-            host="127.0.0.1",
-            port=5432,
-            database="dlreg",
-            username="dlreg",
-            password=os.environ["DATALAD_REGISTRY_PASSWORD"],
-        ),
-        "TESTING": True,
-    }
-
-    app = create_app(test_config)
-
+    app = create_app()
     return app
 
 
@@ -58,7 +53,7 @@ def flask_app(_flask_app):
         db.create_all()
 
     # Reset the base local cache for datasets
-    cache_path = Path(_flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"])
+    cache_path = _flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
     rm_ds_tree(cache_path)
     cache_path.mkdir()
 

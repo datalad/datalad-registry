@@ -1,15 +1,20 @@
-*.egg-info
-*.pid
-*.pyc
+.env.*
 .coverage*
 .dir-locals.el
 .flake8
 .mypy_cache/
 .tox/
+.idea/
+.python-version
+*.egg-info
+*.pid
+*.pyc
+*.swp
 build/
 dist/
 htmlcov/
 instance/
-.idea/
-.python-version
-*.swp
+# default location for underlying services and web instance
+services/
+# virtual environments of yarik
+venvs/
