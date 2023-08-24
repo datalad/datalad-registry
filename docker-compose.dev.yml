@@ -49,9 +49,9 @@ services:
         "CMD", "bash", "-c",
         "celery -A datalad_registry.make_celery:celery_app status --timeout 1 --json | grep -q pong"
       ]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+      interval: 30s
+      timeout: 30s
+      retries: 3
 
   # Monitor for Celery service
   monitor:
@@ -80,7 +80,7 @@ services:
         "RESPONSE=$$(curl -s http://localhost:5555/healthcheck); if [ \"$$RESPONSE\" = \"OK\" ]; then exit 0; else exit 1; fi"
       ]
       interval: 30s
-      timeout: 10s
+      timeout: 30s
       retries: 3
 
   # TODO: Currently, there is no job to be scheduled.
