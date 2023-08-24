@@ -74,10 +74,7 @@ services:
     volumes:
       - ${MONITOR_PATH_AT_HOST}/data:/data
     healthcheck:
-      test: [
-        "CMD", "bash", "-c",
-        "RESPONSE=$$(curl -s http://localhost:5555/healthcheck); if [ \"$$RESPONSE\" = \"OK\" ]; then exit 0; else exit 1; fi"
-      ]
+      test: RESPONSE=$$(curl -s http://localhost:5555/healthcheck); if [ $$RESPONSE = OK ]; then exit 0; else exit 1; fi
       interval: 30s
       timeout: 30s
       retries: 3
