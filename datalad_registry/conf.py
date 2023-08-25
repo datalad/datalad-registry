@@ -42,6 +42,8 @@ class BaseConfig(OperationConfig):
             broker_url=self.CELERY_BROKER_URL,
             result_backend=self.CELERY_RESULT_BACKEND,
             task_ignore_result=True,
+            worker_max_tasks_per_child=1000,
+            worker_max_memory_per_child=1000 * 500,  # 500 MB
         )
 
     # =============================================

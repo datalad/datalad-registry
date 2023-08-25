@@ -74,6 +74,8 @@ class TestCreateApp:
             "broker_url": broker_url,
             "result_backend": result_backend,
             "task_ignore_result": True,
+            "worker_max_tasks_per_child": 1000,
+            "worker_max_memory_per_child": 500_000,  # 500 MB
         }
         assert (
             flask_app.config["SQLALCHEMY_DATABASE_URI"]
