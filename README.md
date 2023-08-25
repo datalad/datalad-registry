@@ -25,7 +25,7 @@ Start the docker instances of postgres, rabbitmq, and redis:
 Now can run the tests after loading environment variables from the temaplte.env.testing.
 Using the next shell within to avoid polluting current environment:
 
-    ( set -a && source template.env.testing && set -a && python -m pytest -s -v  )
+    ( set -a && source template.env.testing && set +a && python -m pytest -s -v  )
 
 In the future - above logic would migrate into the session-scoped pytest fixture, [issue #224](https://github.com/datalad/datalad-registry/issues/224).
 
