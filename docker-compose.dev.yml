@@ -1,8 +1,10 @@
-version: "2.1"  # Compose file format v3 does not support health checks
 services:
   web:
     build:
       dockerfile: dev.Dockerfile
+      ## Old docker-compose asked for context but this was still insufficient
+      ## since it could then "link" the built image here to be used for the worker
+      # context: .
     image: datalad-registry:dev
     depends_on:
       broker:
@@ -36,20 +38,18 @@ services:
         condition: service_healthy
     command: [
       "bash", "-c",
-      "celery -A datalad_registry.make_celery:celery_app worker --loglevel DEBUG --pool prefork"
+      "celery -A datalad_registry.make_celery:celery_app worker --loglevel INFO --pool prefork"
     ]
     volumes:
       - ${WORKER_PATH_AT_HOST}/data/cache:/data/cache
     environment:
       <<: *env
     healthcheck:
-      test: [
-        "CMD", "bash", "-c",
-        "celery -A datalad_registry.make_celery:celery_app status --timeout 1 --json | grep -q pong"
-      ]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+      test: celery -A datalad_registry.make_celery:celery_app status --timeout 1 --json | grep pong
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 3m
 
   scheduler:
     image: datalad-registry:dev
@@ -97,13 +97,11 @@ services:
     volumes:
       - ${MONITOR_PATH_AT_HOST}/data:/data
     healthcheck:
-      test: [
-        "CMD", "bash", "-c",
-        "RESPONSE=$$(curl -s http://localhost:5555/healthcheck); if [ \"$$RESPONSE\" = \"OK\" ]; then exit 0; else exit 1; fi"
-      ]
+      test: RESPONSE=$$(curl -s http://localhost:5555/healthcheck); echo $$RESPONSE; if [ "$$RESPONSE" = "OK" ]; then exit 0; else exit 1; fi
       interval: 30s
-      timeout: 10s
+      timeout: 30s
       retries: 3
+      start_period: 3m
 
   broker:
     image: docker.io/rabbitmq:3-management
@@ -114,13 +112,19 @@ services:
     ports:
       - "127.0.0.1:5672:5672"
       - "127.0.0.1:15672:15672"
+    userns_mode: "keep-id"  # This has an effect only after podman-compose 1.0.3 possibly
+      # See https://github.com/containers/podman-compose/issues/166
+      # for details.
+      # For podman-compose 1.0.3 or earlier, use
+      # `PODMAN_USERNS=keep-id podman-compose up`
     volumes:
       - ${BROKER_PATH_AT_HOST}/home:/var/lib/rabbitmq
     healthcheck: # https://www.rabbitmq.com/monitoring.html#health-checks
-      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      test: rabbitmq-diagnostics ping
       interval: 30s
       timeout: 30s
       retries: 3
+      start_period: 1m
 
   # Result backend for Celery
   backend:
@@ -146,7 +150,8 @@ services:
     volumes:
       - ${DB_PATH_AT_HOST}/data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}", "-q" ]
+      test: pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
       interval: 30s
       timeout: 30s
       retries: 3
+      start_period: 1m
