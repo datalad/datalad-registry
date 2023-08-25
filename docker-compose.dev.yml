@@ -45,13 +45,12 @@ services:
     environment:
       <<: *env
     healthcheck:
-      test: [
-        "CMD", "bash", "-c",
-        "celery -A datalad_registry.make_celery:celery_app status --timeout 1 --json | grep -q pong"
-      ]
+      test: celery -A datalad_registry.make_celery:celery_app status --timeout 1 --json | grep pong
       interval: 30s
       timeout: 30s
       retries: 3
+      start_period: 3m
+      start_interval: 5s
 
   # Monitor for Celery service
   monitor:
@@ -75,13 +74,12 @@ services:
     volumes:
       - ${MONITOR_PATH_AT_HOST}/data:/data
     healthcheck:
-      test: [
-        "CMD", "bash", "-c",
-        "RESPONSE=$$(curl -s http://localhost:5555/healthcheck); if [ \"$$RESPONSE\" = \"OK\" ]; then exit 0; else exit 1; fi"
-      ]
+      test: RESPONSE=$$(curl -s http://localhost:5555/healthcheck); echo $$RESPONSE; if [ "$$RESPONSE" = "OK" ]; then exit 0; else exit 1; fi
       interval: 30s
       timeout: 30s
       retries: 3
+      start_period: 3m
+      start_interval: 5s
 
   # TODO: Currently, there is no job to be scheduled.
   #   Disable this to make debugging easier.
@@ -119,10 +117,12 @@ services:
     volumes:
       - ${BROKER_PATH_AT_HOST}/home:/var/lib/rabbitmq
     healthcheck: # https://www.rabbitmq.com/monitoring.html#health-checks
-      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      test: rabbitmq-diagnostics ping
       interval: 30s
       timeout: 30s
       retries: 3
+      start_period: 1m
+      start_interval: 5s
 
   # Result backend for Celery
   backend:
@@ -148,7 +148,9 @@ services:
     volumes:
       - ${DB_PATH_AT_HOST}/data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}", "-q" ]
+      test: pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
       interval: 30s
       timeout: 30s
       retries: 3
+      start_period: 1m
+      start_interval: 5s
