@@ -55,6 +55,8 @@ class BaseConfig(OperationConfig):
             result_backend=self.CELERY_RESULT_BACKEND,
             beat_schedule=self.CELERY_BEAT_SCHEDULE,
             task_ignore_result=True,
+            worker_max_tasks_per_child=1000,
+            worker_max_memory_per_child=1000 * 500,  # 500 MB
         )
 
     # =============================================
