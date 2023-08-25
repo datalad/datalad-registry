@@ -71,9 +71,10 @@ services:
         "CMD", "bash", "-c",
         "celery -A datalad_registry.make_celery:celery_app status --timeout 1 --json | grep -q pong"
       ]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 3m
 
   # Monitor for Celery service
   monitor:
