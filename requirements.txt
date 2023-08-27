@@ -11,4 +11,4 @@ Flask-Migrate==4.0.4
 yarl==1.9.2
 datalad-catalog==0.2.1
 datalad_neuroimaging==0.3.3
-flower==2.0.0
+flower==2.0.1
