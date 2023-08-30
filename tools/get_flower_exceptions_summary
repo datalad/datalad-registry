@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+import requests
+import os
+from collections import defaultdict
+
+# TODO: add an option to provide starting date
+# TODO: do clever check that for that  args  there is no succesfull one after that point
+
+# Make the GET request
+response = requests.get(f"http://{os.environ['FLOWER_BASIC_AUTH']}@localhost:5555/api/tasks?state=FAILURE")
+response.raise_for_status()
+data = response.json()
+
+# Group by the "exception" value and collect "args"
+exception_groups = defaultdict(list)
+for key, record in data.items():
+    exception = record.get("exception", None)
+    args = record.get("args", None)
+    if exception and args:
+        exception_groups[exception].append(args)
+
+# Display the results
+for exception, args_list in sorted(exception_groups.items(), key=lambda x: len(x[1]), reverse=True):
+    print(f"Exception: {exception}")
+    print(f"Args:")
+    for args in args_list:
+        print(f"  - {args}")
+    print()
