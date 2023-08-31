@@ -1,3 +1,4 @@
+from collections.abc import Iterable, Iterator
 from datetime import datetime, timedelta, timezone
 from enum import auto
 import json
@@ -308,6 +309,11 @@ def url_chk_dispatcher():
     A task intended to be run periodically by Celery Beat to initiate
     checking of dataset urls for potential update
     """
+
+    def iter_url_ids(urls: Iterable[RepoUrl]) -> Iterator[int]:
+        for url_ in urls:
+            yield url_.id
+
     max_failures = current_app.config["DATALAD_REGISTRY_MAX_FAILED_CHKS_PER_URL"]
     min_chk_interval = timedelta(
         seconds=current_app.config["DATALAD_REGISTRY_MIN_CHK_INTERVAL_PER_URL"]
@@ -330,47 +336,40 @@ def url_chk_dispatcher():
         .all()
     )
 
-    # Split the valid requested urls into two groups based on whether they have been
-    # checked before
+    datetime_now = datetime.now(timezone.utc)
+
+    # From the list of valid requested urls, collect two lists of urls that
+    # are to be checked potentially
     yet_to_be_chked_valid_requested_urls = []
-    chked_valid_requested_urls = []
+    old_enough_chked_valid_requested_urls = []
     for url in valid_requested_urls:
         if url.last_chk_dt is None or url.last_chk_dt < url.chk_req_dt:
             yet_to_be_chked_valid_requested_urls.append(url)
-        else:
-            chked_valid_requested_urls.append(url)
+        elif datetime_now - url.last_chk_dt >= min_chk_interval:
+            old_enough_chked_valid_requested_urls.append(url)
 
     if yet_to_be_chked_valid_requested_urls:
-        urls_to_chk = yet_to_be_chked_valid_requested_urls
+        # conditions met by each url in this list:
+        # 1. `chk_req_dt` is not `None`
+        # 2. `n_failed_chks` <= `max_failures`
+        # 3. `last_chk_dt` is `None` or < `chk_req_dt`
+        for id_ in iter_url_ids(yet_to_be_chked_valid_requested_urls):
+            chk_url.delay(id_, True)
+
+    elif old_enough_chked_valid_requested_urls:
+        # conditions met by each url in this list:
+        # 1. `chk_req_dt` is not `None`
+        # 2. `n_failed_chks` <= `max_failures`
+        # 3. `last_chk_dt` is not `None` and >= `chk_req_dt`
+        # 4. `last_chk_dt` is old enough for a new check
+        for id_ in iter_url_ids(old_enough_chked_valid_requested_urls):
+            chk_url.delay(id_, True)
+
     else:
-        urls_to_chk = [
-            url
-            for url in chked_valid_requested_urls
-            if datetime.now(timezone.utc) - url.last_chk_dt >= min_chk_interval
-        ]
-
-    if len(urls_to_chk) > 0:
-        datetime_now = datetime.now(timezone.utc)
-
-        urls_to_chk_ids: list[int] = []
-        for url in urls_to_chk:
-            urls_to_chk_ids.append(url.id)
-            url.last_chk_dt = datetime_now  # Update check time
-
-        db.session.commit()
-
-        # Initiate the checking of the urls
-        for url_id in urls_to_chk_ids:
-            chk_url.delay(url_id)
-
-        return
-
-    # if there is no idle worker processes without any impending tasks to be executed
-    #   # return
-
-    # Fetch all dataset urls that have not been checked for a long time
-    # and met the minimum check interval requirement
-    #   # Initiate the checking of those urls
+        # Fetch all dataset urls that have not been checked for a long time
+        # and met the minimum check interval requirement
+        #   # Initiate the checking of those urls
+        pass
 
 
 @shared_task(rate_limit="10/m")  # todo: add a time limit here
