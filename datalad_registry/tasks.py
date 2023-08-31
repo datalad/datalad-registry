@@ -314,7 +314,7 @@ def url_chk_dispatcher():
         for url_ in urls:
             yield url_.id
 
-    max_failures = current_app.config["DATALAD_REGISTRY_MAX_FAILED_CHKS_PER_URL"]
+    max_failed_chks = current_app.config["DATALAD_REGISTRY_MAX_FAILED_CHKS_PER_URL"]
     min_chk_interval = timedelta(
         seconds=current_app.config["DATALAD_REGISTRY_MIN_CHK_INTERVAL_PER_URL"]
     )
@@ -327,7 +327,7 @@ def url_chk_dispatcher():
             .filter(
                 and_(
                     RepoUrl.chk_req_dt.isnot(None),
-                    RepoUrl.n_failed_chks <= max_failures,
+                    RepoUrl.n_failed_chks <= max_failed_chks,
                 )
             )
             .order_by(RepoUrl.chk_req_dt.asc())
@@ -351,7 +351,7 @@ def url_chk_dispatcher():
     if yet_to_be_chked_valid_requested_urls:
         # conditions met by each url in this list:
         # 1. `chk_req_dt` is not `None`
-        # 2. `n_failed_chks` <= `max_failures`
+        # 2. `n_failed_chks` <= `max_failed_chks`
         # 3. `last_chk_dt` is `None` or < `chk_req_dt`
         for id_ in iter_url_ids(yet_to_be_chked_valid_requested_urls):
             chk_url.delay(id_, True)
@@ -359,7 +359,7 @@ def url_chk_dispatcher():
     elif old_enough_chked_valid_requested_urls:
         # conditions met by each url in this list:
         # 1. `chk_req_dt` is not `None`
-        # 2. `n_failed_chks` <= `max_failures`
+        # 2. `n_failed_chks` <= `max_failed_chks`
         # 3. `last_chk_dt` is not `None` and >= `chk_req_dt`
         # 4. `last_chk_dt` is old enough for a new check
         for id_ in iter_url_ids(old_enough_chked_valid_requested_urls):
