@@ -319,8 +319,8 @@ def url_chk_dispatcher():
         seconds=current_app.config["DATALAD_REGISTRY_MIN_CHK_INTERVAL_PER_URL"]
     )
 
-    # Fetch and lock all dataset urls requested to be checked for which checking has not
-    # failed too many times that are not currently locked by another transaction
+    # Select and lock all dataset urls requested to be checked for which checking has
+    # not failed too many times that are not currently locked by another transaction
     valid_requested_urls: list[RepoUrl] = (
         db.session.execute(
             select(RepoUrl)
