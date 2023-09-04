@@ -371,6 +371,10 @@ def url_chk_dispatcher():
         # and met the minimum check interval requirement
         #   # Initiate the checking of those urls
         pass
+        # the urls must be processed and not failed too many times
+        # if url.last_chk_dt is not None it should be used for comparison
+        # else: url.last_update_dt should be used for comparison
+        # filter out the ones that are not old enough for a new check
 
 
 @shared_task(rate_limit="10/m")  # todo: add a time limit here
