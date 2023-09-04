@@ -310,14 +310,23 @@ def url_chk_dispatcher():
     checking of dataset urls for potential update
     """
 
-    def iter_url_ids(urls: Iterable[RepoUrl]) -> Iterator[int]:
-        for url_ in urls:
+    def iter_url_ids(urls: Iterable[RepoUrl], limit: int) -> Iterator[int]:
+        if limit < 0:
+            raise ValueError("`limit` must be non-negative")
+
+        for i, url_ in enumerate(urls):
+            if i >= limit:
+                break
             yield url_.id
 
     max_failed_chks = current_app.config["DATALAD_REGISTRY_MAX_FAILED_CHKS_PER_URL"]
     min_chk_interval = timedelta(
         seconds=current_app.config["DATALAD_REGISTRY_MIN_CHK_INTERVAL_PER_URL"]
     )
+    # todo: make this configurable
+    #   This is determined by the `rate_limit` of the `chk_url` task and how frequently
+    #   the `url_chk_dispatcher` task is run
+    max_chks_to_dispatch = 10
 
     # Select and lock all dataset urls requested to be checked for which checking has
     # not failed too many times that are not currently locked by another transaction
@@ -354,7 +363,9 @@ def url_chk_dispatcher():
         # 1. `chk_req_dt` is not `None`
         # 2. `n_failed_chks` <= `max_failed_chks`
         # 3. `last_chk_dt` is `None` or < `chk_req_dt`
-        for id_ in iter_url_ids(yet_to_be_chked_valid_requested_urls):
+        for id_ in iter_url_ids(
+            yet_to_be_chked_valid_requested_urls, max_chks_to_dispatch
+        ):
             chk_url.delay(id_, True)
 
     elif old_enough_chked_valid_requested_urls:
@@ -363,7 +374,9 @@ def url_chk_dispatcher():
         # 2. `n_failed_chks` <= `max_failed_chks`
         # 3. `last_chk_dt` is not `None` and >= `chk_req_dt`
         # 4. `last_chk_dt` is old enough for a new check
-        for id_ in iter_url_ids(old_enough_chked_valid_requested_urls):
+        for id_ in iter_url_ids(
+            old_enough_chked_valid_requested_urls, max_chks_to_dispatch
+        ):
             chk_url.delay(id_, True)
 
     else:
