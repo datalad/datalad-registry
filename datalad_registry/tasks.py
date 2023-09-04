@@ -303,21 +303,31 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
             rm_ds_tree(base_cache_path / old_cache_path_relative)
 
 
+def _iter_url_ids(urls: Iterable[RepoUrl], limit: int) -> Iterator[int]:
+    """
+    Iterate over a given iterable of RepoUrl objects up to a given limit of iterations
+    and yield the id of the RepoUrl object in each iteration
+
+    :param urls: The iterable of RepoUrl objects
+    :param limit: The limit of iterations
+    :yield: The id of the RepoUrl object in each iteration
+    :raise: ValueError if the given limit is negative
+    """
+    if limit < 0:
+        raise ValueError("`limit` must be non-negative")
+
+    for i, url_ in enumerate(urls):
+        if i >= limit:
+            break
+        yield url_.id
+
+
 @shared_task
 def url_chk_dispatcher():
     """
     A task intended to be run periodically by Celery Beat to initiate
     checking of dataset urls for potential update
     """
-
-    def iter_url_ids(urls: Iterable[RepoUrl], limit: int) -> Iterator[int]:
-        if limit < 0:
-            raise ValueError("`limit` must be non-negative")
-
-        for i, url_ in enumerate(urls):
-            if i >= limit:
-                break
-            yield url_.id
 
     max_failed_chks = current_app.config["DATALAD_REGISTRY_MAX_FAILED_CHKS_PER_URL"]
     min_chk_interval = timedelta(
@@ -363,7 +373,7 @@ def url_chk_dispatcher():
         # 1. `chk_req_dt` is not `None`
         # 2. `n_failed_chks` <= `max_failed_chks`
         # 3. `last_chk_dt` is `None` or < `chk_req_dt`
-        for id_ in iter_url_ids(
+        for id_ in _iter_url_ids(
             yet_to_be_chked_valid_requested_urls, max_chks_to_dispatch
         ):
             chk_url.delay(id_, True)
@@ -374,7 +384,7 @@ def url_chk_dispatcher():
         # 2. `n_failed_chks` <= `max_failed_chks`
         # 3. `last_chk_dt` is not `None` and >= `chk_req_dt`
         # 4. `last_chk_dt` is old enough for a new check
-        for id_ in iter_url_ids(
+        for id_ in _iter_url_ids(
             old_enough_chked_valid_requested_urls, max_chks_to_dispatch
         ):
             chk_url.delay(id_, True)
