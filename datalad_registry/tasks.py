@@ -328,7 +328,7 @@ def url_chk_dispatcher():
             select(RepoUrl)
             .filter(
                 and_(
-                    RepoUrl.chk_req_dt.isnot(None),
+                    RepoUrl.chk_req_dt.is_not(None),
                     RepoUrl.n_failed_chks <= max_failed_chks,
                     or_(
                         # The ones that have not been checked since the request
@@ -362,7 +362,7 @@ def url_chk_dispatcher():
                         RepoUrl.n_failed_chks <= max_failed_chks,
                         or_(
                             and_(
-                                RepoUrl.last_chk_dt.isnot(None),
+                                RepoUrl.last_chk_dt.is_not(None),
                                 RepoUrl.last_chk_dt <= age_cutoff,
                             ),
                             and_(
@@ -375,7 +375,7 @@ def url_chk_dispatcher():
                 .with_for_update(skip_locked=True)
                 .order_by(
                     case(
-                        (RepoUrl.last_chk_dt.isnot(None), RepoUrl.last_chk_dt),
+                        (RepoUrl.last_chk_dt.is_not(None), RepoUrl.last_chk_dt),
                         else_=RepoUrl.last_update_dt,
                     )
                 )
