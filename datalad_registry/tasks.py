@@ -13,7 +13,7 @@ from datalad.support.exceptions import IncompleteResultsError
 from datalad.utils import rmtree as rm_ds_tree
 from flask import current_app
 from pydantic import StrictBool, StrictInt, StrictStr, parse_obj_as, validate_arguments
-from sqlalchemy import and_, select
+from sqlalchemy import and_, case, or_, select
 from sqlalchemy.exc import NoResultFound
 
 from datalad_registry.models import RepoUrl, URLMetadata, db
@@ -390,9 +390,47 @@ def url_chk_dispatcher():
             chk_url.delay(id_, True)
 
     else:
-        # Fetch all dataset urls that have not been checked for a long time
-        # and met the minimum check interval requirement
-        #   # Initiate the checking of those urls
+        # Select and lock all dataset urls that:
+        #   * have not been requested to be checked
+        #   * have not been checked for a long time
+        #   * meet the minimum check interval requirement
+        #   * have not failed too many times
+        #   * are not currently locked by another transaction
+        age_cutoff = datetime.now(timezone.utc) - min_chk_interval
+        dated_urls_ = (  # noqa: F841
+            db.session.execute(
+                select(RepoUrl)
+                .filter(
+                    and_(
+                        RepoUrl.processed,
+                        RepoUrl.chk_req_dt.is_(None),
+                        RepoUrl.n_failed_chks <= max_failed_chks,
+                        or_(
+                            and_(
+                                RepoUrl.last_chk_dt.isnot(None),
+                                RepoUrl.last_chk_dt <= age_cutoff,
+                            ),
+                            and_(
+                                RepoUrl.last_chk_dt(None),
+                                RepoUrl.last_update_dt <= age_cutoff,
+                            ),
+                        ),
+                    )
+                )
+                .with_for_update(skip_locked=True)
+                .order_by(
+                    case(
+                        (RepoUrl.last_chk_dt.isnot(None), RepoUrl.last_chk_dt),
+                        else_=RepoUrl.last_update_dt,
+                    )
+                )
+                .limit(max_chks_to_dispatch)
+            )
+            .scalars()
+            .all()
+        )
+
+        #    Initiate the checking of those urls
         pass
         # the urls must be processed and not failed too many times
         # if url.last_chk_dt is not None it should be used for comparison
