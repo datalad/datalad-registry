@@ -303,7 +303,7 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
             rm_ds_tree(base_cache_path / old_cache_path_relative)
 
 
-def _iter_url_ids(urls: Iterable[RepoUrl], limit: int) -> Iterator[int]:
+def _iter_url_ids(urls: Iterable[RepoUrl], limit: Optional[int]) -> Iterator[int]:
     """
     Iterate over a given iterable of RepoUrl objects up to a given limit of iterations
     and yield the id of the RepoUrl object in each iteration
@@ -313,11 +313,11 @@ def _iter_url_ids(urls: Iterable[RepoUrl], limit: int) -> Iterator[int]:
     :yield: The id of the RepoUrl object in each iteration
     :raise: ValueError if the given limit is negative
     """
-    if limit < 0:
-        raise ValueError("`limit` must be non-negative")
+    if limit is not None and limit < 0:
+        raise ValueError("`limit` must be non-negative if given as non-`None`")
 
     for i, url_ in enumerate(urls):
-        if i >= limit:
+        if limit is not None and i >= limit:
             break
         yield url_.id
 

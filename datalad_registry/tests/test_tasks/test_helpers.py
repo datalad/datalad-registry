@@ -40,7 +40,7 @@ class TestIterUrlIds:
         iterated_url_ids = list(_iter_url_ids(ten_repo_urls, limit))
         assert iterated_url_ids == list(range(1, 1 + limit))
 
-    @pytest.mark.parametrize("limit", [10, 11, 20, 41])
+    @pytest.mark.parametrize("limit", [None, 10, 11, 20, 41])
     def test_limit_by_length(self, limit, ten_repo_urls):
         """
         Test the case that the results of the iterations are limited by the number
