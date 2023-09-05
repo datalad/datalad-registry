@@ -1,6 +1,7 @@
 from collections.abc import Iterable, Iterator
 from datetime import datetime, timedelta, timezone
 from enum import auto
+from itertools import chain
 import json
 import logging
 from typing import Optional
@@ -303,25 +304,6 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
             rm_ds_tree(base_cache_path / old_cache_path_relative)
 
 
-def _iter_url_ids(urls: Iterable[RepoUrl], limit: Optional[int]) -> Iterator[int]:
-    """
-    Iterate over a given iterable of RepoUrl objects up to a given limit of iterations
-    and yield the id of the RepoUrl object in each iteration
-
-    :param urls: The iterable of RepoUrl objects
-    :param limit: The limit of iterations
-    :yield: The id of the RepoUrl object in each iteration
-    :raise: ValueError if the given limit is negative
-    """
-    if limit is not None and limit < 0:
-        raise ValueError("`limit` must be non-negative if given as non-`None`")
-
-    for i, url_ in enumerate(urls):
-        if limit is not None and i >= limit:
-            break
-        yield url_.id
-
-
 @shared_task
 def url_chk_dispatcher():
     """
@@ -338,66 +320,42 @@ def url_chk_dispatcher():
     #   the `url_chk_dispatcher` task is run
     max_chks_to_dispatch = 10
 
+    age_cutoff = datetime.now(timezone.utc) - min_chk_interval
+
     # Select and lock all dataset urls requested to be checked for which checking has
     # not failed too many times that are not currently locked by another transaction
-    valid_requested_urls: list[RepoUrl] = (
+    requested_urls: list[RepoUrl] = (
         db.session.execute(
             select(RepoUrl)
             .filter(
                 and_(
                     RepoUrl.chk_req_dt.isnot(None),
                     RepoUrl.n_failed_chks <= max_failed_chks,
+                    or_(
+                        RepoUrl.last_chk_dt.is_(None),
+                        and_(
+                            RepoUrl.last_chk_dt.isnot(None),
+                            RepoUrl.last_chk_dt < RepoUrl.chk_req_dt,
+                        ),
+                        _and(
+                            RepoUrl.last_chk_dt.isnot(None),
+                            RepoUrl.last_chk_dt <= age_cutoff,
+                        )
+                    )
                 )
             )
             .with_for_update(skip_locked=True)
             .order_by(RepoUrl.chk_req_dt.asc())
+            .limit(max_chks_to_dispatch)
         )
         .scalars()
         .all()
     )
 
-    datetime_now = datetime.now(timezone.utc)
+    left_chks_to_dispatch = max_chks_to_dispatch - len(requested_urls)
+    assert left_chks_to_dispatch >= 0
 
-    # From the list of valid requested urls, collect two lists of urls that
-    # are to be checked potentially
-    yet_to_be_chked_valid_requested_urls = []
-    old_enough_chked_valid_requested_urls = []
-    for url in valid_requested_urls:
-        if url.last_chk_dt is None or url.last_chk_dt < url.chk_req_dt:
-            yet_to_be_chked_valid_requested_urls.append(url)
-        elif datetime_now - url.last_chk_dt >= min_chk_interval:
-            old_enough_chked_valid_requested_urls.append(url)
-
-    if yet_to_be_chked_valid_requested_urls:
-        # conditions met by each url in this list:
-        # 1. `chk_req_dt` is not `None`
-        # 2. `n_failed_chks` <= `max_failed_chks`
-        # 3. `last_chk_dt` is `None` or < `chk_req_dt`
-        for id_ in _iter_url_ids(
-            yet_to_be_chked_valid_requested_urls, max_chks_to_dispatch
-        ):
-            chk_url.delay(id_, True)
-
-    elif old_enough_chked_valid_requested_urls:
-        # conditions met by each url in this list:
-        # 1. `chk_req_dt` is not `None`
-        # 2. `n_failed_chks` <= `max_failed_chks`
-        # 3. `last_chk_dt` is not `None` and >= `chk_req_dt`
-        # 4. `last_chk_dt` is old enough for a new check
-        for id_ in _iter_url_ids(
-            old_enough_chked_valid_requested_urls, max_chks_to_dispatch
-        ):
-            chk_url.delay(id_, True)
-
-    else:
-        # Select and lock all dataset urls that:
-        #   * have not been requested to be checked
-        #   * have not been checked for a long time
-        #   * meet the minimum check interval requirement
-        #   * have not failed too many times
-        #   * are not currently locked by another transaction
-        age_cutoff = datetime.now(timezone.utc) - min_chk_interval
-        dated_urls_ = (  # noqa: F841
+    dated_urls: list[RepoUrl] = (  # noqa: F841
             db.session.execute(
                 select(RepoUrl)
                 .filter(
@@ -411,7 +369,7 @@ def url_chk_dispatcher():
                                 RepoUrl.last_chk_dt <= age_cutoff,
                             ),
                             and_(
-                                RepoUrl.last_chk_dt(None),
+                                RepoUrl.last_chk_dt.is_(None),
                                 RepoUrl.last_update_dt <= age_cutoff,
                             ),
                         ),
@@ -424,14 +382,15 @@ def url_chk_dispatcher():
                         else_=RepoUrl.last_update_dt,
                     )
                 )
-                .limit(max_chks_to_dispatch)
+                .limit(left_chks_to_dispatch)
             )
             .scalars()
             .all()
-        )
+        ) if left_chks_to_dispatch else []
 
-        #    Initiate the checking of those urls
-        pass
+    #  Initiate the checking of those urls
+    for id_ in chain(requested_urls, dated_urls):
+        chk_url.delay(id_, True)
         # the urls must be processed and not failed too many times
         # if url.last_chk_dt is not None it should be used for comparison
         # else: url.last_update_dt should be used for comparison
