@@ -1,4 +1,3 @@
-from collections.abc import Iterable, Iterator
 from datetime import datetime, timedelta, timezone
 from enum import auto
 from itertools import chain
@@ -332,16 +331,13 @@ def url_chk_dispatcher():
                     RepoUrl.chk_req_dt.isnot(None),
                     RepoUrl.n_failed_chks <= max_failed_chks,
                     or_(
+                        # The ones that have not been checked since the request
                         RepoUrl.last_chk_dt.is_(None),
-                        and_(
-                            RepoUrl.last_chk_dt.isnot(None),
-                            RepoUrl.last_chk_dt < RepoUrl.chk_req_dt,
-                        ),
-                        _and(
-                            RepoUrl.last_chk_dt.isnot(None),
-                            RepoUrl.last_chk_dt <= age_cutoff,
-                        )
-                    )
+                        RepoUrl.last_chk_dt < RepoUrl.chk_req_dt,
+                        # The ones that have been checked since the request but
+                        # the last check is old enough
+                        RepoUrl.last_chk_dt <= age_cutoff,
+                    ),
                 )
             )
             .with_for_update(skip_locked=True)
@@ -355,7 +351,8 @@ def url_chk_dispatcher():
     left_chks_to_dispatch = max_chks_to_dispatch - len(requested_urls)
     assert left_chks_to_dispatch >= 0
 
-    dated_urls: list[RepoUrl] = (  # noqa: F841
+    dated_urls: list[RepoUrl] = (
+        (
             db.session.execute(
                 select(RepoUrl)
                 .filter(
@@ -386,7 +383,10 @@ def url_chk_dispatcher():
             )
             .scalars()
             .all()
-        ) if left_chks_to_dispatch else []
+        )
+        if left_chks_to_dispatch
+        else []
+    )
 
     #  Initiate the checking of those urls
     for id_ in chain(requested_urls, dated_urls):
