@@ -341,7 +341,19 @@ def url_chk_dispatcher():
                 )
             )
             .with_for_update(skip_locked=True)
-            .order_by(RepoUrl.chk_req_dt.asc())
+            .order_by(
+                case(
+                    (
+                        or_(
+                            RepoUrl.last_chk_dt.is_(None),
+                            RepoUrl.last_chk_dt < RepoUrl.chk_req_dt,
+                        ),
+                        1,
+                    ),
+                    else_=2,
+                ),
+                RepoUrl.chk_req_dt.asc(),
+            )
             .limit(max_chks_to_dispatch)
         )
         .scalars()
