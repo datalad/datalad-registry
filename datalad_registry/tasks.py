@@ -450,8 +450,8 @@ def chk_url(url_id: StrictInt, is_requested_chk: StrictBool):
     # if is_requested_chk:
     #
     #
-    elif datetime.now(timezone.utc) - url.last_chk_dt < min_chk_interval:
-        # The check has been performed recently by another worker process
-        return
+    # elif datetime.now(timezone.utc) - url.last_chk_dt < min_chk_interval:
+    #     # The check has been performed recently by another worker process
+    #     return
 
     # Set `chk_req_dt` to `None` if the check succeeds
