@@ -363,6 +363,10 @@ def url_chk_dispatcher():
     left_chks_to_dispatch = max_chks_to_dispatch - len(requested_urls)
     assert left_chks_to_dispatch >= 0
 
+    ref_dt = case(
+        (RepoUrl.last_chk_dt.is_not(None), RepoUrl.last_chk_dt),
+        else_=RepoUrl.last_update_dt,
+    )
     dated_urls: list[RepoUrl] = (
         (
             db.session.execute(
@@ -372,25 +376,11 @@ def url_chk_dispatcher():
                         RepoUrl.processed,
                         RepoUrl.chk_req_dt.is_(None),
                         RepoUrl.n_failed_chks <= max_failed_chks,
-                        or_(
-                            and_(
-                                RepoUrl.last_chk_dt.is_not(None),
-                                RepoUrl.last_chk_dt <= age_cutoff,
-                            ),
-                            and_(
-                                RepoUrl.last_chk_dt.is_(None),
-                                RepoUrl.last_update_dt <= age_cutoff,
-                            ),
-                        ),
+                        ref_dt <= age_cutoff,
                     )
                 )
                 .with_for_update(skip_locked=True)
-                .order_by(
-                    case(
-                        (RepoUrl.last_chk_dt.is_not(None), RepoUrl.last_chk_dt),
-                        else_=RepoUrl.last_update_dt,
-                    )
-                )
+                .order_by(ref_dt)
                 .limit(left_chks_to_dispatch)
             )
             .scalars()
