@@ -323,6 +323,10 @@ def url_chk_dispatcher():
 
     # Select and lock all dataset urls requested to be checked for which checking has
     # not failed too many times that are not currently locked by another transaction
+    relevant_action_dt = case(
+        (RepoUrl.last_chk_dt.is_not(None), RepoUrl.last_chk_dt),
+        else_=RepoUrl.last_update_dt,
+    )
     requested_urls: list[RepoUrl] = (
         db.session.execute(
             select(RepoUrl)
@@ -363,10 +367,6 @@ def url_chk_dispatcher():
     left_chks_to_dispatch = max_chks_to_dispatch - len(requested_urls)
     assert left_chks_to_dispatch >= 0
 
-    relevant_action_dt = case(
-        (RepoUrl.last_chk_dt.is_not(None), RepoUrl.last_chk_dt),
-        else_=RepoUrl.last_update_dt,
-    )
     dated_urls: list[RepoUrl] = (
         (
             db.session.execute(
