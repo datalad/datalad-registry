@@ -319,7 +319,7 @@ def url_chk_dispatcher():
     #   the `url_chk_dispatcher` task is run
     max_chks_to_dispatch = 10
 
-    age_cutoff = datetime.now(timezone.utc) - min_chk_interval
+    repeat_cutoff_dt = datetime.now(timezone.utc) - min_chk_interval
 
     # Select and lock all dataset urls requested to be checked for which checking has
     # not failed too many times that are not currently locked by another transaction
@@ -336,7 +336,7 @@ def url_chk_dispatcher():
                         RepoUrl.last_chk_dt < RepoUrl.chk_req_dt,
                         # The ones that have been checked since the request but
                         # the last check is old enough
-                        RepoUrl.last_chk_dt <= age_cutoff,
+                        RepoUrl.last_chk_dt <= repeat_cutoff_dt,
                     ),
                 )
             )
@@ -363,7 +363,7 @@ def url_chk_dispatcher():
     left_chks_to_dispatch = max_chks_to_dispatch - len(requested_urls)
     assert left_chks_to_dispatch >= 0
 
-    ref_dt = case(
+    relevant_action_dt = case(
         (RepoUrl.last_chk_dt.is_not(None), RepoUrl.last_chk_dt),
         else_=RepoUrl.last_update_dt,
     )
@@ -376,11 +376,11 @@ def url_chk_dispatcher():
                         RepoUrl.processed,
                         RepoUrl.chk_req_dt.is_(None),
                         RepoUrl.n_failed_chks <= max_failed_chks,
-                        ref_dt <= age_cutoff,
+                        relevant_action_dt <= repeat_cutoff_dt,
                     )
                 )
                 .with_for_update(skip_locked=True)
-                .order_by(ref_dt)
+                .order_by(relevant_action_dt)
                 .limit(left_chks_to_dispatch)
             )
             .scalars()
