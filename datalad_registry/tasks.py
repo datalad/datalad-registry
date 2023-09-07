@@ -355,6 +355,7 @@ def url_chk_dispatcher():
             )
             .with_for_update(skip_locked=True)
             .order_by(
+                RepoUrl.chk_req_dt.is_(None),  # Ensure requested ones go first
                 case(
                     (
                         or_(
