@@ -333,10 +333,10 @@ def url_chk_dispatcher():
             .filter(
                 and_(
                     RepoUrl.processed,
+                    RepoUrl.n_failed_chks <= max_failed_chks,
                     or_(
                         and_(
                             RepoUrl.chk_req_dt.is_not(None),
-                            RepoUrl.n_failed_chks <= max_failed_chks,
                             or_(
                                 # The ones that have not been checked since the request
                                 RepoUrl.last_chk_dt.is_(None),
@@ -348,7 +348,6 @@ def url_chk_dispatcher():
                         ),
                         and_(
                             RepoUrl.chk_req_dt.is_(None),
-                            RepoUrl.n_failed_chks <= max_failed_chks,
                             relevant_action_dt <= repeat_cutoff_dt,
                         ),
                     ),
