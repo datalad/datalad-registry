@@ -373,7 +373,18 @@ def url_chk_dispatcher():
                         2,
                     ),
                     else_=3,
-                )
+                ),
+                case(
+                    (
+                        requested_not_chked_cond,
+                        RepoUrl.chk_req_dt,
+                    ),
+                    (
+                        requested_chked_cond,
+                        RepoUrl.last_chk_dt,
+                    ),
+                    else_=relevant_action_dt,
+                ),
             )
             .limit(max_chks_to_dispatch)
         )
