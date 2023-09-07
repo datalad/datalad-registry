@@ -331,24 +331,26 @@ def url_chk_dispatcher():
         db.session.execute(
             select(RepoUrl)
             .filter(
-                or_(
-                    and_(
-                        RepoUrl.chk_req_dt.is_not(None),
-                        RepoUrl.n_failed_chks <= max_failed_chks,
-                        or_(
-                            # The ones that have not been checked since the request
-                            RepoUrl.last_chk_dt.is_(None),
-                            RepoUrl.last_chk_dt < RepoUrl.chk_req_dt,
-                            # The ones that have been checked since the request but
-                            # the last check is old enough
-                            RepoUrl.last_chk_dt <= repeat_cutoff_dt,
+                and_(
+                    RepoUrl.processed,
+                    or_(
+                        and_(
+                            RepoUrl.chk_req_dt.is_not(None),
+                            RepoUrl.n_failed_chks <= max_failed_chks,
+                            or_(
+                                # The ones that have not been checked since the request
+                                RepoUrl.last_chk_dt.is_(None),
+                                RepoUrl.last_chk_dt < RepoUrl.chk_req_dt,
+                                # The ones that have been checked since the request but
+                                # the last check is old enough
+                                RepoUrl.last_chk_dt <= repeat_cutoff_dt,
+                            ),
                         ),
-                    ),
-                    and_(
-                        RepoUrl.processed,
-                        RepoUrl.chk_req_dt.is_(None),
-                        RepoUrl.n_failed_chks <= max_failed_chks,
-                        relevant_action_dt <= repeat_cutoff_dt,
+                        and_(
+                            RepoUrl.chk_req_dt.is_(None),
+                            RepoUrl.n_failed_chks <= max_failed_chks,
+                            relevant_action_dt <= repeat_cutoff_dt,
+                        ),
                     ),
                 )
             )
