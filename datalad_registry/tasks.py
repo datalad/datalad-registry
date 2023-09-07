@@ -335,7 +335,7 @@ def url_chk_dispatcher():
     requested_not_chked_cond = and_(RepoUrl.chk_req_dt.is_not(None), not_chked_cond)
     # Condition for requested and already checked urls
     requested_chked_cond = and_(RepoUrl.chk_req_dt.is_not(None), not_(not_chked_cond))
-    requested_urls: list[RepoUrl] = (
+    urls_to_chk: list[RepoUrl] = (
         db.session.execute(
             select(RepoUrl)
             .filter(
@@ -392,7 +392,7 @@ def url_chk_dispatcher():
         .all()
     )
 
-    left_chks_to_dispatch = max_chks_to_dispatch - len(requested_urls)
+    left_chks_to_dispatch = max_chks_to_dispatch - len(urls_to_chk)
     assert left_chks_to_dispatch >= 0
 
     dated_urls: list[RepoUrl] = (
@@ -419,7 +419,7 @@ def url_chk_dispatcher():
     )
 
     #  Initiate the checking of those urls
-    for id_ in chain(requested_urls, dated_urls):
+    for id_ in chain(urls_to_chk, dated_urls):
         chk_url.delay(id_, True)
         # the urls must be processed and not failed too many times
         # if url.last_chk_dt is not None it should be used for comparison
