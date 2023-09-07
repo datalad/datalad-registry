@@ -13,7 +13,7 @@ from datalad.support.exceptions import IncompleteResultsError
 from datalad.utils import rmtree as rm_ds_tree
 from flask import current_app
 from pydantic import StrictBool, StrictInt, StrictStr, parse_obj_as, validate_arguments
-from sqlalchemy import and_, case, or_, select
+from sqlalchemy import and_, case, not_, or_, select
 from sqlalchemy.exc import NoResultFound
 
 from datalad_registry.models import RepoUrl, URLMetadata, db
@@ -327,6 +327,10 @@ def url_chk_dispatcher():
         (RepoUrl.last_chk_dt.is_not(None), RepoUrl.last_chk_dt),
         else_=RepoUrl.last_update_dt,
     )
+    yet_to_chk_cond = or_(
+        RepoUrl.last_chk_dt.is_(None),
+        RepoUrl.last_chk_dt < RepoUrl.chk_req_dt,
+    )
     requested_urls: list[RepoUrl] = (
         db.session.execute(
             select(RepoUrl)
@@ -355,18 +359,23 @@ def url_chk_dispatcher():
             )
             .with_for_update(skip_locked=True)
             .order_by(
-                RepoUrl.chk_req_dt.is_(None),  # Ensure requested ones go first
                 case(
                     (
-                        or_(
-                            RepoUrl.last_chk_dt.is_(None),
-                            RepoUrl.last_chk_dt < RepoUrl.chk_req_dt,
+                        and_(
+                            RepoUrl.chk_req_dt.is_not(None),
+                            yet_to_chk_cond,
                         ),
                         1,
                     ),
-                    else_=2,
-                ),
-                RepoUrl.chk_req_dt.asc(),
+                    (
+                        and_(
+                            RepoUrl.chk_req_dt.is_not(None),
+                            not_(yet_to_chk_cond),
+                        ),
+                        2,
+                    ),
+                    else_=3,
+                )
             )
             .limit(max_chks_to_dispatch)
         )
