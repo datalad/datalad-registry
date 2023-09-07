@@ -9,7 +9,7 @@ from datalad_registry.utils.pydantic_json import (
     pydantic_model_loads,
 )
 
-# ==== Test for handling standard types =======================================
+# ==== Test for handling basic types =======================================
 d = {"a": 1, "b": 2}
 lst = [1, 2, 3]
 t = (1, 2, 3)
@@ -33,7 +33,7 @@ n = None
         (n, n),
     ],
 )
-def test_standard_types(test_input, expected_output):
+def test_basic_types(test_input, expected_output):
     assert pydantic_model_loads(pydantic_model_dumps(test_input)) == expected_output
 
 
