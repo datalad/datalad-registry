@@ -11,7 +11,7 @@ from datalad.distribution.dataset import require_dataset
 from datalad.support.exceptions import IncompleteResultsError
 from datalad.utils import rmtree as rm_ds_tree
 from flask import current_app
-from pydantic import StrictBool, StrictInt, StrictStr, parse_obj_as, validate_arguments
+from pydantic import StrictInt, StrictStr, parse_obj_as, validate_arguments
 from sqlalchemy import and_, case, not_, or_, select
 from sqlalchemy.exc import NoResultFound
 
@@ -394,52 +394,19 @@ def url_chk_dispatcher():
     )
 
     for url in urls_to_chk:
-        chk_url.delay(url.id, False)
+        chk_url.delay(url.id, url.last_chk_dt)
 
 
-@shared_task(rate_limit="10/m")  # todo: add a time limit here
+@shared_task(rate_limit="10/m")
 @validate_arguments
-def chk_url(url_id: StrictInt, is_requested_chk: StrictBool):
+def chk_url(url_id: StrictInt, initial_last_chk_dt: datetime):
     """
     Check a dataset url for potential update
 
-    :param url_id: The id (primary key) of the dataset url, represented by a `RepoURL`,
+    :param url_id: The id (primary key) of the dataset url, represented by a `RepoUrl`,
                     in the database
-    :param is_requested_chk: Whether the check is requested by a user originally
-    :raise: ValueError if the given url, by its id, has not been processed yet
-
+    :param initial_last_chk_dt: The value of `last_chk_dt` of the `RepoUrl`
+                                when this check was initiated.
     """
-
-    min_chk_interval = timedelta(
-        seconds=current_app.config["DATALAD_REGISTRY_MIN_CHK_INTERVAL_PER_URL"]
-    )
-
-    url: RepoUrl = db.session.execute(
-        select(RepoUrl).filter_by(id=url_id).with_for_update()
-    ).scalar_one()
-
-    if not url.processed:
-        raise ValueError("The given url has not been processed yet.")
-
-    # todo: Check if the URL has been checked by another worker process recently
-    #       If so, return
-
-    if url.last_chk_dt is not None:
-        if is_requested_chk:
-            # === This check is requested by a user ===
-            # todo: this should be done differently because for requested checks,
-            #       we marked them checked as soon as the check is sent to the queue
-            pass
-        elif datetime.now(timezone.utc) - url.last_chk_dt < min_chk_interval:
-            # The check has been performed recently by another worker process
-            return
-
-    # if url.last_chk_dt is not None
-    # if is_requested_chk:
-    #
-    #
-    # elif datetime.now(timezone.utc) - url.last_chk_dt < min_chk_interval:
-    #     # The check has been performed recently by another worker process
-    #     return
-
-    # Set `chk_req_dt` to `None` if the check succeeds
+    # Dummy return value for testing
+    return f"url_id: {url_id}, initial_last_chk_dt: {initial_last_chk_dt}"
