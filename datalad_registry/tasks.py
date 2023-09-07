@@ -336,7 +336,7 @@ def url_chk_dispatcher():
                     RepoUrl.n_failed_chks <= max_failed_chks,
                     or_(
                         and_(
-                            RepoUrl.chk_req_dt.is_not(None),
+                            RepoUrl.chk_req_dt.is_not(None),  # requested to be checked
                             or_(
                                 # The ones that have not been checked since the request
                                 RepoUrl.last_chk_dt.is_(None),
@@ -347,7 +347,7 @@ def url_chk_dispatcher():
                             ),
                         ),
                         and_(
-                            RepoUrl.chk_req_dt.is_(None),
+                            RepoUrl.chk_req_dt.is_(None),  # not requested to be checked
                             relevant_action_dt <= repeat_cutoff_dt,
                         ),
                     ),
