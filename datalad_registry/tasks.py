@@ -320,20 +320,24 @@ def url_chk_dispatcher():
 
     repeat_cutoff_dt = datetime.now(timezone.utc) - min_chk_interval
 
-    # Select and lock all dataset urls requested to be checked for which checking has
-    # not failed too many times that are not currently locked by another transaction
     relevant_action_dt = case(
         (RepoUrl.last_chk_dt.is_not(None), RepoUrl.last_chk_dt),
         else_=RepoUrl.last_update_dt,
     )
+
+    # Condition for not yet checked urls
     not_chked_cond = or_(
         RepoUrl.last_chk_dt.is_(None),
         RepoUrl.last_chk_dt < RepoUrl.chk_req_dt,
     )
+
     # Condition for requested but not yet checked urls
     requested_not_chked_cond = and_(RepoUrl.chk_req_dt.is_not(None), not_chked_cond)
+
     # Condition for requested and already checked urls
     requested_chked_cond = and_(RepoUrl.chk_req_dt.is_not(None), not_(not_chked_cond))
+
+    # Select and lock all dataset urls to be checked
     urls_to_chk: list[RepoUrl] = (
         db.session.execute(
             select(RepoUrl)
@@ -359,7 +363,7 @@ def url_chk_dispatcher():
                     ),
                 )
             )
-            .with_for_update(skip_locked=True)
+            .with_for_update(skip_locked=True)  # Skipped already locked rows
             .order_by(
                 case(
                     (
