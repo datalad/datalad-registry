@@ -317,7 +317,6 @@ def url_chk_dispatcher():
     #   This is determined by the `rate_limit` of the `chk_url` task and how frequently
     #   the `url_chk_dispatcher` task is run
     max_chks_to_dispatch = 10
-
     repeat_cutoff_dt = datetime.now(timezone.utc) - min_chk_interval
 
     relevant_action_dt = case(
