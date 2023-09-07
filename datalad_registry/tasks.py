@@ -362,7 +362,7 @@ def url_chk_dispatcher():
                     ),
                 )
             )
-            .with_for_update(skip_locked=True)  # Skipped already locked rows
+            .with_for_update(skip_locked=True)  # Skipping already locked rows
             .order_by(
                 case(
                     (
