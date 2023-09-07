@@ -346,8 +346,7 @@ def url_chk_dispatcher():
                             RepoUrl.chk_req_dt.is_not(None),  # requested to be checked
                             or_(
                                 # The ones that have not been checked since the request
-                                RepoUrl.last_chk_dt.is_(None),
-                                RepoUrl.last_chk_dt < RepoUrl.chk_req_dt,
+                                not_chked_cond,
                                 # The ones that have been checked since the request but
                                 # the last check is old enough
                                 RepoUrl.last_chk_dt <= repeat_cutoff_dt,
