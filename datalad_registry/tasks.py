@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta, timezone
 from enum import auto
-from itertools import chain
 import json
 import logging
 from typing import Optional
@@ -392,39 +391,8 @@ def url_chk_dispatcher():
         .all()
     )
 
-    left_chks_to_dispatch = max_chks_to_dispatch - len(urls_to_chk)
-    assert left_chks_to_dispatch >= 0
-
-    dated_urls: list[RepoUrl] = (
-        (
-            db.session.execute(
-                select(RepoUrl)
-                .filter(
-                    and_(
-                        RepoUrl.processed,
-                        RepoUrl.chk_req_dt.is_(None),
-                        RepoUrl.n_failed_chks <= max_failed_chks,
-                        relevant_action_dt <= repeat_cutoff_dt,
-                    )
-                )
-                .with_for_update(skip_locked=True)
-                .order_by(relevant_action_dt)
-                .limit(left_chks_to_dispatch)
-            )
-            .scalars()
-            .all()
-        )
-        if left_chks_to_dispatch
-        else []
-    )
-
-    #  Initiate the checking of those urls
-    for id_ in chain(urls_to_chk, dated_urls):
-        chk_url.delay(id_, True)
-        # the urls must be processed and not failed too many times
-        # if url.last_chk_dt is not None it should be used for comparison
-        # else: url.last_update_dt should be used for comparison
-        # filter out the ones that are not old enough for a new check
+    for url in urls_to_chk:
+        chk_url.delay(url.id, False)
 
 
 @shared_task(rate_limit="10/m")  # todo: add a time limit here
