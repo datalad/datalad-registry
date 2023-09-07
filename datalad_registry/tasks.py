@@ -327,14 +327,14 @@ def url_chk_dispatcher():
         (RepoUrl.last_chk_dt.is_not(None), RepoUrl.last_chk_dt),
         else_=RepoUrl.last_update_dt,
     )
-    yet_to_chk_cond = or_(
+    not_chked_cond = or_(
         RepoUrl.last_chk_dt.is_(None),
         RepoUrl.last_chk_dt < RepoUrl.chk_req_dt,
     )
     # Condition for requested but not yet checked urls
-    requested_not_chked_cond = and_(RepoUrl.chk_req_dt.is_not(None), yet_to_chk_cond)
+    requested_not_chked_cond = and_(RepoUrl.chk_req_dt.is_not(None), not_chked_cond)
     # Condition for requested and already checked urls
-    requested_chked_cond = and_(RepoUrl.chk_req_dt.is_not(None), not_(yet_to_chk_cond))
+    requested_chked_cond = and_(RepoUrl.chk_req_dt.is_not(None), not_(not_chked_cond))
     requested_urls: list[RepoUrl] = (
         db.session.execute(
             select(RepoUrl)
