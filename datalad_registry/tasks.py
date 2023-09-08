@@ -399,7 +399,7 @@ def url_chk_dispatcher():
 
 @shared_task(rate_limit="10/m")
 @validate_arguments
-def chk_url(url_id: StrictInt, initial_last_chk_dt: datetime):
+def chk_url(url_id: StrictInt, initial_last_chk_dt: Optional[datetime]):
     """
     Check a dataset url for potential update
 
