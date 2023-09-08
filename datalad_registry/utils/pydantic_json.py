@@ -11,4 +11,4 @@ def pydantic_dumps(obj):
     return dumps(obj, default=pydantic_encoder)
 
 
-pydantic_model_loads = loads
+pydantic_loads = loads
