@@ -117,7 +117,7 @@ def celery_init_app(flask_app: Flask) -> Celery:
     celery_app.config_from_object(flask_app.config["CELERY"])
 
     # Register JSON encoding and decoding functions with additional support of
-    # Pydantic models as a serializer
+    # Pydantic models and other supported types by Pydantic for JSON serialization
     register(
         "pydantic_json",
         pydantic_dumps,
@@ -126,7 +126,7 @@ def celery_init_app(flask_app: Flask) -> Celery:
         content_encoding="utf-8",
     )
 
-    # Set the Celery app to use the JSON serializer with support for Pydantic models
+    # Set the Celery app to use the JSON serializer registered above
     celery_app.conf.update(
         accept_content=["pydantic_json"],
         task_serializer="pydantic_json",
