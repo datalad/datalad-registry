@@ -7,7 +7,7 @@ from kombu.utils.json import dumps, loads
 from pydantic.json import pydantic_encoder
 
 
-def pydantic_model_dumps(obj):
+def pydantic_dumps(obj):
     return dumps(obj, default=pydantic_encoder)
 
 

@@ -11,7 +11,7 @@ from werkzeug.exceptions import HTTPException
 from . import overview, root
 from .conf import compile_config_from_env
 from .models import db, init_db_command, migrate
-from .utils.pydantic_json import pydantic_model_dumps, pydantic_model_loads
+from .utils.pydantic_json import pydantic_dumps, pydantic_model_loads
 
 if sys.version_info[:2] < (3, 8):
     from importlib_metadata import version
@@ -120,7 +120,7 @@ def celery_init_app(flask_app: Flask) -> Celery:
     # Pydantic models as a serializer
     register(
         "pydantic_json",
-        pydantic_model_dumps,
+        pydantic_dumps,
         pydantic_model_loads,
         content_type="application/x-pydantic-json",
         content_encoding="utf-8",

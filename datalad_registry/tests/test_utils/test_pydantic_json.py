@@ -8,10 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel, validate_arguments
 import pytest
 
-from datalad_registry.utils.pydantic_json import (
-    pydantic_model_dumps,
-    pydantic_model_loads,
-)
+from datalad_registry.utils.pydantic_json import pydantic_dumps, pydantic_model_loads
 
 # ==== Test for handling basic types =======================================
 d = {"a": 1, "b": 2}
@@ -38,7 +35,7 @@ n = None
     ],
 )
 def test_basic_types(test_input, expected_output):
-    assert pydantic_model_loads(pydantic_model_dumps(test_input)) == expected_output
+    assert pydantic_model_loads(pydantic_dumps(test_input)) == expected_output
 
 
 # ===== Test for supported complex standard types ============================
@@ -96,7 +93,7 @@ def return_foo_data(fd: FooData) -> FooData:
     ],
 )
 def test_supported_complex_standard_types(io_put, process_func):
-    assert process_func(pydantic_model_loads(pydantic_model_dumps(io_put))) == io_put
+    assert process_func(pydantic_model_loads(pydantic_dumps(io_put))) == io_put
 
 
 # ==== Test for handling pydantic model types =================================
@@ -157,7 +154,7 @@ def return_list_of_spams(spam_list: List[Spam]) -> List[Spam]:
 )
 def test_pydantic_model_types(test_input, expected_output, process_func):
     assert (
-        process_func(pydantic_model_loads(pydantic_model_dumps(test_input)))
+        process_func(pydantic_model_loads(pydantic_dumps(test_input)))
         == expected_output
     )
 
@@ -167,4 +164,4 @@ def test_pydantic_model_types(test_input, expected_output, process_func):
 
 def test_unsupported_types():
     with pytest.raises(TypeError):
-        pydantic_model_dumps(return_datetime)
+        pydantic_dumps(return_datetime)
