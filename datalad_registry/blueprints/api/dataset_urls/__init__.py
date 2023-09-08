@@ -1,6 +1,5 @@
 # This file is for defining the API endpoints related to dataset URls
 
-from datetime import datetime, timezone
 from json import loads
 import operator
 from pathlib import Path
@@ -12,7 +11,12 @@ from sqlalchemy import and_
 from sqlalchemy.sql.elements import BinaryExpression
 
 from datalad_registry.models import RepoUrl, db
-from datalad_registry.tasks import extract_ds_meta, log_error, process_dataset_url
+from datalad_registry.tasks import (
+    extract_ds_meta,
+    log_error,
+    mark_for_chk,
+    process_dataset_url,
+)
 from datalad_registry.utils.flask_tools import json_resp_from_str
 
 from .models import (
@@ -107,11 +111,10 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
         # Build the response from the current representation of the URL in the DB
         resp_model = DatasetURLRespModel.from_orm(repo_url).json(exclude_none=True)
 
-        if repo_url.processed:
-            # Flag the URL to be updated if there is no unhandled update request of it
-            if repo_url.chk_req_dt is None:
-                repo_url.chk_req_dt = datetime.now(timezone.utc)
-                db.session.commit()
+        if repo_url.processed and repo_url.chk_req_dt is None:
+            # === The dataset url has been processed and there is no unhandled request
+            # for check for update of the dataset at the URL ===
+            mark_for_chk.delay(repo_url.id)
 
         return json_resp_from_str(resp_model, 202)
 

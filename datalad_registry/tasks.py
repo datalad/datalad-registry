@@ -303,6 +303,33 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
 
 
 @shared_task
+@validate_arguments
+def mark_for_chk(url_id: StrictInt) -> None:
+    """
+    Mark a dataset url for check for update with a timestamp as the value of
+    `chk_req_dt` of the `RepoUrl` object representing the URL
+
+    :param url_id: The ID (primary key) of the `RepoUrl` object representing the URL
+    """
+
+    # Select and lock the dataset url to be marked for update check
+    url: Optional[RepoUrl] = (
+        db.session.execute(select(RepoUrl).filter_by(id=url_id).with_for_update())
+        .scalars()
+        .one_or_none()
+    )
+
+    # Note: It is possible that there is no `RepoUrl` record with the given ID
+    #       (possibly due to deletion).
+    #       So do something only if there is such a record
+    if url is not None and url.processed and url.chk_req_dt is None:
+        # The dataset url has been processed and there is no unhandled request
+        # for check for update of the dataset at the URL
+        url.chk_req_dt = datetime.now(timezone.utc)
+        db.session.commit()
+
+
+@shared_task
 def url_chk_dispatcher():
     """
     A task intended to be run periodically by Celery Beat to initiate
