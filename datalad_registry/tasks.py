@@ -364,64 +364,60 @@ def url_chk_dispatcher():
     requested_chked_cond = and_(RepoUrl.chk_req_dt.is_not(None), not_(not_chked_cond))
 
     # Select and lock all dataset urls to be checked
-    urls_to_chk: list[RepoUrl] = (
-        db.session.execute(
-            select(RepoUrl)
-            .filter(
-                and_(
-                    RepoUrl.processed,
-                    RepoUrl.n_failed_chks <= max_failed_chks,
-                    or_(
-                        and_(
-                            RepoUrl.chk_req_dt.is_not(None),  # requested to be checked
-                            or_(
-                                # The ones that have not been checked since the request
-                                not_chked_cond,
-                                # The ones that have been checked since the request but
-                                # the last check is old enough
-                                RepoUrl.last_chk_dt <= repeat_cutoff_dt,
-                            ),
-                        ),
-                        and_(
-                            RepoUrl.chk_req_dt.is_(None),  # not requested to be checked
-                            relevant_action_dt <= repeat_cutoff_dt,
+    result: tuple[int, Optional[datetime]] = db.session.execute(
+        select(RepoUrl.id, RepoUrl.last_chk_dt)
+        .filter(
+            and_(
+                RepoUrl.processed,
+                RepoUrl.n_failed_chks <= max_failed_chks,
+                or_(
+                    and_(
+                        RepoUrl.chk_req_dt.is_not(None),  # requested to be checked
+                        or_(
+                            # The ones that have not been checked since the request
+                            not_chked_cond,
+                            # The ones that have been checked since the request but
+                            # the last check is old enough
+                            RepoUrl.last_chk_dt <= repeat_cutoff_dt,
                         ),
                     ),
-                )
-            )
-            .with_for_update(skip_locked=True)  # Skipping already locked rows
-            .order_by(
-                case(
-                    (
-                        requested_not_chked_cond,
-                        1,
+                    and_(
+                        RepoUrl.chk_req_dt.is_(None),  # not requested to be checked
+                        relevant_action_dt <= repeat_cutoff_dt,
                     ),
-                    (
-                        requested_chked_cond,
-                        2,
-                    ),
-                    else_=3,
-                ),
-                case(
-                    (
-                        requested_not_chked_cond,
-                        RepoUrl.chk_req_dt,
-                    ),
-                    (
-                        requested_chked_cond,
-                        RepoUrl.last_chk_dt,
-                    ),
-                    else_=relevant_action_dt,
                 ),
             )
-            .limit(max_chks_to_dispatch)
         )
-        .scalars()
-        .all()
-    )
+        .with_for_update(skip_locked=True)  # Skipping already locked rows
+        .order_by(
+            case(
+                (
+                    requested_not_chked_cond,
+                    1,
+                ),
+                (
+                    requested_chked_cond,
+                    2,
+                ),
+                else_=3,
+            ),
+            case(
+                (
+                    requested_not_chked_cond,
+                    RepoUrl.chk_req_dt,
+                ),
+                (
+                    requested_chked_cond,
+                    RepoUrl.last_chk_dt,
+                ),
+                else_=relevant_action_dt,
+            ),
+        )
+        .limit(max_chks_to_dispatch)
+    ).all()
 
-    for url in urls_to_chk:
-        chk_url.delay(url.id, url.last_chk_dt)
+    for id_, last_chk_dt in result:
+        chk_url.delay(id_, last_chk_dt)
 
 
 @shared_task(rate_limit="10/m")
