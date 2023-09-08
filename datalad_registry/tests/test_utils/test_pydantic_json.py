@@ -1,5 +1,9 @@
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from decimal import Decimal
+from pathlib import Path
 from typing import List, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, validate_arguments
 import pytest
@@ -35,6 +39,64 @@ n = None
 )
 def test_basic_types(test_input, expected_output):
     assert pydantic_model_loads(pydantic_model_dumps(test_input)) == expected_output
+
+
+# ===== Test for supported complex standard types ============================
+@validate_arguments
+def return_datetime(dt: datetime) -> datetime:
+    return dt
+
+
+@validate_arguments
+def return_decimal(dec: Decimal) -> Decimal:
+    return dec
+
+
+@validate_arguments
+def return_path(pth: Path) -> Path:
+    return pth
+
+
+@validate_arguments
+def return_uuid(uid: UUID) -> UUID:
+    return uid
+
+
+@dataclass
+class FooData:
+    a: int
+    b: str
+
+
+@validate_arguments
+def return_foo_data(fd: FooData) -> FooData:
+    return fd
+
+
+@pytest.mark.parametrize(
+    "io_put, process_func",
+    [
+        (
+            datetime(
+                year=1999,
+                month=12,
+                day=13,
+                hour=11,
+                minute=30,
+                second=44,
+                microsecond=14983,
+                tzinfo=timezone.utc,
+            ),
+            return_datetime,
+        ),
+        (Decimal("499.543"), return_decimal),
+        (Path("/the/middle/path"), return_path),
+        (UUID("c55f3251-54eb-4961-be58-0c2d2d24dc24"), return_uuid),
+        (FooData(a=1, b="foo"), return_foo_data),
+    ],
+)
+def test_supported_complex_standard_types(io_put, process_func):
+    assert process_func(pydantic_model_loads(pydantic_model_dumps(io_put))) == io_put
 
 
 # ==== Test for handling pydantic model types =================================
@@ -101,12 +163,8 @@ def test_pydantic_model_types(test_input, expected_output, process_func):
 
 
 # ==== Test for handling unsupported types ====================================
-@dataclass
-class DataclassUser:
-    id: int
-    name = "Jane Doe"
 
 
 def test_unsupported_types():
     with pytest.raises(TypeError):
-        pydantic_model_dumps(DataclassUser(id=1))
+        pydantic_model_dumps(return_datetime)
