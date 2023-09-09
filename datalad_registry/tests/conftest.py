@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from celery import Celery
 from datalad import api as dl
@@ -172,8 +172,8 @@ def populate_with_dataset_urls(flask_app) -> list[str]:
             annexed_files_in_wt_count=200,
             annexed_files_in_wt_size=1000,
             git_objects_kb=110,
-            last_update_dt=datetime(2008, 7, 18, 18, 34, 32),
-            chk_req_dt=datetime(2008, 7, 18, 18, 34, 34),
+            last_update_dt=datetime(2008, 7, 18, 18, 34, 32, tzinfo=timezone.utc),
+            chk_req_dt=datetime(2008, 7, 18, 18, 34, 34, tzinfo=timezone.utc),
             processed=True,
             cache_path="8c8/fff/e01f2142d88690d92144b00af0",
         ),
@@ -185,7 +185,7 @@ def populate_with_dataset_urls(flask_app) -> list[str]:
             annexed_files_in_wt_count=100,
             annexed_files_in_wt_size=400,
             git_objects_kb=1100,
-            last_update_dt=datetime(2009, 6, 18, 18, 34, 32),
+            last_update_dt=datetime(2009, 6, 18, 18, 34, 32, tzinfo=timezone.utc),
             # chk_req_dt=None, # Commenting this out to allow `chk_req_dt` to default
             processed=True,
             cache_path="72e/cd9/cc10534e2a9f551e32119e0e60",
@@ -198,8 +198,8 @@ def populate_with_dataset_urls(flask_app) -> list[str]:
             annexed_files_in_wt_count=490,
             annexed_files_in_wt_size=1000_000,
             git_objects_kb=4000,
-            last_update_dt=datetime(2004, 6, 18, 18, 34, 32),
-            chk_req_dt=datetime(2004, 6, 19, 18, 34, 34),
+            last_update_dt=datetime(2004, 6, 18, 18, 34, 32, tzinfo=timezone.utc),
+            chk_req_dt=datetime(2004, 6, 19, 18, 34, 34, tzinfo=timezone.utc),
             processed=True,
             cache_path="72e/4e5/4184da47e282c02ae7e568ba74",
         ),
