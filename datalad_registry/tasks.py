@@ -135,8 +135,11 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
 
     """
 
+    # Get the RepoUrl from the database by ID with a read/share lock
     url = (
-        db.session.execute(select(RepoUrl).filter_by(id=ds_url_id))
+        db.session.execute(
+            select(RepoUrl).filter_by(id=ds_url_id).with_for_update(read=True)
+        )
         .scalars()
         .one_or_none()
     )
