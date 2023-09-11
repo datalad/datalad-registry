@@ -36,6 +36,11 @@ class ExtractMetaStatus(StrEnum):
     SKIPPED = auto()
 
 
+class ProcessUrlStatus(StrEnum):
+    SUCCEEDED = auto()
+    NO_RECORD = auto()
+
+
 def _update_dataset_url_info(dataset_url: RepoUrl, ds: Dataset) -> None:
     """
     Update a given RepoUrl object with the information of a given dataset
@@ -230,7 +235,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
     retry_backoff=100,
 )
 @validate_arguments
-def process_dataset_url(dataset_url_id: StrictInt) -> None:
+def process_dataset_url(dataset_url_id: StrictInt) -> ProcessUrlStatus:
     """
     Process a RepoUrl
 
@@ -249,10 +254,10 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
            (by deleting the new cache directory for the cloning of the dataset).
 
     Note: If there is no RepoUrl in the database with the specified ID, this task simply
-          returns without doing anything. (This task can be initiated with an argument,
-          a supposed ID of a RepoUrl, that doesn't identify any RepoUrl in the database
-          at the time of the execution of this task because the RepoUrl has been deleted
-          from the database.)
+          returns `ProcessUrlStatus.NO_RECORD` without doing anything else.
+          (This task can be initiated with an argument, a supposed ID of a RepoUrl,
+          that doesn't identify any RepoUrl in the database at the time of the execution
+          of this task because the RepoUrl has been deleted from the database.)
     """
 
     # Get the RepoUrl from the database by ID
@@ -265,8 +270,8 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
     )
 
     if dataset_url is None:
-        # Return when there is no RepoUrl in the database with the specified ID
-        return
+        # === there is no RepoUrl in the database with the specified ID ===
+        return ProcessUrlStatus.NO_RECORD
 
     base_cache_path = current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
 
@@ -310,6 +315,8 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
             # Delete the old cache directory for the dataset (the directory that is
             # a previous clone of the dataset)
             rm_ds_tree(base_cache_path / old_cache_path_relative)
+
+        return ProcessUrlStatus.SUCCEEDED
 
 
 @shared_task

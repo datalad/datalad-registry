@@ -10,7 +10,7 @@ from pytest_mock import MockerFixture
 from sqlalchemy import inspect
 
 from datalad_registry.models import RepoUrl, db
-from datalad_registry.tasks import process_dataset_url
+from datalad_registry.tasks import ProcessUrlStatus, process_dataset_url
 
 
 def is_there_file_in_tree(top: Union[Path, str]) -> bool:
@@ -67,15 +67,18 @@ class TestProcessDatasetUrl:
         Test the case that the given RepoUrl id is not valid, i.e. no RepoUrl
         having the given id exists in the database
 
-        The Celery task is expected to simply return without doing anything because the
-        given argument, a supposed RepoUrl ID, can identify a RepoUrl that has been
-        deleted from the database before the execution of the Celery task.
+        The Celery task is expected to simply return `ProcessUrlStatus.NO_RECORD`
+        without doing anything else because the given argument, a supposed RepoUrl ID,
+        can identify a RepoUrl that has been deleted from the database before
+        the execution of the Celery task.
         """
         mock_update_dataset_url_info = mocker.patch(
             "datalad_registry.tasks._update_dataset_url_info"
         )
-        process_dataset_url(invalid_dataset_url_id)
+        process_status = process_dataset_url(invalid_dataset_url_id)
+
         mock_update_dataset_url_info.assert_not_called()
+        assert process_status is ProcessUrlStatus.NO_RECORD
 
     @pytest.mark.usefixtures("populate_db_with_unprocessed_dataset_urls")
     @pytest.mark.parametrize("dataset_url_id", [2, 3, 4, 5, 6])
