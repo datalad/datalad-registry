@@ -251,7 +251,7 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
 
     # Get the RepoUrl from the database by ID
     dataset_url: Optional[RepoUrl] = db.session.execute(
-        db.select(RepoUrl).filter_by(id=dataset_url_id)
+        select(RepoUrl).filter_by(id=dataset_url_id).with_for_update()
     ).scalar()
 
     if dataset_url is None:
