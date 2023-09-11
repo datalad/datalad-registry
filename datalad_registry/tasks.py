@@ -247,6 +247,12 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
            Otherwise, no cell of the given RepoUrl row will be changed,
            and the local cache will be restored to its previous state
            (by deleting the new cache directory for the cloning of the dataset).
+
+    Note: If there is no RepoUrl in the database with the specified ID, this task simply
+          returns without doing anything. (This task can be initiated with an argument,
+          a supposed ID of a RepoUrl, that doesn't identify any RepoUrl in the database
+          at the time of the execution of this task because the RepoUrl has been deleted
+          from the database.)
     """
 
     # Get the RepoUrl from the database by ID
@@ -259,8 +265,8 @@ def process_dataset_url(dataset_url_id: StrictInt) -> None:
     )
 
     if dataset_url is None:
-        # Error out when no RepoUrl in the database with the specified ID
-        raise ValueError(f"RepoUrl with ID {dataset_url_id} does not exist")
+        # Return when there is no RepoUrl in the database with the specified ID
+        return
 
     base_cache_path = current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
 

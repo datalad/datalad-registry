@@ -6,6 +6,7 @@ from typing import Optional, Union
 
 from flask import current_app
 import pytest
+from pytest_mock import MockerFixture
 from sqlalchemy import inspect
 
 from datalad_registry.models import RepoUrl, db
@@ -59,13 +60,22 @@ def is_dataset_url_unprocessed(dataset_url_id: int) -> bool:
 class TestProcessDatasetUrl:
     @pytest.mark.usefixtures("populate_db_with_unprocessed_dataset_urls")
     @pytest.mark.parametrize("invalid_dataset_url_id", [-100, -1, 0, 1, 7, 8, 99])
-    def test_invalid_dataset_url_id(self, invalid_dataset_url_id):
+    def test_invalid_dataset_url_id(
+        self, invalid_dataset_url_id, mocker: MockerFixture
+    ):
         """
         Test the case that the given RepoUrl id is not valid, i.e. no RepoUrl
         having the given id exists in the database
+
+        The Celery task is expected to simply return without doing anything because the
+        given argument, a supposed RepoUrl ID, can identify a RepoUrl that has been
+        deleted from the database before the execution of the Celery task.
         """
-        with pytest.raises(ValueError):
-            process_dataset_url(invalid_dataset_url_id)
+        mock_update_dataset_url_info = mocker.patch(
+            "datalad_registry.tasks._update_dataset_url_info"
+        )
+        process_dataset_url(invalid_dataset_url_id)
+        mock_update_dataset_url_info.assert_not_called()
 
     @pytest.mark.usefixtures("populate_db_with_unprocessed_dataset_urls")
     @pytest.mark.parametrize("dataset_url_id", [2, 3, 4, 5, 6])
