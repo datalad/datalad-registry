@@ -13,7 +13,6 @@ from datalad.utils import rmtree as rm_ds_tree
 from flask import current_app
 from pydantic import StrictInt, StrictStr, parse_obj_as, validate_arguments
 from sqlalchemy import and_, case, not_, or_, select
-from sqlalchemy.exc import NoResultFound
 
 from datalad_registry.models import RepoUrl, URLMetadata, db
 from datalad_registry.utils import StrEnum, allocate_ds_path
@@ -34,6 +33,7 @@ class ExtractMetaStatus(StrEnum):
     SUCCEEDED = auto()
     ABORTED = auto()
     SKIPPED = auto()
+    NO_RECORD = auto()
 
 
 class ProcessUrlStatus(StrEnum):
@@ -124,17 +124,26 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
              `ExtractMetaStatus.SKIPPED` if the extraction has been skipped because the
                  metadata to be extracted is already present in the database,
                  as identified by the extractor name, RepoUrl, and dataset version.
+             `ExtractMetaStatus.NO_RECORD` if there is no RepoUrl in the database with
+                the specified ID. (This task can be initiated with the argument of a
+                supposed ID of a RepoUrl that doesn't identify any RepoUrl in
+                the database at the time of the execution of this task because
+                the RepoUrl has been deleted from the database.)
     :raise: ValueError if the RepoUrl of the specified ID does not exist or has not
                 been processed yet.
             RuntimeError if the extraction has produced no valid metadata.
 
     """
-    try:
-        url = db.session.execute(
-            db.select(RepoUrl).where(RepoUrl.id == ds_url_id)
-        ).scalar_one()
-    except NoResultFound:
-        raise ValueError(f"RepoUrl of ID: {ds_url_id} does not exist")
+
+    url = (
+        db.session.execute(select(RepoUrl).filter_by(id=ds_url_id))
+        .scalars()
+        .one_or_none()
+    )
+
+    if url is None:
+        # === there is no RepoUrl in the database with the specified ID ===
+        return ExtractMetaStatus.NO_RECORD
 
     if not url.processed:
         raise ValueError(
