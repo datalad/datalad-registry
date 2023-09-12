@@ -172,7 +172,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
                 return ExtractMetaStatus.ABORTED
 
     # Check if the metadata to be extracted is already present in the database
-    for data in url.metadata_:
+    for data in url.metadata_:  # type: ignore
         if extractor == data.extractor_name:
             # Get the current version of the dataset as it exists in the local cache
             ds_version = require_dataset(
