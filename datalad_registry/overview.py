@@ -4,7 +4,7 @@
 import logging
 
 from flask import Blueprint, render_template, request
-from sqlalchemy import nullslast, or_, String
+from sqlalchemy import Text, nullslast, or_
 
 from datalad_registry.models import RepoUrl, URLMetadata, db
 
@@ -53,7 +53,9 @@ def overview():  # No type hints due to mypy#7187.
                         # It seems to serialize nested fields
                         # URLMetadata.extracted_metadata['entities'].as_string().contains(filter)
                         # search the entire record!
-                        URLMetadata.extracted_metadata.cast(String).contains(filter),
+                        URLMetadata.extracted_metadata.cast(Text).contains(
+                            filter, autoescape=True
+                        ),
                     )
                 ),
             )
