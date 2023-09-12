@@ -4,9 +4,9 @@
 import logging
 
 from flask import Blueprint, render_template, request
-from sqlalchemy import nullslast
+from sqlalchemy import nullslast, or_, String
 
-from datalad_registry.models import RepoUrl, db
+from datalad_registry.models import RepoUrl, URLMetadata, db
 
 lgr = logging.getLogger(__name__)
 bp = Blueprint("overview", __name__, url_prefix="/overview")
@@ -34,10 +34,30 @@ def overview():  # No type hints due to mypy#7187.
     r = db.session.query(RepoUrl)
 
     # Apply filter if provided
-    url_filter = request.args.get("filter", None, type=str)
-    if url_filter:
-        lgr.debug("Filter URLs by '%s'", url_filter)
-        r = r.filter(RepoUrl.url.contains(url_filter, autoescape=True))
+    filter = request.args.get("filter", None, type=str)
+    if filter:
+        lgr.debug("Filter URLs by '%s'", filter)
+        r = r.filter(
+            or_(
+                RepoUrl.url.contains(filter, autoescape=True),
+                RepoUrl.ds_id.contains(filter, autoescape=True),
+                RepoUrl.head.contains(filter, autoescape=True),
+                RepoUrl.head_describe.contains(filter, autoescape=True),
+                RepoUrl.branches.contains(filter, autoescape=True),
+                RepoUrl.tags.contains(filter, autoescape=True),
+                RepoUrl.metadata_.any(
+                    or_(
+                        URLMetadata.extractor_name.contains(filter, autoescape=True),
+                        # for a specific field: .as_string()
+                        # URLMetadata.extracted_metadata['dataset_version'].as_string().contains(filter)
+                        # It seems to serialize nested fields
+                        # URLMetadata.extracted_metadata['entities'].as_string().contains(filter)
+                        # search the entire record!
+                        URLMetadata.extracted_metadata.cast(String).contains(filter),
+                    )
+                ),
+            )
+        )
 
     # Sort
     r = r.group_by(RepoUrl)
@@ -55,5 +75,5 @@ def overview():  # No type hints due to mypy#7187.
         "overview.html",
         pagination=pagination,
         sort_by=sort_by,
-        url_filter=url_filter,
+        url_filter=filter,
     )
