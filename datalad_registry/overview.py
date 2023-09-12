@@ -43,7 +43,7 @@ def overview():  # No type hints due to mypy#7187.
                 RepoUrl.ds_id.contains(filter, autoescape=True),
                 RepoUrl.head.contains(filter, autoescape=True),
                 RepoUrl.head_describe.contains(filter, autoescape=True),
-                RepoUrl.branches.contains(filter, autoescape=True),
+                RepoUrl.branches.cast(Text).contains(filter, autoescape=True),
                 RepoUrl.tags.contains(filter, autoescape=True),
                 RepoUrl.metadata_.any(
                     or_(
