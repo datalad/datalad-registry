@@ -37,6 +37,7 @@ class TestCreateApp:
             "url-check-dispatcher": {
                 "task": "datalad_registry.tasks.url_chk_dispatcher",
                 "schedule": 60.0,
+                "options": {"expires": 60.0},
             }
         }
 
