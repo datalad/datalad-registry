@@ -37,24 +37,29 @@ def overview():  # No type hints due to mypy#7187.
     filter = request.args.get("filter", None, type=str)
     if filter:
         lgr.debug("Filter URLs by '%s'", filter)
+
+        escape = "\\"
+        escaped_filter = (
+            filter.replace(escape, escape + escape)
+            .replace("%", escape + "%")
+            .replace("_", escape + "_")
+        )
+        pattern = f"%{escaped_filter}%"
+
         r = r.filter(
             or_(
-                RepoUrl.url.contains(filter, autoescape=True),
-                RepoUrl.ds_id.contains(filter, autoescape=True),
-                RepoUrl.head.contains(filter, autoescape=True),
-                RepoUrl.head_describe.contains(filter, autoescape=True),
-                RepoUrl.branches.contains(filter, autoescape=True),
-                RepoUrl.tags.contains(filter, autoescape=True),
+                RepoUrl.url.ilike(pattern, escape=escape),
+                RepoUrl.ds_id.ilike(pattern, escape=escape),
+                RepoUrl.head.ilike(pattern, escape=escape),
+                RepoUrl.head_describe.ilike(pattern, escape=escape),
+                RepoUrl.branches.ilike(pattern, escape=escape),
+                RepoUrl.tags.ilike(pattern, escape=escape),
                 RepoUrl.metadata_.any(
                     or_(
-                        URLMetadata.extractor_name.contains(filter, autoescape=True),
-                        # for a specific field: .as_string()
-                        # URLMetadata.extracted_metadata['dataset_version'].as_string().contains(filter)
-                        # It seems to serialize nested fields
-                        # URLMetadata.extracted_metadata['entities'].as_string().contains(filter)
-                        # search the entire record!
-                        URLMetadata.extracted_metadata.cast(Text).contains(
-                            filter, autoescape=True
+                        URLMetadata.extractor_name.ilike(pattern, escape=escape),
+                        # search the entire JSON column as text
+                        URLMetadata.extracted_metadata.cast(Text).ilike(
+                            pattern, escape=escape
                         ),
                     )
                 ),
