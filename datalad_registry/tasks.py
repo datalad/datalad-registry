@@ -457,7 +457,7 @@ def chk_url(url_id: StrictInt, initial_last_chk_dt: Optional[datetime]):
     Check a dataset url for potential update
 
     :param url_id: The id (primary key) of the dataset url, represented by a `RepoUrl`,
-                    in the database
+                   in the database
     :param initial_last_chk_dt: The value of `last_chk_dt` of the `RepoUrl`
                                 when this check was initiated.
     """
