@@ -373,6 +373,7 @@ def url_chk_dispatcher():
     #   This is determined by the `rate_limit` of the `chk_url` task and how frequently
     #   the `url_chk_dispatcher` task is run
     max_chks_to_dispatch = 10
+    chk_url_task_expiration = 60.0  # todo: make this configurable
     repeat_cutoff_dt = datetime.now(timezone.utc) - min_chk_interval
 
     relevant_action_dt = case(
@@ -446,7 +447,7 @@ def url_chk_dispatcher():
     ).all()
 
     for id_, last_chk_dt in result:
-        chk_url.delay(id_, last_chk_dt)
+        chk_url.apply_async((id_, last_chk_dt), expires=chk_url_task_expiration)
 
 
 @shared_task(rate_limit="10/m")
