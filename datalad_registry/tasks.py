@@ -41,6 +41,29 @@ class ProcessUrlStatus(StrEnum):
     NO_RECORD = auto()
 
 
+class ChkUrlStatus(StrEnum):
+    ABORTED = auto()
+    SKIPPED = auto()
+
+
+def _validate_url_is_processed(repo_url: RepoUrl) -> None:
+    """
+    Validate that a given RepoUrl has been marked processed and has a cache path
+
+    :raise: ValueError if the given RepoUrl has not been marked processed
+    :raise: Otherwise, AssertionError if the given RepoUrl has no cache path
+    """
+
+    if not repo_url.processed:
+        raise ValueError(
+            f"RepoUrl {repo_url.url}, of ID: {repo_url.id}, has not been processed yet"
+        )
+
+    assert (
+        repo_url.cache_path is not None
+    ), "Encountered a processed RepoUrl with no cache path"
+
+
 def _update_dataset_url_info(dataset_url: RepoUrl, ds: Dataset) -> None:
     """
     Update a given RepoUrl object with the information of a given dataset
@@ -148,14 +171,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
         # === there is no RepoUrl in the database with the specified ID ===
         return ExtractMetaStatus.NO_RECORD
 
-    if not url.processed:
-        raise ValueError(
-            f"RepoUrl {url.url}, of ID: {url.id}, has not been processed yet"
-        )
-
-    assert (
-        url.cache_path is not None
-    ), "Encountered a processed RepoUrl with no cache path"
+    _validate_url_is_processed(url)
 
     # Absolute path of the dataset clone in cache
     cache_path_abs = (
