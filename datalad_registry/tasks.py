@@ -468,7 +468,7 @@ def url_chk_dispatcher():
 
 @shared_task(rate_limit="10/m")
 @validate_arguments
-def chk_url(url_id: StrictInt, initial_last_chk_dt: Optional[datetime]):
+def chk_url(url_id: StrictInt, initial_last_chk_dt: Optional[datetime]) -> ChkUrlStatus:
     """
     Check a dataset url for potential update
 
@@ -476,6 +476,59 @@ def chk_url(url_id: StrictInt, initial_last_chk_dt: Optional[datetime]):
                    in the database
     :param initial_last_chk_dt: The value of `last_chk_dt` of the `RepoUrl`
                                 when this check was initiated.
+    :raise: ValueError if the RepoUrl of the specified ID does not exist or has not
+            been processed yet.
     """
-    # Dummy return value for testing
-    return f"url_id: {url_id}, initial_last_chk_dt: {initial_last_chk_dt}"
+
+    # Select and lock the RepoUrl identified by the given ID if it is not locked
+    # by another transaction
+    url = (
+        db.session.execute(
+            select(RepoUrl).filter_by(id=url_id).with_for_update(skip_locked=True)
+        )
+        .scalars()
+        .one_or_none()
+    )
+
+    if url is None:
+        # ===
+        # There is no RepoUrl in the database with the specified ID, possibly due to
+        # deletion, or the RepoUrl identified by the given ID is currently locked.
+        # ===
+        return ChkUrlStatus.ABORTED
+
+    # ===
+    # At this point, the RepoUrl identified by the given ID is obtained and exclusively
+    # locked by the current transaction
+    # ===
+
+    _validate_url_is_processed(url)
+
+    if url.last_chk_dt != initial_last_chk_dt:
+        # The RepoUrl has been checked by another process since this check was initiated
+        # Skip this check
+        return ChkUrlStatus.SKIPPED
+
+    # ===
+    # The RepoUrl has not been checked by any other process
+    # since this check was initiated
+    # ===
+
+    # todo: the following is just a template
+    try:
+        # Do the checking and potential updating
+        pass
+    except Exception as e:
+        # rollback the transaction
+        db.session.rollback()  # todo: verify the use of this
+
+        url.n_failed_chks += 1
+        raise e
+    else:
+        url.n_failed_chks = 0
+        url.chk_req_dt = None
+    finally:
+        url.last_chk_dt = datetime.now(timezone.utc)
+        db.session.commit()
+
+    # todo: return the status of the check
