@@ -462,14 +462,21 @@ def url_chk_dispatcher():
     ).all()
 
     for id_, last_chk_dt in result:
-        chk_url.apply_async((id_, last_chk_dt), expires=chk_url_task_expiration)
+        chk_url_to_update.apply_async(
+            (id_, last_chk_dt), expires=chk_url_task_expiration
+        )
 
 
 @shared_task(rate_limit="10/m")
 @validate_arguments
-def chk_url(url_id: StrictInt, initial_last_chk_dt: Optional[datetime]) -> ChkUrlStatus:
+def chk_url_to_update(
+    url_id: StrictInt, initial_last_chk_dt: Optional[datetime]
+) -> ChkUrlStatus:
     """
     Check a dataset url for potential update
+
+    If an update is available, update the clone of the dataset at the url in the local
+    cache and update the corresponding RepoUrl object in the database.
 
     :param url_id: The id (primary key) of the dataset url, represented by a `RepoUrl`,
                    in the database
