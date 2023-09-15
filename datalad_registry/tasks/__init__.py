@@ -14,6 +14,7 @@ from flask import current_app
 from pydantic import StrictInt, StrictStr, parse_obj_as, validate_arguments
 from sqlalchemy import and_, case, not_, or_, select
 
+from datalad_registry.com_models import MetaExtractResult
 from datalad_registry.models import RepoUrl, URLMetadata, db
 from datalad_registry.utils import StrEnum, allocate_ds_path
 from datalad_registry.utils.datalad_tls import (
@@ -23,8 +24,6 @@ from datalad_registry.utils.datalad_tls import (
     get_origin_branches,
     get_wt_annexed_file_info,
 )
-
-from .com_models import MetaExtractResult
 
 lgr = logging.getLogger(__name__)
 
