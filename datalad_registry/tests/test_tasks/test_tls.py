@@ -4,7 +4,7 @@ from uuid import UUID
 
 from flask import current_app
 
-from datalad_registry.utils import allocate_ds_path
+from datalad_registry.tasks.tls import allocate_ds_path
 
 _PATH_NAME_CHARS = hexdigits[:-6]
 

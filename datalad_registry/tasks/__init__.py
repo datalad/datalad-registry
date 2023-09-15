@@ -16,7 +16,7 @@ from sqlalchemy import and_, case, not_, or_, select
 
 from datalad_registry.com_models import MetaExtractResult
 from datalad_registry.models import RepoUrl, URLMetadata, db
-from datalad_registry.utils import StrEnum, allocate_ds_path
+from datalad_registry.utils import StrEnum
 from datalad_registry.utils.datalad_tls import (
     clone,
     get_origin_annex_key_count,
@@ -24,6 +24,8 @@ from datalad_registry.utils.datalad_tls import (
     get_origin_branches,
     get_wt_annexed_file_info,
 )
+
+from .tls import allocate_ds_path
 
 lgr = logging.getLogger(__name__)
 
