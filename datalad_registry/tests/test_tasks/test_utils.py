@@ -4,7 +4,7 @@ from uuid import UUID
 
 from flask import current_app
 
-from datalad_registry.tasks.tls import allocate_ds_path
+from datalad_registry.tasks.utils import allocate_ds_path
 
 _PATH_NAME_CHARS = hexdigits[:-6]
 
@@ -58,8 +58,8 @@ class TestAllocateDsPath:
                 parents=True, exist_ok=False
             )
 
-            from datalad_registry.utils import misc
+            from datalad_registry.tasks import utils as tasks_utils
 
-            monkeypatch.setattr(misc, "uuid4", mock_uuid4)
+            monkeypatch.setattr(tasks_utils, "uuid4", mock_uuid4)
 
             assert allocate_ds_path() == final_path

@@ -25,7 +25,7 @@ from datalad_registry.utils.datalad_tls import (
     get_wt_annexed_file_info,
 )
 
-from .tls import allocate_ds_path
+from .utils import allocate_ds_path
 
 lgr = logging.getLogger(__name__)
 
