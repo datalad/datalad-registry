@@ -41,6 +41,9 @@ def validate_url_is_processed(repo_url: RepoUrl) -> None:
 
     :raise: ValueError if the given RepoUrl has not been marked processed
     :raise: Otherwise, AssertionError if the given RepoUrl has no cache path
+
+    Note: This function is meant to be called inside a Celery task for it requires
+          an active application context of the Flask app
     """
 
     if not repo_url.processed:
