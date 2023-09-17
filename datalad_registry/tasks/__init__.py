@@ -47,7 +47,7 @@ class ChkUrlStatus(StrEnum):
     SKIPPED = auto()
 
 
-def _validate_url_is_processed(repo_url: RepoUrl) -> None:
+def validate_url_is_processed(repo_url: RepoUrl) -> None:
     """
     Validate that a given RepoUrl has been marked processed and has a cache path
 
@@ -172,7 +172,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
         # === there is no RepoUrl in the database with the specified ID ===
         return ExtractMetaStatus.NO_RECORD
 
-    _validate_url_is_processed(url)
+    validate_url_is_processed(url)
 
     # Absolute path of the dataset clone in cache
     cache_path_abs = (
@@ -510,7 +510,7 @@ def chk_url_to_update(
     # locked by the current transaction
     # ===
 
-    _validate_url_is_processed(url)
+    validate_url_is_processed(url)
 
     if url.last_chk_dt != initial_last_chk_dt:
         # The RepoUrl has been checked by another process since this check was initiated
