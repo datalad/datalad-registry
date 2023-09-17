@@ -5,6 +5,8 @@ from uuid import uuid4
 
 from flask import current_app
 
+from datalad_registry.models import RepoUrl
+
 
 def allocate_ds_path() -> Path:
     """
@@ -31,3 +33,7 @@ def allocate_ds_path() -> Path:
 
         if not (current_app.config["DATALAD_REGISTRY_DATASET_CACHE"] / path).is_dir():
             return path
+
+
+def update_ds_clone(repo_url: RepoUrl) -> tuple[Path, bool]:
+    pass
