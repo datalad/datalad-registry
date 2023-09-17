@@ -57,4 +57,16 @@ def validate_url_is_processed(repo_url: RepoUrl) -> None:
 
 
 def update_ds_clone(repo_url: RepoUrl) -> tuple[Path, bool]:
+    """
+    Update the local clone of the dataset at a given URL
+
+    :param repo_url: The RepoUrl object representing the given URL
+    :return: A tuple containing the following two elements:
+             - The path to an up-to-date clone of the dataset at the given URL
+               Note: This path is a relative path to the base cache directory
+             - A boolean indicating if the path, the first element of the tuple,
+               is a newly created directory for a new clone of the dataset, which is
+               different from the current value of `cache_path` of the given RepoUrl
+               object
+    """
     pass
