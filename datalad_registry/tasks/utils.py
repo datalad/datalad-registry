@@ -35,5 +35,23 @@ def allocate_ds_path() -> Path:
             return path
 
 
+def validate_url_is_processed(repo_url: RepoUrl) -> None:
+    """
+    Validate that a given RepoUrl has been marked processed and has a cache path
+
+    :raise: ValueError if the given RepoUrl has not been marked processed
+    :raise: Otherwise, AssertionError if the given RepoUrl has no cache path
+    """
+
+    if not repo_url.processed:
+        raise ValueError(
+            f"RepoUrl {repo_url.url}, of ID: {repo_url.id}, has not been processed yet"
+        )
+
+    assert (
+        repo_url.cache_path is not None
+    ), "Encountered a processed RepoUrl with no cache path"
+
+
 def update_ds_clone(repo_url: RepoUrl) -> tuple[Path, bool]:
     pass

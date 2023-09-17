@@ -25,7 +25,7 @@ from datalad_registry.utils.datalad_tls import (
     get_wt_annexed_file_info,
 )
 
-from .utils import allocate_ds_path
+from .utils import allocate_ds_path, validate_url_is_processed
 
 lgr = logging.getLogger(__name__)
 
@@ -45,24 +45,6 @@ class ProcessUrlStatus(StrEnum):
 class ChkUrlStatus(StrEnum):
     ABORTED = auto()
     SKIPPED = auto()
-
-
-def validate_url_is_processed(repo_url: RepoUrl) -> None:
-    """
-    Validate that a given RepoUrl has been marked processed and has a cache path
-
-    :raise: ValueError if the given RepoUrl has not been marked processed
-    :raise: Otherwise, AssertionError if the given RepoUrl has no cache path
-    """
-
-    if not repo_url.processed:
-        raise ValueError(
-            f"RepoUrl {repo_url.url}, of ID: {repo_url.id}, has not been processed yet"
-        )
-
-    assert (
-        repo_url.cache_path is not None
-    ), "Encountered a processed RepoUrl with no cache path"
 
 
 def _update_dataset_url_info(dataset_url: RepoUrl, ds: Dataset) -> None:
