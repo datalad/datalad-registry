@@ -10,6 +10,7 @@ from datalad_registry.utils.datalad_tls import (
     get_origin_annex_uuid,
     get_origin_branches,
     get_origin_default_branch,
+    get_origin_upstream_branch,
     get_wt_annexed_file_info,
 )
 
@@ -217,3 +218,21 @@ class TestGetOriginDefaultBranch:
         l1_clone.repo.call_git(["checkout", "-b", branch_name])
 
         assert get_origin_default_branch(l2_clone) == branch_name
+
+
+class TestGetOriginUpstreamBranch:
+    def test_no_match(self, two_files_ds_non_annex, tmp_path, monkeypatch):
+        """
+        Test the case that the name of the upstream branch at the origin remote of
+        the current local branch of a given dataset can't be extracted from the output
+        of `git rev-parse`
+        """
+
+        ds_clone = clone(source=two_files_ds_non_annex.path, path=tmp_path)
+
+        with pytest.raises(RuntimeError, match="Failed to extract the name"):
+            with monkeypatch.context() as m:
+                import re
+
+                m.setattr(re, "search", _mock_no_match_re_search)
+                get_origin_upstream_branch(ds_clone)
