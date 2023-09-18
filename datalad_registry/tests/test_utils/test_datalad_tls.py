@@ -172,6 +172,10 @@ def test_get_origin_branches(ds_name, request, tmp_path):
         }
 
 
+def _mock_no_match_re_search(*_args, **_kwargs):
+    return None
+
+
 class TestGetOriginDefaultBranch:
     def test_no_match(self, two_files_ds_non_annex, tmp_path, monkeypatch):
         """
@@ -179,16 +183,13 @@ class TestGetOriginDefaultBranch:
         dataset can't be extracted from the output of `git ls-remote`
         """
 
-        def mock_search(*_args, **_kwargs):
-            return None
-
         ds_clone = clone(source=two_files_ds_non_annex.path, path=tmp_path)
 
         with pytest.raises(RuntimeError, match="Failed to extract the name"):
             with monkeypatch.context() as m:
                 import re
 
-                m.setattr(re, "search", mock_search)
+                m.setattr(re, "search", _mock_no_match_re_search)
                 get_origin_default_branch(ds_clone)
 
     @pytest.mark.parametrize(
