@@ -9,6 +9,7 @@ from datalad_registry.utils.datalad_tls import (
     get_origin_annex_key_count,
     get_origin_annex_uuid,
     get_origin_branches,
+    get_origin_default_branch,
     get_wt_annexed_file_info,
 )
 
@@ -169,3 +170,44 @@ def test_get_origin_branches(ds_name, request, tmp_path):
                 ["log", "-1", "--format=%aI", b_name]
             ).strip(),
         }
+
+
+class TestGetOriginDefaultBranch:
+    def test_no_match(self, two_files_ds_non_annex, tmp_path, monkeypatch):
+        """
+        Test the case that the default branch name of the origin remote of the given
+        dataset can't be extracted from the output of `git ls-remote`
+        """
+
+        def mock_search(*_args, **_kwargs):
+            return None
+
+        ds_clone = clone(source=two_files_ds_non_annex.path, path=tmp_path)
+
+        with pytest.raises(RuntimeError, match="Failed to extract the name"):
+            with monkeypatch.context() as m:
+                import re
+
+                m.setattr(re, "search", mock_search)
+                get_origin_default_branch(ds_clone)
+
+    @pytest.mark.parametrize(
+        "ds_name",
+        [
+            "empty_ds_annex",
+            "two_files_ds_annex",
+            "empty_ds_non_annex",
+            "two_files_ds_non_annex",
+        ],
+    )
+    @pytest.mark.parametrize("branch_name", ["foo", "bar"])
+    def test_normal_operation(self, ds_name, branch_name, request, tmp_path):
+        """
+        Test the normal operation of `get_origin_default_branch`
+        """
+        ds: Dataset = request.getfixturevalue(ds_name)
+        ds_clone = clone(source=ds.path, path=tmp_path)
+
+        ds.repo.call_git(["checkout", "-b", branch_name])
+
+        assert get_origin_default_branch(ds_clone) == branch_name
