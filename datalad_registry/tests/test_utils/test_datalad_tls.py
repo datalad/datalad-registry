@@ -251,3 +251,26 @@ class TestGetOriginUpstreamBranch:
 
                 m.setattr(re, "search", _mock_no_match_re_search)
                 get_origin_upstream_branch(ds_clone)
+
+    @pytest.mark.parametrize(
+        "ds_name",
+        [
+            "empty_ds_annex",
+            "two_files_ds_annex",
+            "empty_ds_non_annex",
+            "two_files_ds_non_annex",
+        ],
+    )
+    @pytest.mark.parametrize("branch_name", ["foo", "bar"])
+    def test_normal_operation(self, ds_name, branch_name, request, tmp_path):
+        """
+        Test the normal operation of `get_origin_upstream_branch`
+        """
+        ds: Dataset = request.getfixturevalue(ds_name)
+
+        _, l2_clone = _two_level_clone(ds, tmp_path)
+
+        l2_clone.repo.call_git(["checkout", "-b", branch_name])
+        l2_clone.repo.call_git(["push", "-u", "origin", branch_name])
+
+        assert get_origin_upstream_branch(l2_clone) == branch_name
