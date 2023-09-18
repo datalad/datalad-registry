@@ -206,8 +206,13 @@ class TestGetOriginDefaultBranch:
         Test the normal operation of `get_origin_default_branch`
         """
         ds: Dataset = request.getfixturevalue(ds_name)
-        ds_clone = clone(source=ds.path, path=tmp_path)
 
-        ds.repo.call_git(["checkout", "-b", branch_name])
+        l1_clone_path = tmp_path / "l1_clone"
+        l2_clone_path = tmp_path / "l2_clone"
 
-        assert get_origin_default_branch(ds_clone) == branch_name
+        l1_clone = clone(source=ds.path, path=l1_clone_path)
+        l2_clone = clone(source=l1_clone.path, path=l2_clone_path)
+
+        l1_clone.repo.call_git(["checkout", "-b", branch_name])
+
+        assert get_origin_default_branch(l2_clone) == branch_name
