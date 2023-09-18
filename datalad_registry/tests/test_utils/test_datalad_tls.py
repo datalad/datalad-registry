@@ -1,3 +1,4 @@
+from pathlib import Path
 from uuid import UUID
 
 from datalad.api import Dataset
@@ -177,6 +178,24 @@ def _mock_no_match_re_search(*_args, **_kwargs):
     return None
 
 
+def _two_level_clone(ds: Dataset, dir_path: Path) -> tuple[Dataset, Dataset]:
+    """
+    Do a two-level clone of a given dataset within a given directory
+
+    :param ds: The given directory
+    :param dir_path: The given directory, which must be empty
+    :return: A tuple consisting of the first and second level clones
+             of the given dataset each residing in a subdirectory of the given directory
+    """
+    l1_clone_path = dir_path / "l1_clone"
+    l2_clone_path = dir_path / "l2_clone"
+
+    l1_clone = clone(source=ds.path, path=l1_clone_path)
+    l2_clone = clone(source=l1_clone.path, path=l2_clone_path)
+
+    return l1_clone, l2_clone
+
+
 class TestGetOriginDefaultBranch:
     def test_no_match(self, two_files_ds_non_annex, tmp_path, monkeypatch):
         """
@@ -209,11 +228,7 @@ class TestGetOriginDefaultBranch:
         """
         ds: Dataset = request.getfixturevalue(ds_name)
 
-        l1_clone_path = tmp_path / "l1_clone"
-        l2_clone_path = tmp_path / "l2_clone"
-
-        l1_clone = clone(source=ds.path, path=l1_clone_path)
-        l2_clone = clone(source=l1_clone.path, path=l2_clone_path)
+        l1_clone, l2_clone = _two_level_clone(ds, tmp_path)
 
         l1_clone.repo.call_git(["checkout", "-b", branch_name])
 
