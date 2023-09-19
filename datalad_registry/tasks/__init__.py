@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from enum import auto
 import json
+from pathlib import Path
 from typing import Optional
 
 from celery import shared_task
@@ -25,7 +26,7 @@ from datalad_registry.utils.datalad_tls import (
     get_wt_annexed_file_info,
 )
 
-from .utils import allocate_ds_path, validate_url_is_processed
+from .utils import allocate_ds_path, update_ds_clone, validate_url_is_processed
 
 lgr = get_task_logger(__name__)
 
@@ -43,6 +44,7 @@ class ProcessUrlStatus(StrEnum):
 
 
 class ChkUrlStatus(StrEnum):
+    SUCCEEDED = auto()
     ABORTED = auto()
     SKIPPED = auto()
 
@@ -504,21 +506,51 @@ def chk_url_to_update(
     # since this check was initiated
     # ===
 
-    # todo: the following is just a template
     try:
-        # Do the checking and potential updating
-        pass
+        # Check and potentially update the dataset clone
+        ds_clone_path_relative, is_new_clone = update_ds_clone(url)
     except Exception as e:
+        lgr.info(
+            "Check to update the clone of the dataset at the given URL, %s failed."
+            "This is the %s-th consecutive failures in checking for update",
+            url.url,
+            url.n_failed_chks + 1,
+            exc_info=True,
+        )
+
         # rollback the transaction
-        db.session.rollback()  # todo: verify the use of this
+        db.session.rollback()
 
         url.n_failed_chks += 1
+
         raise e
     else:
+        base_cache_path: Path = current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
+        ds_clone_path_absolute = base_cache_path / ds_clone_path_relative
+
+        ds_clone = require_dataset(
+            ds_clone_path_absolute,
+            check_installed=True,
+            purpose="updating dataset info in database",
+        )
+
+        _update_dataset_url_info(url, ds_clone)
+
+        if is_new_clone:
+            # Remove old clone
+            rm_ds_tree(url.cache_path)
+
+            # Update the cache path to the path of the new clone
+            url.cache_path = str(ds_clone_path_relative)
+
+        # Initiate extraction of metadata of the up-to-date dataset
+        for extractor in current_app.config["DATALAD_REGISTRY_METADATA_EXTRACTORS"]:
+            extract_ds_meta.apply_async((url.id, extractor), link_error=log_error.s())
+
         url.n_failed_chks = 0
         url.chk_req_dt = None
     finally:
         url.last_chk_dt = datetime.now(timezone.utc)
         db.session.commit()
 
-    # todo: return the status of the check
+    return ChkUrlStatus.SUCCEEDED
