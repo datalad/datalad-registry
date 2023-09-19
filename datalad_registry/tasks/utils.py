@@ -107,6 +107,12 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Path, bool]:
             )
         except CommandError:
             # Log the CommandError
+            lgr.debug(
+                "Failed to merge the origin upstream branch. "
+                "A new clone of the dataset at the given URL will be made"
+                " in a new directory",
+                exc_info=True,
+            )
 
             # Make a new clone of the dataset at the given URL at a new directory
 
