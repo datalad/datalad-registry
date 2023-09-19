@@ -154,8 +154,7 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Path, bool]:
             )
 
             # Make a new clone of the dataset at the given URL at a new directory
-
-            raise NotImplementedError
+            return reclone_ds(), True
         else:
             # Merge the git-annex branch if the current dataset is an annex repo
             if current_ds_clone.repo.is_with_annex():
@@ -164,4 +163,4 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Path, bool]:
             return current_ds_clone_path, False
     else:
         # Make a new clone of the dataset at the given URL at a new directory
-        raise NotImplementedError
+        return reclone_ds(), True
