@@ -3,9 +3,18 @@
 from pathlib import Path
 from uuid import uuid4
 
+from celery.utils.log import get_task_logger
+from datalad.distribution.dataset import require_dataset
+from datalad.support.exceptions import CommandError
 from flask import current_app
 
 from datalad_registry.models import RepoUrl
+from datalad_registry.utils.datalad_tls import (
+    get_origin_default_branch,
+    get_origin_upstream_branch,
+)
+
+lgr = get_task_logger(__name__)
 
 
 def allocate_ds_path() -> Path:
@@ -68,5 +77,46 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Path, bool]:
                is a newly created directory for a new clone of the dataset, which is
                different from the current value of `cache_path` of the given RepoUrl
                object
+
+    Note: This function is meant to be called inside a Celery task for it requires
+          an active application context of the Flask app
     """
-    pass
+    validate_url_is_processed(repo_url)
+
+    base_cache_path: Path = current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
+
+    current_ds_clone_path = base_cache_path / repo_url.cache_path
+
+    current_ds_clone = require_dataset(
+        current_ds_clone_path, check_installed=True, purpose="update"
+    )
+
+    current_ds_clone.repo.call_git(["fetch"])
+
+    # The current default branch of the origin remote, the copy of the dataset
+    # located at the given URL, that the local clone is tracking
+    current_origin_default_branch = get_origin_default_branch(current_ds_clone)
+
+    # The upstream branch at the origin remote of the current local branch
+    origin_upstream_branch = get_origin_upstream_branch(current_ds_clone)
+
+    if origin_upstream_branch == current_origin_default_branch:
+        try:
+            current_ds_clone.repo.call_git(
+                ["merge", "--ff-only", f"origin/{origin_upstream_branch}"]
+            )
+        except CommandError:
+            # Log the CommandError
+
+            # Make a new clone of the dataset at the given URL at a new directory
+
+            raise NotImplementedError
+        else:
+            # Merge the git-annex branch if the current dataset is an annex repo
+            if current_ds_clone.repo.is_with_annex():
+                current_ds_clone.repo.call_annex(["merge"])
+
+            return current_ds_clone_path, False
+    else:
+        # Make a new clone of the dataset at the given URL at a new directory
+        raise NotImplementedError
