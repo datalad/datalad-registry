@@ -6,10 +6,12 @@ from uuid import uuid4
 from celery.utils.log import get_task_logger
 from datalad.distribution.dataset import require_dataset
 from datalad.support.exceptions import CommandError
+from datalad.utils import rmtree as rm_ds_tree
 from flask import current_app
 
 from datalad_registry.models import RepoUrl
 from datalad_registry.utils.datalad_tls import (
+    clone,
     get_origin_default_branch,
     get_origin_upstream_branch,
 )
@@ -81,6 +83,43 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Path, bool]:
     Note: This function is meant to be called inside a Celery task for it requires
           an active application context of the Flask app
     """
+
+    def reclone_ds() -> Path:
+        """
+        Reclone the dataset at the given URL
+
+        :return: The path to the newly cloned dataset
+                 Note: This path is a relative path to the base cache directory
+        """
+        # Allocate a new path for the new clone of the dataset
+        ds_path_relative = allocate_ds_path()
+        ds_path_absolute = base_cache_path / ds_path_relative
+
+        # Create a directory at the newly allocated path
+        ds_path_absolute.mkdir(parents=True, exist_ok=False)
+
+        try:
+            # Clone the dataset at the given URL to the newly created directory
+            clone(
+                source=repo_url.url,
+                path=ds_path_absolute,
+                on_failure="stop",
+                result_renderer="disabled",
+            )
+        except Exception:
+            lgr.debug(
+                "Failed to clone the dataset at the given URL, %s, to a new directory",
+                repo_url.url,
+                exc_info=True,
+            )
+
+            # Delete the newly created directory for cloning the dataset
+            rm_ds_tree(ds_path_absolute)
+
+            raise
+        else:
+            return ds_path_relative
+
     validate_url_is_processed(repo_url)
 
     base_cache_path: Path = current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
