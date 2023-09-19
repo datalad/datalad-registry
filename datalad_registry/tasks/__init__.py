@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta, timezone
 from enum import auto
 import json
-import logging
 from typing import Optional
 
 from celery import shared_task
+from celery.utils.log import get_task_logger
 from datalad import api as dl
 from datalad.api import Dataset
 from datalad.distribution.dataset import require_dataset
@@ -27,7 +27,7 @@ from datalad_registry.utils.datalad_tls import (
 
 from .utils import allocate_ds_path, validate_url_is_processed
 
-lgr = logging.getLogger(__name__)
+lgr = get_task_logger(__name__)
 
 
 class ExtractMetaStatus(StrEnum):
