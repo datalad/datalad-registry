@@ -518,9 +518,6 @@ def chk_url_to_update(
             exc_info=True,
         )
 
-        # rollback the transaction
-        db.session.rollback()
-
         url.n_failed_chks += 1
 
         raise e
