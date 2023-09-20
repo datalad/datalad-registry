@@ -124,7 +124,7 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Path, bool]:
 
     base_cache_path: Path = current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
 
-    current_ds_clone_path = base_cache_path / repo_url.cache_path
+    current_ds_clone_path = repo_url.cache_path_absolute
 
     current_ds_clone = require_dataset(
         current_ds_clone_path, check_installed=True, purpose="update"
