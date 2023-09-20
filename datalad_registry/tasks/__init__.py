@@ -159,6 +159,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
 
     # Absolute path of the dataset clone in cache
     cache_path_abs = url.cache_path_absolute
+    assert cache_path_abs is not None
 
     # Check for missing of required files
     if extractor in _EXTRACTOR_REQUIRED_FILES:
