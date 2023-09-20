@@ -43,8 +43,19 @@ class ProcessUrlStatus(StrEnum):
 
 
 class ChkUrlStatus(StrEnum):
-    SUCCEEDED = auto()
+    # The dataset at the URL has been successfully updated
+    OK_UPDATED = auto()
+
+    # The dataset at the URL has been successfully checked for update, but there is no
+    # update available
+    OK_CHK_ONLY = auto()
+
+    # The check for update task has been aborted because there is no RepoUrl in the
+    # database with the specified ID, possibly due to
+    # deletion, or the RepoUrl identified by the given ID is currently locked
     ABORTED = auto()
+
+    # The RepoUrl has been checked by another process since this check was initiated
     SKIPPED = auto()
 
 
@@ -503,6 +514,7 @@ def chk_url_to_update(
     # since this check was initiated
     # ===
 
+    is_record_updated = False
     try:
         # Check and potentially update the dataset clone
         ds_clone_path_relative, is_new_clone = update_ds_clone(url)
@@ -543,6 +555,8 @@ def chk_url_to_update(
                     (url.id, extractor), link_error=log_error.s()
                 )
 
+            is_record_updated = True
+
         if is_new_clone:
             # Remove old clone
             rm_ds_tree(url.cache_path)
@@ -556,4 +570,4 @@ def chk_url_to_update(
         url.last_chk_dt = datetime.now(timezone.utc)
         db.session.commit()
 
-    return ChkUrlStatus.SUCCEEDED
+    return ChkUrlStatus.OK_UPDATED if is_record_updated else ChkUrlStatus.OK_CHK_ONLY
