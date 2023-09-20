@@ -158,9 +158,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
     validate_url_is_processed(url)
 
     # Absolute path of the dataset clone in cache
-    cache_path_abs = (
-        current_app.config["DATALAD_REGISTRY_DATASET_CACHE"] / url.cache_path
-    )
+    cache_path_abs = url.cache_path_absolute
 
     # Check for missing of required files
     if extractor in _EXTRACTOR_REQUIRED_FILES:
