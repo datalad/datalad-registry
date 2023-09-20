@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from enum import auto
 import json
-from pathlib import Path
 from typing import Optional
 
 from celery import shared_task
@@ -522,11 +521,11 @@ def chk_url_to_update(
 
         raise e
     else:
-        base_cache_path: Path = current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
-        ds_clone_path_absolute = base_cache_path / ds_clone_path_relative
-
         ds_clone = require_dataset(
-            ds_clone_path_absolute,
+            (
+                current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
+                / ds_clone_path_relative
+            ),
             check_installed=True,
             purpose="updating dataset info in database",
         )
