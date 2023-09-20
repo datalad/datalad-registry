@@ -285,15 +285,15 @@ def process_dataset_url(dataset_url_id: StrictInt) -> ProcessUrlStatus:
         # === there is no RepoUrl in the database with the specified ID ===
         return ProcessUrlStatus.NO_RECORD
 
-    base_cache_path = current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
-
-    old_cache_path_relative = dataset_url.cache_path
+    old_cache_path_absolute = dataset_url.cache_path_absolute
 
     # Allocate a new path in the local cache for cloning the dataset
     # at the specified URL
     ds_path_relative = allocate_ds_path()
 
-    ds_path_absolute = base_cache_path / ds_path_relative
+    ds_path_absolute = (
+        current_app.config["DATALAD_REGISTRY_DATASET_CACHE"] / ds_path_relative
+    )
 
     # Create a directory at the newly allocated path
     ds_path_absolute.mkdir(parents=True, exist_ok=False)
@@ -323,10 +323,9 @@ def process_dataset_url(dataset_url_id: StrictInt) -> ProcessUrlStatus:
         raise e
 
     else:
-        if old_cache_path_relative is not None:
-            # Delete the old cache directory for the dataset (the directory that is
-            # a previous clone of the dataset)
-            rm_ds_tree(base_cache_path / old_cache_path_relative)
+        if old_cache_path_absolute is not None:
+            # Delete the directory for the old local dataset clone
+            rm_ds_tree(old_cache_path_absolute)
 
         return ProcessUrlStatus.SUCCEEDED
 
