@@ -173,27 +173,24 @@ class TestProcessDatasetUrl:
 
         url_id = 5  # RepoUrl ID of the `two_files_ds_annex` dataset
 
-        with flask_app.app_context():
-            base_cache_path = current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
-
-        def get_cache_path():
+        def get_cache_path_abs():
             with flask_app.app_context():
                 _dataset_url: Optional[RepoUrl] = db.session.execute(
                     db.select(RepoUrl).filter_by(id=url_id)
                 ).scalar()
 
-                return base_cache_path / Path(_dataset_url.cache_path)
+                return _dataset_url.cache_path_absolute
 
-        ds_cache_paths: list[Path] = []
+        abs_ds_cache_paths: list[Path] = []
         for _ in range(3):
             process_dataset_url(url_id)
-            ds_cache_paths.append(get_cache_path())
+            abs_ds_cache_paths.append(get_cache_path_abs())
 
         # Verify that only the cache directory created
         # by the last processing remains
-        assert not ds_cache_paths[0].is_dir()
-        assert not ds_cache_paths[1].is_dir()
-        assert ds_cache_paths[2].is_dir()
+        assert not abs_ds_cache_paths[0].is_dir()
+        assert not abs_ds_cache_paths[1].is_dir()
+        assert abs_ds_cache_paths[2].is_dir()
 
         # Verified that the dataset URL has been processed
         with flask_app.app_context():
