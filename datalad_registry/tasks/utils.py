@@ -160,7 +160,7 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Path, bool]:
             if current_ds_clone.repo.is_with_annex():
                 current_ds_clone.repo.call_annex(["merge"])
 
-            return current_ds_clone_path, False
+            return Path(repo_url.cache_path), False
     else:
         # Make a new clone of the dataset at the given URL at a new directory
         return reclone_ds(), True
