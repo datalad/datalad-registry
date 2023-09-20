@@ -528,7 +528,20 @@ def chk_url_to_update(
             purpose="updating dataset info in database",
         )
 
-        _update_dataset_url_info(url, ds_clone)
+        if ds_clone.repo.get_hexsha() != url.head:
+            # ===
+            # The dataset clone has been updated
+            # Update the dataset URL representation and
+            # associated metadata in the database
+            # ===
+
+            _update_dataset_url_info(url, ds_clone)
+
+            # Initiate extraction of metadata of the up-to-date dataset
+            for extractor in current_app.config["DATALAD_REGISTRY_METADATA_EXTRACTORS"]:
+                extract_ds_meta.apply_async(
+                    (url.id, extractor), link_error=log_error.s()
+                )
 
         if is_new_clone:
             # Remove old clone
@@ -536,10 +549,6 @@ def chk_url_to_update(
 
             # Update the cache path to the path of the new clone
             url.cache_path = str(ds_clone_path_relative)
-
-        # Initiate extraction of metadata of the up-to-date dataset
-        for extractor in current_app.config["DATALAD_REGISTRY_METADATA_EXTRACTORS"]:
-            extract_ds_meta.apply_async((url.id, extractor), link_error=log_error.s())
 
         url.n_failed_chks = 0
         url.chk_req_dt = None
