@@ -1,4 +1,8 @@
+from pathlib import Path
+from typing import Optional
+
 import click
+from flask import current_app
 from flask.cli import with_appcontext
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -62,6 +66,20 @@ class RepoUrl(db.Model):  # type: ignore
 
     def __repr__(self) -> str:
         return f"<RepoUrl(url={self.url!r}, ds_id={self.ds_id!r})>"
+
+    @property
+    def cache_path_absolute(self) -> Optional[Path]:
+        """
+        The absolute path in the local cache where a copy of the dataset at the URL is
+        stored. Note: The value of None indicates that there is no such path stored
+        indirectly in the database record.
+        """
+        if self.cache_path is not None:
+            return (
+                current_app.config["DATALAD_REGISTRY_DATASET_CACHE"] / self.cache_path
+            )
+        else:
+            return None
 
 
 class URLMetadata(db.Model):  # type: ignore
