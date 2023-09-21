@@ -523,8 +523,9 @@ def chk_url_to_update(
         url.n_failed_chks += 1
 
         lgr.info(
-            "Check to update the clone of the dataset at the given URL, %s, failed."
-            "This is the %s-th consecutive failures in checking for update",
+            "Check to update the dataset at the given URL, %s, failed."
+            "This is the %s-th consecutive failures in checking for update of the "
+            "dataset at the URL",
             url.url,
             url.n_failed_chks,
             exc_info=True,
