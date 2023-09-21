@@ -223,6 +223,9 @@ class DatasetURLRespBaseModel(DatasetURLSubmitModel):
         description="Whether an initial processing has been completed "
         "on the dataset URL"
     )
+    last_chk_dt: Optional[datetime] = Field(
+        None, description="The datetime the last check for update was performed"
+    )
 
     class Config:
         orm_mode = True
