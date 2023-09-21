@@ -521,7 +521,7 @@ def chk_url_to_update(
         ds_clone, is_new_clone = update_ds_clone(url)
     except Exception:
         lgr.info(
-            "Check to update the clone of the dataset at the given URL, %s failed."
+            "Check to update the clone of the dataset at the given URL, %s, failed."
             "This is the %s-th consecutive failures in checking for update",
             url.url,
             url.n_failed_chks + 1,
