@@ -536,19 +536,46 @@ def chk_url_to_update(
         if ds_clone.repo.get_hexsha() != url.head:
             # ===
             # The dataset clone has been updated
-            # Update the dataset URL representation and
-            # associated metadata in the database
             # ===
 
-            _update_dataset_url_info(url, ds_clone)
+            try:
+                # Update the dataset URL representation in the database
+                _update_dataset_url_info(url, ds_clone)
+            except Exception:
+                db.session.rollback()  # Rollback any possible changes to the database
 
-            # Initiate extraction of metadata of the up-to-date dataset
-            for extractor in current_app.config["DATALAD_REGISTRY_METADATA_EXTRACTORS"]:
-                extract_ds_meta.apply_async(
-                    (url.id, extractor), link_error=log_error.s()
+                url.n_failed_chks += 1
+
+                lgr.info(
+                    "Check to update the dataset at the given URL, %s, failed. This is "
+                    "the %s-th consecutive failures in checking for update of the "
+                    "dataset at the URL. This particular failure is not due to a "
+                    "failure in updating the local clone of the dataset, but a failure "
+                    "in extracting information from the updated clone of the dataset "
+                    "to update the representation of the dataset URL in the database",
+                    url.url,
+                    url.n_failed_chks,
+                    exc_info=True,
                 )
 
-            is_record_updated = True
+                if is_new_clone:
+                    # Remove the newly created clone
+                    rm_ds_tree(ds_clone.path)
+                else:
+                    # Restore the existing clone to its previous state
+                    ds_clone.repo.call_git(["reset", "--hard", url.head])
+
+                raise
+            else:
+                is_record_updated = True
+
+                # Initiate extraction of metadata of the up-to-date dataset
+                for extractor in current_app.config[
+                    "DATALAD_REGISTRY_METADATA_EXTRACTORS"
+                ]:
+                    extract_ds_meta.apply_async(
+                        (url.id, extractor), link_error=log_error.s()
+                    )
 
         if is_new_clone:
             # Remove old clone
