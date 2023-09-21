@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from enum import auto
 import json
+from pathlib import Path
 from typing import Optional
 
 from celery import shared_task
@@ -517,7 +518,7 @@ def chk_url_to_update(
     is_record_updated = False
     try:
         # Check and potentially update the dataset clone
-        ds_clone_path_relative, is_new_clone = update_ds_clone(url)
+        ds_clone, is_new_clone = update_ds_clone(url)
     except Exception:
         lgr.info(
             "Check to update the clone of the dataset at the given URL, %s failed."
@@ -531,15 +532,6 @@ def chk_url_to_update(
 
         raise
     else:
-        ds_clone = require_dataset(
-            (
-                current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
-                / ds_clone_path_relative
-            ),
-            check_installed=True,
-            purpose="updating dataset info in database",
-        )
-
         if ds_clone.repo.get_hexsha() != url.head:
             # ===
             # The dataset clone has been updated
@@ -561,8 +553,12 @@ def chk_url_to_update(
             # Remove old clone
             rm_ds_tree(url.cache_path)
 
-            # Update the cache path to the path of the new clone
-            url.cache_path = str(ds_clone_path_relative)
+            # Update the cache path in the record to the path of the new clone
+            url.cache_path = str(
+                Path(ds_clone.path).relative_to(
+                    current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
+                )
+            )
 
         url.n_failed_chks = 0
         url.chk_req_dt = None

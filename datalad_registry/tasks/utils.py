@@ -4,6 +4,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from celery.utils.log import get_task_logger
+from datalad.api import Dataset
 from datalad.distribution.dataset import require_dataset
 from datalad.support.exceptions import CommandError
 from datalad.utils import rmtree as rm_ds_tree
@@ -67,29 +68,29 @@ def validate_url_is_processed(repo_url: RepoUrl) -> None:
     ), "Encountered a processed RepoUrl with no cache path"
 
 
-def update_ds_clone(repo_url: RepoUrl) -> tuple[Path, bool]:
+def update_ds_clone(repo_url: RepoUrl) -> tuple[Dataset, bool]:
     """
     Update the local clone of the dataset at a given URL
 
     :param repo_url: The RepoUrl object representing the given URL
     :return: A tuple containing the following two elements:
-             - The path to an up-to-date clone of the dataset at the given URL
-               Note: This path is a relative path to the base cache directory
-             - A boolean indicating if the path, the first element of the tuple,
-               is a newly created directory for a new clone of the dataset, which is
-               different from the current value of `cache_path` of the given RepoUrl
-               object
+             - An up-to-date clone of the dataset at the given URL that exists in the
+               cache
+               Note: This can be a newly created clone.
+             - A boolean indicating if the dataset clone, the first element of
+               the returning tuple, is a newly created clone of the dataset,
+               which is different from the one located at the current value of
+               `cache_path` of the given RepoUrl object
 
     Note: This function is meant to be called inside a Celery task for it requires
           an active application context of the Flask app
     """
 
-    def reclone_ds() -> Path:
+    def reclone_ds() -> Dataset:
         """
-        Reclone the dataset at the given URL
+        Reclone the dataset at the given URL to a new directory in the cache
 
-        :return: The path to the newly cloned dataset
-                 Note: This path is a relative path to the base cache directory
+        :return: The new dataset clone
         """
         # Allocate a new path for the new clone of the dataset
         ds_path_relative = allocate_ds_path()
@@ -100,7 +101,7 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Path, bool]:
 
         try:
             # Clone the dataset at the given URL to the newly created directory
-            clone(
+            ds_clone = clone(
                 source=repo_url.url,
                 path=ds_path_absolute,
                 on_failure="stop",
@@ -118,7 +119,7 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Path, bool]:
 
             raise
         else:
-            return ds_path_relative
+            return ds_clone
 
     validate_url_is_processed(repo_url)
 
@@ -161,7 +162,7 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Path, bool]:
             if current_ds_clone.repo.is_with_annex():
                 current_ds_clone.repo.call_annex(["merge"])
 
-            return Path(repo_url.cache_path), False
+            return current_ds_clone, False
     else:
         # Make a new clone of the dataset at the given URL at a new directory
         return reclone_ds(), True
