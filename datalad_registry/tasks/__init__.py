@@ -369,10 +369,13 @@ def mark_for_chk(url_id: StrictInt) -> None:
 
 
 @shared_task
-def url_chk_dispatcher():
+def url_chk_dispatcher() -> list[int]:
     """
     A task intended to be periodically initiated by Celery Beat to initiate
     checking of dataset urls for potential update
+
+    :return: The list of IDs, the primary keys, of the dataset urls that have been
+             requested to be checked in the order of their respective requests
     """
 
     max_failed_chks = current_app.config["DATALAD_REGISTRY_MAX_FAILED_CHKS_PER_URL"]
@@ -456,10 +459,14 @@ def url_chk_dispatcher():
         .limit(max_chks_to_dispatch)
     ).all()
 
+    urls_to_chk_by_id = []
     for id_, last_chk_dt in result:
         chk_url_to_update.apply_async(
             (id_, last_chk_dt), expires=chk_url_task_expiration
         )
+        urls_to_chk_by_id.append(id_)
+
+    return urls_to_chk_by_id
 
 
 @shared_task(rate_limit="10/m")
