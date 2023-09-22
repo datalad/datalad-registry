@@ -371,7 +371,7 @@ def mark_for_chk(url_id: StrictInt) -> None:
 @shared_task
 def url_chk_dispatcher():
     """
-    A task intended to be run periodically by Celery Beat to initiate
+    A task intended to be periodically initiated by Celery Beat to initiate
     checking of dataset urls for potential update
     """
 
