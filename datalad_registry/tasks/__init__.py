@@ -407,7 +407,7 @@ def url_chk_dispatcher() -> list[int]:
     requested_chked_cond = and_(RepoUrl.chk_req_dt.is_not(None), not_(not_chked_cond))
 
     # Select and lock all dataset urls to be checked
-    result: tuple[int, Optional[datetime]] = db.session.execute(
+    result = db.session.execute(
         select(RepoUrl.id, RepoUrl.last_chk_dt)
         .filter(
             and_(
