@@ -459,6 +459,8 @@ def url_chk_dispatcher() -> list[int]:
         .limit(max_chks_to_dispatch)
     ).all()
 
+    db.session.rollback()  # Release the lock
+
     urls_to_chk_by_id = []
     for id_, last_chk_dt in result:
         chk_url_to_update.apply_async(
