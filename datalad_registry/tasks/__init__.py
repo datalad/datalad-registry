@@ -469,7 +469,7 @@ def url_chk_dispatcher() -> list[int]:
     return urls_to_chk_by_id
 
 
-@shared_task(rate_limit="10/m")
+@shared_task
 @validate_arguments
 def chk_url_to_update(
     url_id: StrictInt, initial_last_chk_dt: Optional[datetime]
