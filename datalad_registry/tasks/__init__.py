@@ -551,7 +551,10 @@ def chk_url_to_update(
                 # Update the dataset URL representation in the database
                 _update_dataset_url_info(url, ds_clone)
             except Exception:
-                db.session.rollback()  # Rollback any possible changes to the database
+                # Using `refresh` to rollback changes to `url` without releasing the
+                # lock. This ensures that we can safely continue working with this `url`
+                # without affecting other database operations.
+                db.session.refresh(url)
 
                 url.n_failed_chks += 1
 
