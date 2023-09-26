@@ -5,6 +5,7 @@ import logging
 from typing import Optional
 
 from celery import shared_task
+from dandischema.models import Dandiset
 from datalad import api as dl
 from datalad.api import Dataset
 from datalad.distribution.dataset import require_dataset
@@ -85,6 +86,9 @@ _EXTRACTOR_REQUIRED_FILES = {
     "metalad_studyminimeta": [".studyminimeta.yaml"],
     "datacite_gin": ["datacite.yml"],
     "bids_dataset": ["dataset_description.json"],
+    "dandi:dandiset": ["dandiset.yaml"],
+    # not yet for now -- need to decide how to work with per-file metadata
+    # "dandi:assets": [".dandi/assets.json"],
 }
 
 
@@ -170,14 +174,25 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
                 db.session.delete(data)  # delete the old metadata from the database
                 break
 
-    results = parse_obj_as(
-        list[MetaExtractResult],
-        dl.meta_extract(
+    # start with ad-hoc dandi "extractor" -- just load those files
+    if extractor == "dandi:dandiset":
+        meta: dict = yaml_load(cache_path_abs / "dandiset.yaml")
+        extracted_metadata = wrap_to_MetaExtractResult(meta)
+    elif extractor == "dandi:assets":
+        meta: list[dict] = json_load(cache_path_abs / ".dandi" / "assets.json")
+        extracted_metadata = wrap_to_MetaExtractResult(meta)
+    else:
+        # use datalad metalad
+        extracted_metadata = dl.meta_extract(
             extractor,
             dataset=cache_path_abs,
             result_renderer="disabled",
             on_failure="stop",
-        ),
+        )
+    
+    results = parse_obj_as(
+        list[MetaExtractResult],
+        extracted_metadata,
     )
 
     if len(results) == 0:

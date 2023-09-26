@@ -29,6 +29,9 @@ class BaseConfig(OperationConfig):
         "metalad_studyminimeta",
         "datacite_gin",
         "bids_dataset",
+        # dandi: is ATM just native loading of dandiset.yaml and the .dandi/assets.json dumps
+        "dandi:dandiset",
+        "dandi:assets",
     ]
 
     # === worker, Celery, related configuration  ===
