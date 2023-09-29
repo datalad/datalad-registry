@@ -47,6 +47,75 @@ class TestDeclareDatasetURL:
         # Ensure the response body is valid
         DatasetURLRespModel.parse_raw(resp.text)
 
+    def test_retrieve_blocking_record(self, flask_client, monkeypatch):
+        """
+        Test the case that a submitted URL cannot be inserted into the database
+        because there is a blocking record in the database.
+        """
+        from psycopg2.errors import UniqueViolation
+        from sqlalchemy.exc import IntegrityError
+        from sqlalchemy.orm.scoping import scoped_session
+
+        def mock_commit(_scoped_session_obj):
+            raise IntegrityError(None, None, UniqueViolation(None, None, None))
+
+        def mock_rollback(scoped_session_obj):
+            original_rollback(scoped_session_obj)
+
+            # Insure a `RepoUrl` record with the given URL
+            scoped_session_obj.add(RepoUrl(url=url_as_str))
+            original_commit(scoped_session_obj)
+
+        original_commit = scoped_session.commit
+        original_rollback = scoped_session.rollback
+        url_as_str = "https://www.example.com"
+
+        monkeypatch.setattr(scoped_session, "commit", mock_commit)
+        monkeypatch.setattr(scoped_session, "rollback", mock_rollback)
+
+        resp = flask_client.post("/api/v2/dataset-urls", json={"url": url_as_str})
+
+        assert resp.status_code == 201
+
+    def test_failure_to_insert_url_to_db(self, flask_client, monkeypatch):
+        """
+        Test the case that a submitted URL cannot be inserted into the database
+        because concurrent requests and processes repeatedly insert and delete
+        `RepoUrl` objects presenting the same URL.
+        """
+        from psycopg2.errors import UniqueViolation
+        from sqlalchemy.exc import IntegrityError
+        from sqlalchemy.orm.scoping import scoped_session
+
+        def mock_commit(_scoped_session_obj):
+            raise IntegrityError(None, None, UniqueViolation(None, None, None))
+
+        monkeypatch.setattr(scoped_session, "commit", mock_commit)
+
+        with pytest.raises(RuntimeError, match="Failed to add the URL"):
+            flask_client.post(
+                "/api/v2/dataset-urls", json={"url": "https://www.example.com"}
+            )
+
+    def test_other_integrity_error(self, flask_client, monkeypatch):
+        """
+        Test the case that a submitted URL cannot be inserted into the database
+        because of an integrity error that is not caused directly by
+        a `UniqueViolation` error.
+        """
+        from sqlalchemy.exc import IntegrityError
+        from sqlalchemy.orm.scoping import scoped_session
+
+        def mock_commit(_scoped_session_obj):
+            raise IntegrityError("This is a test", None, ValueError())
+
+        monkeypatch.setattr(scoped_session, "commit", mock_commit)
+
+        with pytest.raises(IntegrityError, match="This is a test"):
+            flask_client.post(
+                "/api/v2/dataset-urls", json={"url": "https://www.example.com"}
+            )
+
     @pytest.mark.usefixtures("populate_with_dataset_urls")
     @pytest.mark.parametrize(
         "url, original_chk_req_dt, expecting_chk_req_dt_changed",
