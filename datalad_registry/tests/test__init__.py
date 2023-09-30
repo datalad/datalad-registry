@@ -89,13 +89,13 @@ class TestCreateApp:
             flask_app.config["DATALAD_REGISTRY_MAX_URL_CHKS_ISSUED_PER_DISPATCH_CYCLE"]
             == 10
         )
+        assert flask_app.config["DATALAD_REGISTRY_DISPATCH_CYCLE_LENGTH"] == 60.0
         assert (
             flask_app.config["DATALAD_REGISTRY_METADATA_EXTRACTORS"]
             == default_metadata_extractors
         )
         assert flask_app.config["CELERY_BROKER_URL"] == broker_url
         assert flask_app.config["CELERY_RESULT_BACKEND"] == result_backend
-        assert flask_app.config["CELERY_BEAT_SCHEDULE"] == default_beat_schedule
         assert flask_app.config["CELERY"] == {
             "broker_url": broker_url,
             "result_backend": result_backend,
@@ -116,3 +116,5 @@ class TestCreateApp:
         assert celery_app.conf["result_backend"] == result_backend
         assert celery_app.conf["beat_schedule"] == default_beat_schedule
         assert celery_app.conf["task_ignore_result"] is True
+        assert celery_app.conf["worker_max_tasks_per_child"] == 1000
+        assert celery_app.conf["worker_max_memory_per_child"] == 500_000  # 500 MB
