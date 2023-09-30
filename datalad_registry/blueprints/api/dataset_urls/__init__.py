@@ -7,7 +7,9 @@ from pathlib import Path
 from celery import group
 from flask import current_app, url_for
 from flask_openapi3 import APIBlueprint, Tag
+from psycopg2.errors import UniqueViolation
 from sqlalchemy import and_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.elements import BinaryExpression
 
 from datalad_registry.models import RepoUrl, db
@@ -80,27 +82,69 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
     if repo_url_row is None:
         # == The URL requested to be created does not exist in the database ==
 
-        repo_url = RepoUrl(url=url_as_str)
-        db.session.add(repo_url)
-        db.session.commit()
+        repo_url_to_add = RepoUrl(url=url_as_str)
 
-        # Initiate celery tasks to process the RepoUrl
-        # and extract metadata from the corresponding dataset
-        url_processing = process_dataset_url.signature(
-            (repo_url.id,), link_error=log_error.s()
-        )
-        meta_extractions = [
-            extract_ds_meta.signature(
-                (repo_url.id, extractor),
-                immutable=True,
-                link_error=log_error.s(),
-            )
-            for extractor in current_app.config["DATALAD_REGISTRY_METADATA_EXTRACTORS"]
-        ]
-        (url_processing | group(meta_extractions)).apply_async()
+        max_url_uniqueness_failures = 10
+        url_uniqueness_failure_count = 0
+        while url_uniqueness_failure_count < max_url_uniqueness_failures:
+            db.session.add(repo_url_to_add)
+
+            try:
+                db.session.commit()
+            except IntegrityError as e:
+                if isinstance(e.orig, UniqueViolation):
+                    url_uniqueness_failure_count += 1
+
+                    # The URL has been added to the database by another request
+                    # while the current request is being processed.
+                    # Rollback the session and obtain the representation
+                    # of the URL in the database
+                    db.session.rollback()
+                    repo_url_added_by_another = (
+                        db.session.execute(db.select(RepoUrl).filter_by(url=url_as_str))
+                        .scalars()
+                        .one_or_none()
+                    )
+
+                    if repo_url_added_by_another is not None:
+                        # ===
+                        # The representation of the URL that is added by another request
+                        # is successfully obtained from the database.
+                        # ===
+                        repo_url_to_resp = repo_url_added_by_another
+                        break
+                    else:
+                        # ===
+                        # The representation of the URL that is added by another request
+                        # no longer exists in the database
+                        # ===
+                        continue
+                else:
+                    raise
+            else:
+                # Initiate celery tasks to process the RepoUrl
+                # and extract metadata from the corresponding dataset
+                url_processing = process_dataset_url.signature(
+                    (repo_url_to_add.id,), link_error=log_error.s()
+                )
+                meta_extractions = [
+                    extract_ds_meta.signature(
+                        (repo_url_to_add.id, extractor),
+                        immutable=True,
+                        link_error=log_error.s(),
+                    )
+                    for extractor in current_app.config[
+                        "DATALAD_REGISTRY_METADATA_EXTRACTORS"
+                    ]
+                ]
+                (url_processing | group(meta_extractions)).apply_async()
+                repo_url_to_resp = repo_url_to_add
+                break
+        else:
+            raise RuntimeError(f"Failed to add the URL, {url_as_str}, to the database.")
 
         return json_resp_from_str(
-            DatasetURLRespModel.from_orm(repo_url).json(exclude_none=True), 201
+            DatasetURLRespModel.from_orm(repo_url_to_resp).json(exclude_none=True), 201
         )
 
     else:
