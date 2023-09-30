@@ -27,7 +27,7 @@ class BaseConfig(OperationConfig):
     # URL check dispatcher related configuration
     DATALAD_REGISTRY_MIN_CHK_INTERVAL_PER_URL: NonNegativeInt = 3600  # seconds
     DATALAD_REGISTRY_MAX_FAILED_CHKS_PER_URL: NonNegativeInt = 10
-    DATALAD_REGISTRY_MAX_URL_CHKS_IN_PROGRESS: NonNegativeInt = 10
+    DATALAD_REGISTRY_MAX_URL_CHKS_ISSUED_PER_CYCLE: NonNegativeInt = 10
 
     # Metadata extractors to use
     DATALAD_REGISTRY_METADATA_EXTRACTORS: list[str] = [
