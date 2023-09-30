@@ -69,67 +69,43 @@ class TestBaseConfig:
             )
 
     @pytest.mark.parametrize(
-        "broker_url, result_backend, beat_schedule, expected_broker_url, "
-        "expected_beat_schedule",
+        "dispatch_cycle_length, broker_url, result_backend, expected_broker_url ",
         [
+            (None, "redis://localhost", "redis://127.0.0.1", "redis://localhost"),
+            ("10", "redis://broker", "redis://new", "redis://broker"),
             (
-                "redis://localhost",
-                "redis://127.0.0.1",
-                None,
-                "redis://localhost",
-                {
-                    "url-check-dispatcher": {
-                        "task": "datalad_registry.tasks.url_chk_dispatcher",
-                        "schedule": 60.0,
-                        "options": {"expires": 60.0},
-                    }
-                },
-            ),
-            (
-                "redis://broker",
-                "redis://new",
-                '{"piece-of-cake": {"task": "take_a_bite", "schedule": 2.0}}',
-                "redis://broker",
-                {"piece-of-cake": {"task": "take_a_bite", "schedule": 2.0}},
-            ),
-            (
+                "400.0",
                 '["redis://localhost", "redis://broker"]',
                 "redis://127.0.0.1",
-                """
-                {
-                    "sisyphus's-job": {
-                        "task": "boulder_up",
-                        "schedule": 87714900,
-                        "kwargs": {
-                            "boulder_weight_in_kg": 100
-                        }
-                    }
-                }
-                """,
                 ["redis://localhost", "redis://broker"],
-                {
-                    "sisyphus's-job": {
-                        "task": "boulder_up",
-                        "schedule": 87_714_900,
-                        "kwargs": {"boulder_weight_in_kg": 100},
-                    }
-                },
             ),
         ],
     )
     def test_celery(
         self,
+        dispatch_cycle_length,
         broker_url,
         result_backend,
-        beat_schedule,
         expected_broker_url,
-        expected_beat_schedule,
         monkeypatch,
     ):
+        expected_dispatch_cycle_length = (
+            float(dispatch_cycle_length) if dispatch_cycle_length is not None else 60.0
+        )
+        expected_beat_schedule = {
+            "url-check-dispatcher": {
+                "task": "datalad_registry.tasks.url_chk_dispatcher",
+                "schedule": expected_dispatch_cycle_length,
+                "options": {"expires": expected_dispatch_cycle_length},
+            }
+        }
+
+        if dispatch_cycle_length is not None:
+            monkeypatch.setenv(
+                "DATALAD_REGISTRY_DISPATCH_CYCLE_LENGTH", dispatch_cycle_length
+            )
         monkeypatch.setenv("CELERY_BROKER_URL", broker_url)
         monkeypatch.setenv("CELERY_RESULT_BACKEND", result_backend)
-        if beat_schedule is not None:
-            monkeypatch.setenv("CELERY_BEAT_SCHEDULE", beat_schedule)
 
         # noinspection PyTypeChecker
         assert BaseConfig(
