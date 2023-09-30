@@ -386,7 +386,7 @@ def url_chk_dispatcher() -> list[int]:
     #   This is determined by the `rate_limit` of the `chk_url` task and how frequently
     #   the `url_chk_dispatcher` task is run
     max_chks_to_dispatch = current_app.config[
-        "DATALAD_REGISTRY_MAX_URL_CHKS_ISSUED_PER_CYCLE"
+        "DATALAD_REGISTRY_MAX_URL_CHKS_ISSUED_PER_DISPATCH_CYCLE"
     ]
     chk_url_task_expiration = 60.0  # todo: make this configurable
     repeat_cutoff_dt = datetime.now(timezone.utc) - min_chk_interval

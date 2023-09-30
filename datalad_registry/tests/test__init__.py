@@ -85,7 +85,10 @@ class TestCreateApp:
         assert flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"] == Path(cache_path)
         assert flask_app.config["DATALAD_REGISTRY_MIN_CHK_INTERVAL_PER_URL"] == 3600
         assert flask_app.config["DATALAD_REGISTRY_MAX_FAILED_CHKS_PER_URL"] == 10
-        assert flask_app.config["DATALAD_REGISTRY_MAX_URL_CHKS_ISSUED_PER_CYCLE"] == 10
+        assert (
+            flask_app.config["DATALAD_REGISTRY_MAX_URL_CHKS_ISSUED_PER_DISPATCH_CYCLE"]
+            == 10
+        )
         assert (
             flask_app.config["DATALAD_REGISTRY_METADATA_EXTRACTORS"]
             == default_metadata_extractors
