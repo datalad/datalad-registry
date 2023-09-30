@@ -55,6 +55,8 @@ class TestDeclareDatasetURL:
         from sqlalchemy.exc import IntegrityError
         from sqlalchemy.orm.scoping import scoped_session
 
+        from datalad_registry.models import RepoUrl
+
         def mock_commit(_scoped_session_obj):
             raise IntegrityError(None, None, UniqueViolation(None, None, None))
 
