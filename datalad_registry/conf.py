@@ -41,13 +41,6 @@ class BaseConfig(OperationConfig):
     # === worker, Celery, related configuration  ===
     CELERY_BROKER_URL: Union[str, list[str]]
     CELERY_RESULT_BACKEND: str
-    CELERY_BEAT_SCHEDULE: dict[str, dict[str, Any]] = {
-        "url-check-dispatcher": {
-            "task": "datalad_registry.tasks.url_chk_dispatcher",
-            "schedule": 60.0,
-            "options": {"expires": 60.0},
-        }
-    }
 
     # noinspection PyPep8Naming
     @property
@@ -55,7 +48,13 @@ class BaseConfig(OperationConfig):
         return dict(
             broker_url=self.CELERY_BROKER_URL,
             result_backend=self.CELERY_RESULT_BACKEND,
-            beat_schedule=self.CELERY_BEAT_SCHEDULE,
+            beat_schedule={
+                "url-check-dispatcher": {
+                    "task": "datalad_registry.tasks.url_chk_dispatcher",
+                    "schedule": self.DATALAD_REGISTRY_DISPATCH_CYCLE_LENGTH,
+                    "options": {"expires": self.DATALAD_REGISTRY_DISPATCH_CYCLE_LENGTH},
+                }
+            },
             task_ignore_result=True,
             worker_max_tasks_per_child=1000,
             worker_max_memory_per_child=1000 * 500,  # 500 MB
