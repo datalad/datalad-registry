@@ -382,9 +382,6 @@ def url_chk_dispatcher() -> list[int]:
     min_chk_interval = timedelta(
         seconds=current_app.config["DATALAD_REGISTRY_MIN_CHK_INTERVAL_PER_URL"]
     )
-    # todo: make this configurable
-    #   This is determined by the `rate_limit` of the `chk_url` task and how frequently
-    #   the `url_chk_dispatcher` task is run
     max_chks_to_dispatch = current_app.config[
         "DATALAD_REGISTRY_MAX_URL_CHKS_ISSUED_PER_DISPATCH_CYCLE"
     ]
