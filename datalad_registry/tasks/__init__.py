@@ -413,7 +413,7 @@ def url_chk_dispatcher() -> list[int]:
         .filter(
             and_(
                 RepoUrl.processed,
-                RepoUrl.n_failed_chks <= max_failed_chks,
+                RepoUrl.n_failed_chks < max_failed_chks,
                 or_(
                     and_(
                         RepoUrl.chk_req_dt.is_not(None),  # requested to be checked
