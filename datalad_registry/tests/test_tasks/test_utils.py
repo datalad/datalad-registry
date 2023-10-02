@@ -87,6 +87,52 @@ class TestUpdateDsClone:
         url = RepoUrl(
             url=two_files_ds_annex.path, processed=True, cache_path=clone_path_relative
         )
+        # noinspection DuplicatedCode
+        with flask_app.app_context():
+            db.session.add(url)
+            db.session.commit()
+
+            up_to_date_clone, is_up_to_date_clone_new = update_ds_clone(url)
+
+        assert not is_up_to_date_clone_new
+        assert up_to_date_clone.path == ds_clone.path
+        assert up_to_date_clone.repo.get_hexsha() == ds_clone.repo.get_hexsha()
+
+    def test_there_is_update(self, two_files_ds_annex_func_scoped, flask_app):
+        """
+        Test the case that there is an update in the origin remote of the dataset
+        """
+        base_cache_path = flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
+
+        clone_path_relative = "a/b/c"
+
+        ds_clone = clone(
+            source=two_files_ds_annex_func_scoped,
+            path=base_cache_path / clone_path_relative,
+            on_failure="stop",
+            result_renderer="disabled",
+        )
+
+        original_head_hexsha = two_files_ds_annex_func_scoped.repo.get_hexsha()
+
+        # Modify the dataset in the origin remote, `two_files_ds_annex_func_scoped`
+        # by adding a new file
+        new_file_name = "new_file.txt"
+        with open(two_files_ds_annex_func_scoped.pathobj / new_file_name, "w") as f:
+            f.write(f"Hello in {new_file_name}\n")
+        two_files_ds_annex_func_scoped.save(message=f"Add {new_file_name}")
+
+        new_head_hexsha = two_files_ds_annex_func_scoped.repo.get_hexsha()
+
+        assert new_head_hexsha != original_head_hexsha
+
+        # Add representation of the URL to the database
+        url = RepoUrl(
+            url=two_files_ds_annex_func_scoped.path,
+            processed=True,
+            cache_path=clone_path_relative,
+        )
+        # noinspection DuplicatedCode
         with flask_app.app_context():
             db.session.add(url)
             db.session.commit()
