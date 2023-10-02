@@ -3,6 +3,7 @@ from string import hexdigits
 from uuid import UUID
 
 from flask import current_app
+import pytest
 
 from datalad_registry.models import RepoUrl, db
 from datalad_registry.tasks.utils import allocate_ds_path, update_ds_clone
@@ -140,3 +141,62 @@ class TestUpdateDsClone:
         assert not is_up_to_date_clone_new
         assert up_to_date_clone.path == ds_clone.path
         assert up_to_date_clone.repo.get_hexsha() == ds_clone.repo.get_hexsha()
+
+    @pytest.mark.parametrize("does_cloning_fail", [True, False])
+    def test_new_default_branch_at_origin_remote(
+        self,
+        does_cloning_fail,
+        two_files_ds_annex_func_scoped,
+        monkeypatch,
+        flask_app,
+        base_cache_path,
+    ):
+        """
+        Test the case that there is a new default branch at the origin remote of the
+        dataset
+        """
+        initial_clone_path_relative = "a/b/c"
+
+        initial_clone_path_abs = base_cache_path / initial_clone_path_relative
+        initial_ds_clone = clone(
+            source=two_files_ds_annex_func_scoped,
+            path=initial_clone_path_abs,
+            on_failure="stop",
+            result_renderer="disabled",
+        )
+        initial_clone_path = initial_ds_clone.path
+        initial_clone_head_hexsha = initial_ds_clone.repo.get_hexsha()
+
+        # Change the default branch of the origin remote of the dataset
+        # i.e. switch `two_files_ds_annex_func_scoped` to a new branch
+        two_files_ds_annex_func_scoped.repo.call_git(["checkout", "-b", "new-branch"])
+
+        # Add representation of the URL to the database
+        url = RepoUrl(
+            url=two_files_ds_annex_func_scoped.path,
+            processed=True,
+            cache_path=initial_clone_path_relative,
+        )
+        # noinspection DuplicatedCode
+        with flask_app.app_context():
+            db.session.add(url)
+            db.session.commit()
+
+            if not does_cloning_fail:
+                up_to_date_clone, is_up_to_date_clone_new = update_ds_clone(url)
+
+                assert is_up_to_date_clone_new
+                assert up_to_date_clone.path != initial_clone_path
+                assert up_to_date_clone.repo.get_hexsha() == initial_clone_head_hexsha
+
+            else:
+
+                def mock_clone(*_args, **_kwargs):
+                    raise RuntimeError("Failure from the mock clone")
+
+                from datalad_registry.tasks import utils as tasks_utils
+
+                monkeypatch.setattr(tasks_utils, "clone", mock_clone)
+
+                with pytest.raises(RuntimeError, match="Failure from the mock clone"):
+                    update_ds_clone(url)
