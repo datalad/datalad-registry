@@ -114,6 +114,19 @@ def empty_ds_non_annex(tmp_path_factory) -> Dataset:
     return dl.create(path=tmp_path_factory.mktemp("empty_ds_non_annex"), annex=False)
 
 
+@pytest.fixture
+def empty_ds_non_annex_func_scoped(empty_ds_non_annex, tmp_path_factory) -> Dataset:
+    """
+    A clone of `empty_ds_non_annex` that is function-scoped
+    """
+    return clone(
+        source=empty_ds_non_annex.path,
+        path=tmp_path_factory.mktemp("empty_ds_non_annex_func_scope"),
+        on_failure="stop",
+        result_renderer="disabled",
+    )
+
+
 def two_files_ds(annex: bool, tmp_path_factory: TempPathFactory) -> Dataset:
     """
     A dataset with two simple files
