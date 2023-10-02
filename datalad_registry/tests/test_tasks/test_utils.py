@@ -164,8 +164,6 @@ class TestUpdateDsClone:
             on_failure="stop",
             result_renderer="disabled",
         )
-        initial_clone_path = initial_ds_clone.path
-        initial_clone_head_hexsha = initial_ds_clone.repo.get_hexsha()
 
         # Change the default branch of the origin remote of the dataset
         # i.e. switch `two_files_ds_annex_func_scoped` to a new branch
@@ -186,8 +184,11 @@ class TestUpdateDsClone:
                 up_to_date_clone, is_up_to_date_clone_new = update_ds_clone(url)
 
                 assert is_up_to_date_clone_new
-                assert up_to_date_clone.path != initial_clone_path
-                assert up_to_date_clone.repo.get_hexsha() == initial_clone_head_hexsha
+                assert up_to_date_clone.path != initial_ds_clone.path
+                assert (
+                    up_to_date_clone.repo.get_hexsha()
+                    == initial_ds_clone.repo.get_hexsha()
+                )
 
             else:
 
