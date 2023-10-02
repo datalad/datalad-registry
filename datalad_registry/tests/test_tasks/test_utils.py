@@ -68,12 +68,10 @@ class TestAllocateDsPath:
 
 
 class TestUpdateDsClone:
-    def test_no_update(self, two_files_ds_annex, flask_app):
+    def test_no_update(self, two_files_ds_annex, flask_app, base_cache_path):
         """
         Test the case that there is no update in the origin remote of the dataset
         """
-        base_cache_path = flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
-
         clone_path_relative = "a/b/c"
 
         ds_clone = clone(
@@ -98,12 +96,12 @@ class TestUpdateDsClone:
         assert up_to_date_clone.path == ds_clone.path
         assert up_to_date_clone.repo.get_hexsha() == ds_clone.repo.get_hexsha()
 
-    def test_there_is_update(self, two_files_ds_annex_func_scoped, flask_app):
+    def test_there_is_update(
+        self, two_files_ds_annex_func_scoped, flask_app, base_cache_path
+    ):
         """
         Test the case that there is an update in the origin remote of the dataset
         """
-        base_cache_path = flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
-
         clone_path_relative = "a/b/c"
 
         ds_clone = clone(
