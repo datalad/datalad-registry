@@ -155,6 +155,19 @@ def two_files_ds_annex(tmp_path_factory) -> Dataset:
     return two_files_ds(annex=True, tmp_path_factory=tmp_path_factory)
 
 
+@pytest.fixture
+def two_files_ds_annex_func_scoped(two_files_ds_annex, tmp_path_factory) -> Dataset:
+    """
+    A clone of `two_files_ds_annex` that is function-scoped
+    """
+    return clone(
+        source=two_files_ds_annex.path,
+        path=tmp_path_factory.mktemp("two_files_ds_annex_func_scope"),
+        on_failure="stop",
+        result_renderer="disabled",
+    )
+
+
 @pytest.fixture(scope="session")
 def two_files_ds_non_annex(tmp_path_factory) -> Dataset:
     """
