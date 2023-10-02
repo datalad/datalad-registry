@@ -177,6 +177,21 @@ def two_files_ds_non_annex(tmp_path_factory) -> Dataset:
 
 
 @pytest.fixture
+def two_files_ds_non_annex_func_scoped(
+    two_files_ds_non_annex, tmp_path_factory
+) -> Dataset:
+    """
+    A clone of `two_files_ds_non_annex` that is function-scoped
+    """
+    return clone(
+        source=two_files_ds_non_annex.path,
+        path=tmp_path_factory.mktemp("two_files_ds_non_annex_func_scoped"),
+        on_failure="stop",
+        result_renderer="disabled",
+    )
+
+
+@pytest.fixture
 def populate_with_2_dataset_urls(flask_app):
     """
     Populate the url table with 2 DatasetURLs, at position 1 and 3.
