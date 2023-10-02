@@ -11,6 +11,7 @@ from datalad_registry import create_app
 
 # noinspection PyPep8Naming
 from datalad_registry.models import RepoUrl, URLMetadata, db
+from datalad_registry.utils.datalad_tls import clone
 
 
 @pytest.fixture(scope="session")
@@ -90,6 +91,19 @@ def empty_ds_annex(tmp_path_factory) -> Dataset:
     An empty dataset that is a git-annex repository
     """
     return dl.create(path=tmp_path_factory.mktemp("empty_ds_annex"))
+
+
+@pytest.fixture
+def empty_ds_annex_func_scoped(empty_ds_annex, tmp_path_factory) -> Dataset:
+    """
+    A clone of `empty_ds_annex` that is function-scoped
+    """
+    return clone(
+        source=empty_ds_annex.path,
+        path=tmp_path_factory.mktemp("empty_ds_annex_func_scope"),
+        on_failure="stop",
+        result_renderer="disabled",
+    )
 
 
 @pytest.fixture(scope="session")
