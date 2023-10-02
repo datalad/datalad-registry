@@ -100,7 +100,7 @@ def empty_ds_annex_func_scoped(empty_ds_annex, tmp_path_factory) -> Dataset:
     """
     return clone(
         source=empty_ds_annex.path,
-        path=tmp_path_factory.mktemp("empty_ds_annex_func_scope"),
+        path=tmp_path_factory.mktemp("empty_ds_annex_func_scoped"),
         on_failure="stop",
         result_renderer="disabled",
     )
@@ -121,7 +121,7 @@ def empty_ds_non_annex_func_scoped(empty_ds_non_annex, tmp_path_factory) -> Data
     """
     return clone(
         source=empty_ds_non_annex.path,
-        path=tmp_path_factory.mktemp("empty_ds_non_annex_func_scope"),
+        path=tmp_path_factory.mktemp("empty_ds_non_annex_func_scoped"),
         on_failure="stop",
         result_renderer="disabled",
     )
@@ -162,7 +162,7 @@ def two_files_ds_annex_func_scoped(two_files_ds_annex, tmp_path_factory) -> Data
     """
     return clone(
         source=two_files_ds_annex.path,
-        path=tmp_path_factory.mktemp("two_files_ds_annex_func_scope"),
+        path=tmp_path_factory.mktemp("two_files_ds_annex_func_scoped"),
         on_failure="stop",
         result_renderer="disabled",
     )
