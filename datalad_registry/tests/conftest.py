@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from pathlib import Path
 
 from celery import Celery
 from datalad import api as dl
@@ -83,6 +84,14 @@ def flask_cli_runner(flask_app):
     The fixture of the test cli runner of flask_app
     """
     return flask_app.test_cli_runner()
+
+
+@pytest.fixture
+def base_cache_path(flask_app) -> Path:
+    """
+    The base path of the local cache for datasets
+    """
+    return flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
 
 
 @pytest.fixture(scope="session")
