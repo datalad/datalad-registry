@@ -4,7 +4,9 @@ from uuid import UUID
 
 from flask import current_app
 
-from datalad_registry.tasks.utils import allocate_ds_path
+from datalad_registry.models import RepoUrl, db
+from datalad_registry.tasks.utils import allocate_ds_path, update_ds_clone
+from datalad_registry.utils.datalad_tls import clone
 
 _PATH_NAME_CHARS = hexdigits[:-6]
 
@@ -63,3 +65,34 @@ class TestAllocateDsPath:
             monkeypatch.setattr(tasks_utils, "uuid4", mock_uuid4)
 
             assert allocate_ds_path() == final_path
+
+
+class TestUpdateDsClone:
+    def test_no_update(self, two_files_ds_annex, flask_app):
+        """
+        Test the case that there is no update in the origin remote of the dataset
+        """
+        base_cache_path = flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
+
+        clone_path_relative = "a/b/c"
+
+        ds_clone = clone(
+            source=two_files_ds_annex,
+            path=base_cache_path / clone_path_relative,
+            on_failure="stop",
+            result_renderer="disabled",
+        )
+
+        # Add representation of the URL to the database
+        url = RepoUrl(
+            url=two_files_ds_annex.path, processed=True, cache_path=clone_path_relative
+        )
+        with flask_app.app_context():
+            db.session.add(url)
+            db.session.commit()
+
+            up_to_date_clone, is_up_to_date_clone_new = update_ds_clone(url)
+
+        assert not is_up_to_date_clone_new
+        assert up_to_date_clone.path == ds_clone.path
+        assert up_to_date_clone.repo.get_hexsha() == ds_clone.repo.get_hexsha()
