@@ -99,7 +99,7 @@ def empty_ds_annex_func_scoped(empty_ds_annex, tmp_path_factory) -> Dataset:
     A clone of `empty_ds_annex` that is function-scoped
     """
     return clone(
-        source=empty_ds_annex.path,
+        source=empty_ds_annex,
         path=tmp_path_factory.mktemp("empty_ds_annex_func_scoped"),
         on_failure="stop",
         result_renderer="disabled",
@@ -120,7 +120,7 @@ def empty_ds_non_annex_func_scoped(empty_ds_non_annex, tmp_path_factory) -> Data
     A clone of `empty_ds_non_annex` that is function-scoped
     """
     return clone(
-        source=empty_ds_non_annex.path,
+        source=empty_ds_non_annex,
         path=tmp_path_factory.mktemp("empty_ds_non_annex_func_scoped"),
         on_failure="stop",
         result_renderer="disabled",
@@ -161,7 +161,7 @@ def two_files_ds_annex_func_scoped(two_files_ds_annex, tmp_path_factory) -> Data
     A clone of `two_files_ds_annex` that is function-scoped
     """
     return clone(
-        source=two_files_ds_annex.path,
+        source=two_files_ds_annex,
         path=tmp_path_factory.mktemp("two_files_ds_annex_func_scoped"),
         on_failure="stop",
         result_renderer="disabled",
@@ -184,7 +184,7 @@ def two_files_ds_non_annex_func_scoped(
     A clone of `two_files_ds_non_annex` that is function-scoped
     """
     return clone(
-        source=two_files_ds_non_annex.path,
+        source=two_files_ds_non_annex,
         path=tmp_path_factory.mktemp("two_files_ds_non_annex_func_scoped"),
         on_failure="stop",
         result_renderer="disabled",
