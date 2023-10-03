@@ -64,7 +64,7 @@ def fix_datetime_now(monkeypatch):
     Fix the `datalad_registry.tasks.datetime.now()` to return a specific value
     """
 
-    class MockDateTime:
+    class MockDateTime(datetime):
         @classmethod
         def now(cls, *_args, **_kwargs):
             return datetime(2023, 9, 30, 19, 20, 34, tzinfo=timezone.utc)
