@@ -97,7 +97,11 @@ class TestUpdateDsClone:
 
         assert not is_up_to_date_clone_new
         assert up_to_date_clone.path == initial_ds_clone.path
-        assert up_to_date_clone.repo.get_hexsha() == initial_ds_clone.repo.get_hexsha()
+        assert (
+            up_to_date_clone.repo.get_hexsha()
+            == initial_ds_clone.repo.get_hexsha()
+            == two_files_ds_annex.repo.get_hexsha()
+        )
 
     @pytest.mark.parametrize("does_git_merge_fail", [True, False])
     def test_there_is_update(
@@ -217,6 +221,7 @@ class TestUpdateDsClone:
                 assert (
                     up_to_date_clone.repo.get_hexsha()
                     == initial_ds_clone.repo.get_hexsha()
+                    == two_files_ds_annex_func_scoped.repo.get_hexsha()
                 )
 
             else:
