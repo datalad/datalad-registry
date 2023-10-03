@@ -59,9 +59,9 @@ def processed_ds_urls(flask_app, two_files_ds_annex) -> list[int]:
 
 
 @pytest.fixture
-def set_datetime_now(monkeypatch):
+def fix_datetime_now(monkeypatch):
     """
-    Set the `datalad_registry.tasks.datetime.now()` to a fixed value
+    Fix the `datalad_registry.tasks.datetime.now()` to return a specific value
     """
 
     class MockDateTime:

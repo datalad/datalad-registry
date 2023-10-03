@@ -16,7 +16,7 @@ class TestUrlChkDispatcher:
         """
         assert url_chk_dispatcher() == []
 
-    @pytest.mark.usefixtures("set_datetime_now")
+    @pytest.mark.usefixtures("fix_datetime_now")
     @pytest.mark.parametrize(
         "urls_in_db, expected_result",
         [
