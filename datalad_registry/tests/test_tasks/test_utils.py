@@ -74,18 +74,20 @@ class TestUpdateDsClone:
         """
         Test the case that there is no update in the origin remote of the dataset
         """
-        clone_path_relative = "a/b/c"
+        initial_clone_path_relative = "a/b/c"
 
-        ds_clone = clone(
+        initial_ds_clone = clone(
             source=two_files_ds_annex,
-            path=base_cache_path / clone_path_relative,
+            path=base_cache_path / initial_clone_path_relative,
             on_failure="stop",
             result_renderer="disabled",
         )
 
         # Add representation of the URL to the database
         url = RepoUrl(
-            url=two_files_ds_annex.path, processed=True, cache_path=clone_path_relative
+            url=two_files_ds_annex.path,
+            processed=True,
+            cache_path=initial_clone_path_relative,
         )
         with flask_app.app_context():
             db.session.add(url)
@@ -94,8 +96,8 @@ class TestUpdateDsClone:
             up_to_date_clone, is_up_to_date_clone_new = update_ds_clone(url)
 
         assert not is_up_to_date_clone_new
-        assert up_to_date_clone.path == ds_clone.path
-        assert up_to_date_clone.repo.get_hexsha() == ds_clone.repo.get_hexsha()
+        assert up_to_date_clone.path == initial_ds_clone.path
+        assert up_to_date_clone.repo.get_hexsha() == initial_ds_clone.repo.get_hexsha()
 
     @pytest.mark.parametrize("does_git_merge_fail", [True, False])
     def test_there_is_update(
