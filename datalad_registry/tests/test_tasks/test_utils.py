@@ -2,6 +2,7 @@ from pathlib import Path
 from string import hexdigits
 from uuid import UUID
 
+from datalad.support.exceptions import CommandError
 from flask import current_app
 import pytest
 
@@ -86,7 +87,6 @@ class TestUpdateDsClone:
         url = RepoUrl(
             url=two_files_ds_annex.path, processed=True, cache_path=clone_path_relative
         )
-        # noinspection DuplicatedCode
         with flask_app.app_context():
             db.session.add(url)
             db.session.commit()
@@ -97,17 +97,23 @@ class TestUpdateDsClone:
         assert up_to_date_clone.path == ds_clone.path
         assert up_to_date_clone.repo.get_hexsha() == ds_clone.repo.get_hexsha()
 
+    @pytest.mark.parametrize("does_git_merge_fail", [True, False])
     def test_there_is_update(
-        self, two_files_ds_annex_func_scoped, flask_app, base_cache_path
+        self,
+        does_git_merge_fail,
+        two_files_ds_annex_func_scoped,
+        monkeypatch,
+        flask_app,
+        base_cache_path,
     ):
         """
         Test the case that there is an update in the origin remote of the dataset
         """
-        clone_path_relative = "a/b/c"
+        initial_clone_path_relative = "a/b/c"
 
-        ds_clone = clone(
+        initial_ds_clone = clone(
             source=two_files_ds_annex_func_scoped,
-            path=base_cache_path / clone_path_relative,
+            path=base_cache_path / initial_clone_path_relative,
             on_failure="stop",
             result_renderer="disabled",
         )
@@ -129,18 +135,39 @@ class TestUpdateDsClone:
         url = RepoUrl(
             url=two_files_ds_annex_func_scoped.path,
             processed=True,
-            cache_path=clone_path_relative,
+            cache_path=initial_clone_path_relative,
         )
-        # noinspection DuplicatedCode
+
         with flask_app.app_context():
             db.session.add(url)
             db.session.commit()
 
-            up_to_date_clone, is_up_to_date_clone_new = update_ds_clone(url)
+            if not does_git_merge_fail:
 
-        assert not is_up_to_date_clone_new
-        assert up_to_date_clone.path == ds_clone.path
-        assert up_to_date_clone.repo.get_hexsha() == ds_clone.repo.get_hexsha()
+                up_to_date_clone, is_up_to_date_clone_new = update_ds_clone(url)
+
+                assert not is_up_to_date_clone_new
+                assert up_to_date_clone.path == initial_ds_clone.path
+            else:
+
+                def mock_call_git(*args, **kwargs):
+                    if args[1][0] == "merge":
+                        raise CommandError("Mock git merge failure")
+                    else:
+                        return original_call_git(*args, **kwargs)
+
+                from datalad.dataset.gitrepo import GitRepo
+
+                original_call_git = GitRepo.call_git
+
+                monkeypatch.setattr(GitRepo, "call_git", mock_call_git)
+
+                up_to_date_clone, is_up_to_date_clone_new = update_ds_clone(url)
+
+                assert is_up_to_date_clone_new
+                assert up_to_date_clone.path != initial_ds_clone.path
+
+        assert up_to_date_clone.repo.get_hexsha() == new_head_hexsha
 
     @pytest.mark.parametrize("does_cloning_fail", [True, False])
     def test_new_default_branch_at_origin_remote(
