@@ -239,6 +239,7 @@ def populate_with_dataset_urls(flask_app) -> list[str]:
             last_update_dt=datetime(2008, 7, 18, 18, 34, 32, tzinfo=timezone.utc),
             last_chk_dt=datetime(2008, 7, 18, 19, 34, 34, tzinfo=timezone.utc),
             chk_req_dt=datetime(2008, 7, 18, 18, 34, 34, tzinfo=timezone.utc),
+            # n_failed_chks = 0,  # Allow `n_failed_chks` to default
             processed=True,
             cache_path="8c8/fff/e01f2142d88690d92144b00af0",
         ),
@@ -253,6 +254,7 @@ def populate_with_dataset_urls(flask_app) -> list[str]:
             last_update_dt=datetime(2009, 6, 18, 18, 34, 32, tzinfo=timezone.utc),
             last_chk_dt=datetime(2009, 6, 18, 19, 34, 7, tzinfo=timezone.utc),
             # chk_req_dt=None, # Commenting this out to allow `chk_req_dt` to default
+            n_failed_chks=2,
             processed=True,
             cache_path="72e/cd9/cc10534e2a9f551e32119e0e60",
         ),
@@ -267,6 +269,7 @@ def populate_with_dataset_urls(flask_app) -> list[str]:
             last_update_dt=datetime(2004, 6, 18, 18, 34, 32, tzinfo=timezone.utc),
             last_chk_dt=datetime(2004, 6, 18, 18, 33, 7, tzinfo=timezone.utc),
             chk_req_dt=datetime(2004, 6, 19, 18, 34, 34, tzinfo=timezone.utc),
+            n_failed_chks=9,
             processed=True,
             cache_path="72e/4e5/4184da47e282c02ae7e568ba74",
         ),
