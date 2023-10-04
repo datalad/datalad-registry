@@ -56,7 +56,7 @@ class TestChkUrlToUpdate:
             ),
         ],
     )
-    def test_update_ds_clone_fails(
+    def test_update_ds_clone_failure(
         self,
         url_id,
         initial_last_chk_dt,
