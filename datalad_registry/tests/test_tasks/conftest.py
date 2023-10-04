@@ -1,11 +1,11 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 import pytest
 
 from datalad_registry.models import RepoUrl, db
 from datalad_registry.tasks import process_dataset_url
 
-from . import TEST_MIN_REPO_URL
+from . import FIXED_DATETIME_NOW_VALUE, TEST_MIN_REPO_URL
 
 
 @pytest.fixture
@@ -67,7 +67,7 @@ def fix_datetime_now(monkeypatch):
     class MockDateTime(datetime):
         @classmethod
         def now(cls, *_args, **_kwargs):
-            return datetime(2023, 9, 30, 19, 20, 34, tzinfo=timezone.utc)
+            return FIXED_DATETIME_NOW_VALUE
 
     from datalad_registry import tasks
 
