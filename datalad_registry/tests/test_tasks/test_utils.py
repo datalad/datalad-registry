@@ -85,49 +85,14 @@ class TestUpdateDsClone:
 
     @pytest.mark.parametrize("does_git_merge_fail", [True, False])
     def test_there_is_update(
-        self,
-        does_git_merge_fail,
-        two_files_ds_annex_func_scoped,
-        monkeypatch,
-        flask_app,
-        base_cache_path,
+        self, repo_url_outdated_by_new_file, does_git_merge_fail, monkeypatch, flask_app
     ):
         """
         Test the case that there is an update in the origin remote of the dataset
         """
-        initial_clone_path_relative = "a/b/c"
-
-        initial_ds_clone = clone(
-            source=two_files_ds_annex_func_scoped,
-            path=base_cache_path / initial_clone_path_relative,
-            on_failure="stop",
-            result_renderer="disabled",
-        )
-
-        original_head_hexsha = two_files_ds_annex_func_scoped.repo.get_hexsha()
-
-        # Modify the dataset in the origin remote, `two_files_ds_annex_func_scoped`
-        # by adding a new file
-        new_file_name = "new_file.txt"
-        with open(two_files_ds_annex_func_scoped.pathobj / new_file_name, "w") as f:
-            f.write(f"Hello in {new_file_name}\n")
-        two_files_ds_annex_func_scoped.save(message=f"Add {new_file_name}")
-
-        new_head_hexsha = two_files_ds_annex_func_scoped.repo.get_hexsha()
-
-        assert new_head_hexsha != original_head_hexsha
-
-        # Add representation of the URL to the database
-        url = RepoUrl(
-            url=two_files_ds_annex_func_scoped.path,
-            processed=True,
-            cache_path=initial_clone_path_relative,
-        )
+        url, origin_remote_ds, initial_ds_clone = repo_url_outdated_by_new_file
 
         with flask_app.app_context():
-            db.session.add(url)
-            db.session.commit()
-
             if not does_git_merge_fail:
 
                 up_to_date_clone, is_up_to_date_clone_new = update_ds_clone(url)
@@ -153,7 +118,7 @@ class TestUpdateDsClone:
                 assert is_up_to_date_clone_new
                 assert up_to_date_clone.path != initial_ds_clone.path
 
-        assert up_to_date_clone.repo.get_hexsha() == new_head_hexsha
+        assert up_to_date_clone.repo.get_hexsha() == origin_remote_ds.repo.get_hexsha()
 
     @pytest.mark.parametrize("does_cloning_fail", [True, False])
     def test_new_default_branch_at_origin_remote(
