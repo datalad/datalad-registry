@@ -140,3 +140,24 @@ def repo_url_outdated_by_new_file(repo_url_with_up_to_date_clone):
     remote_ds.save(message=f"Add {new_file_name}")
 
     return url, remote_ds, local_ds_clone
+
+
+@pytest.fixture
+def repo_url_outdated_by_new_default_branch(repo_url_with_up_to_date_clone):
+    """
+    This is an extension of the `repo_url_with_up_to_date_clone` fixture with the
+    remote repository's default branch changed to a new branch.
+
+    The return of this fixture is the same as the return of
+    the `repo_url_with_up_to_date_clone` fixture. However, because of the change
+    of the default branch of the remote repository, the `RepoUrl` object and the clone
+    of the remote at the local cache are outdated.
+
+    Note: This fixture modifies the remote repository, i.e., the value of the
+          `two_files_ds_annex_func_scoped` fixture
+    """
+    url, remote_ds, local_ds_clone = repo_url_with_up_to_date_clone
+
+    remote_ds.repo.call_git(["checkout", "-b", "new-branch"])
+
+    return url, remote_ds, local_ds_clone
