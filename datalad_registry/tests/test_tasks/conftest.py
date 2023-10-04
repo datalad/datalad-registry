@@ -116,3 +116,27 @@ def repo_url_with_up_to_date_clone(
         db.session.refresh(url)
 
         return url, two_files_ds_annex_func_scoped, ds_clone
+
+
+@pytest.fixture
+def repo_url_outdated_by_new_file(repo_url_with_up_to_date_clone):
+    """
+    This is an extension of the `repo_url_with_up_to_date_clone` fixture with the
+    remote repository advanced by a new commit that includes a new file.
+
+    The return of this fixture is the same as the return of
+    the `repo_url_with_up_to_date_clone` fixture. However, because of the advancement
+    of the remote repository, the `RepoUrl` object and the clone of the remote
+    at the local cache are outdated.
+
+    Note: This fixture modifies the remote repository, i.e., the value of the
+          `two_files_ds_annex_func_scoped` fixture
+    """
+    url, remote_ds, local_ds_clone = repo_url_with_up_to_date_clone
+
+    new_file_name = "new_file.txt"
+    with open(remote_ds.pathobj / new_file_name, "w") as f:
+        f.write(f"Hello in {new_file_name}\n")
+    remote_ds.save(message=f"Add {new_file_name}")
+
+    return url, remote_ds, local_ds_clone
