@@ -1,9 +1,12 @@
 from datetime import datetime
 
+from datalad.api import Dataset
 import pytest
 
 from datalad_registry.models import RepoUrl, db
 from datalad_registry.tasks import process_dataset_url
+from datalad_registry.tasks.utils import allocate_ds_path
+from datalad_registry.utils.datalad_tls import clone
 
 from . import FIXED_DATETIME_NOW_VALUE, TEST_MIN_REPO_URL
 
@@ -72,3 +75,44 @@ def fix_datetime_now(monkeypatch):
     from datalad_registry import tasks
 
     monkeypatch.setattr(tasks, "datetime", MockDateTime)
+
+
+@pytest.fixture
+def repo_url_with_up_to_date_clone(
+    two_files_ds_annex_func_scoped, base_cache_path, flask_app
+) -> tuple[RepoUrl, Dataset, Dataset]:
+    """
+    Return a tuple of the following
+    - A `RepoUrl` object that represents a remote repository
+      at the URL of the repository in the database
+      Note: This repository is actually the value
+            of the `two_files_ds_annex_func_scoped` fixture
+    - A `Dataset` object that represents the remote repository,
+      i.e., the value of the `two_files_ds_annex_func_scoped` fixture
+    - A `Dataset` object that represents a clone of the remote repository
+      at the local cache
+    """
+    with flask_app.app_context():
+        clone_path_relative = allocate_ds_path()
+        clone_path_abs = base_cache_path / clone_path_relative
+
+        ds_clone = clone(
+            source=two_files_ds_annex_func_scoped,
+            path=clone_path_abs,
+            on_failure="stop",
+            result_renderer="disabled",
+        )
+
+        # Add representation of the URL to the database
+        url = RepoUrl(
+            url=two_files_ds_annex_func_scoped.path,
+            processed=True,
+            cache_path=str(clone_path_relative),
+        )
+        db.session.add(url)
+        db.session.commit()
+
+        # Reload the `url` object from the database
+        db.session.refresh(url)
+
+        return url, two_files_ds_annex_func_scoped, ds_clone
