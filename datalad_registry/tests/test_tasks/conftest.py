@@ -181,7 +181,5 @@ def repo_url_off_sync_by_new_default_branch(
           remote is still pointing to the same commit
     """
     url, remote_ds, local_ds_clone = repo_url_with_up_to_date_clone
-
-    remote_ds.repo.call_git(["checkout", "-b", "new-branch"])
-
+    _modify_remote(remote_ds, setting_new_default_branch=True, adding_file=False)
     return url, remote_ds, local_ds_clone
