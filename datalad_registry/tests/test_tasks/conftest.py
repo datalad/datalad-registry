@@ -158,12 +158,7 @@ def repo_url_outdated_by_new_file(
           `two_files_ds_annex_func_scoped` fixture
     """
     url, remote_ds, local_ds_clone = repo_url_with_up_to_date_clone
-
-    new_file_name = "new_file.txt"
-    with open(remote_ds.pathobj / new_file_name, "w") as f:
-        f.write(f"Hello in {new_file_name}\n")
-    remote_ds.save(message=f"Add {new_file_name}")
-
+    _modify_remote(remote_ds, setting_new_default_branch=False, adding_file=True)
     return url, remote_ds, local_ds_clone
 
 
