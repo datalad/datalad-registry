@@ -119,6 +119,28 @@ def repo_url_with_up_to_date_clone(
         return url, two_files_ds_annex_func_scoped, ds_clone
 
 
+def _modify_remote(
+    remote_ds: Dataset, setting_new_default_branch: bool, adding_file: bool
+):
+    """
+    Modify the remote repository of a local dataset clone
+
+    :param remote_ds: The remote repository is to be modified
+    :param setting_new_default_branch: A boolean indicating whether to set a new default
+                                       branch for the remote repository
+    :param adding_file: A boolean indicating whether to add a new file to the remote
+                        repository
+    """
+    if setting_new_default_branch:
+        remote_ds.repo.call_git(["checkout", "-b", "new-branch"])
+
+    if adding_file:
+        new_file_name = "new_file.txt"
+        with open(remote_ds.pathobj / new_file_name, "w") as f:
+            f.write(f"Hello in {new_file_name}\n")
+        remote_ds.save(message=f"Add {new_file_name}")
+
+
 @pytest.fixture
 def repo_url_outdated_by_new_file(
     repo_url_with_up_to_date_clone,
