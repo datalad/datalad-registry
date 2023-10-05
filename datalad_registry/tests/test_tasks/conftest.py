@@ -144,18 +144,20 @@ def repo_url_outdated_by_new_file(repo_url_with_up_to_date_clone):
 
 
 @pytest.fixture
-def repo_url_outdated_by_new_default_branch(repo_url_with_up_to_date_clone):
+def repo_url_off_sync_by_new_default_branch(repo_url_with_up_to_date_clone):
     """
     This is an extension of the `repo_url_with_up_to_date_clone` fixture with the
     remote repository's default branch changed to a new branch.
 
     The return of this fixture is the same as the return of
     the `repo_url_with_up_to_date_clone` fixture. However, because of the change
-    of the default branch of the remote repository, the `RepoUrl` object and the clone
-    of the remote at the local cache are outdated.
+    of the default branch of the remote repository, the clone of the remote
+    at the local cache are out of sync with the remote
 
     Note: This fixture modifies the remote repository, i.e., the value of the
           `two_files_ds_annex_func_scoped` fixture
+    Note: The `RepoUrl` object is not considered outdated because the HEAD of the
+          remote is still pointing to the same commit
     """
     url, remote_ds, local_ds_clone = repo_url_with_up_to_date_clone
 

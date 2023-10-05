@@ -121,7 +121,7 @@ class TestUpdateDsClone:
     @pytest.mark.parametrize("does_cloning_fail", [True, False])
     def test_new_default_branch_at_origin_remote(
         self,
-        repo_url_outdated_by_new_default_branch,
+        repo_url_off_sync_by_new_default_branch,
         does_cloning_fail,
         monkeypatch,
         flask_app,
@@ -134,7 +134,7 @@ class TestUpdateDsClone:
             url,
             origin_remote_ds,
             initial_ds_clone,
-        ) = repo_url_outdated_by_new_default_branch
+        ) = repo_url_off_sync_by_new_default_branch
 
         with flask_app.app_context():
             if not does_cloning_fail:
