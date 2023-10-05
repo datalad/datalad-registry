@@ -179,7 +179,7 @@ class TestProcessDatasetUrl:
                     db.select(RepoUrl).filter_by(id=url_id)
                 ).scalar()
 
-                return _dataset_url.cache_path_absolute
+                return _dataset_url.cache_path_abs
 
         abs_ds_cache_paths: list[Path] = []
         for _ in range(3):

@@ -170,7 +170,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
     validate_url_is_processed(url)
 
     # Absolute path of the dataset clone in cache
-    cache_path_abs = url.cache_path_absolute
+    cache_path_abs = url.cache_path_abs
     assert cache_path_abs is not None
 
     # Check for missing of required files
@@ -296,7 +296,7 @@ def process_dataset_url(dataset_url_id: StrictInt) -> ProcessUrlStatus:
         # === there is no RepoUrl in the database with the specified ID ===
         return ProcessUrlStatus.NO_RECORD
 
-    old_cache_path_absolute = dataset_url.cache_path_absolute
+    old_cache_path_absolute = dataset_url.cache_path_abs
 
     # Allocate a new path in the local cache for cloning the dataset
     # at the specified URL

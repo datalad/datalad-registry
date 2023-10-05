@@ -68,7 +68,7 @@ class RepoUrl(db.Model):  # type: ignore
         return f"<RepoUrl(url={self.url!r}, ds_id={self.ds_id!r})>"
 
     @property
-    def cache_path_absolute(self) -> Optional[Path]:
+    def cache_path_abs(self) -> Optional[Path]:
         """
         The absolute path in the local cache where a copy of the dataset at the URL is
         stored. Note: The value of None indicates that there is no such path stored

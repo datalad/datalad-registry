@@ -31,9 +31,9 @@ class TestRepoUrl:
             assert isinstance(base_cache_path, Path)
 
             if cache_path is None:
-                assert repo_url.cache_path_absolute is None
+                assert repo_url.cache_path_abs is None
             else:
                 assert (
-                    repo_url.cache_path_absolute
+                    repo_url.cache_path_abs
                     == current_app.config["DATALAD_REGISTRY_DATASET_CACHE"] / cache_path
                 )
