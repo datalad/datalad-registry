@@ -120,7 +120,9 @@ def repo_url_with_up_to_date_clone(
 
 
 @pytest.fixture
-def repo_url_outdated_by_new_file(repo_url_with_up_to_date_clone):
+def repo_url_outdated_by_new_file(
+    repo_url_with_up_to_date_clone,
+) -> tuple[RepoUrl, Dataset, Dataset]:
     """
     This is an extension of the `repo_url_with_up_to_date_clone` fixture with the
     remote repository advanced by a new commit that includes a new file.
@@ -144,7 +146,9 @@ def repo_url_outdated_by_new_file(repo_url_with_up_to_date_clone):
 
 
 @pytest.fixture
-def repo_url_off_sync_by_new_default_branch(repo_url_with_up_to_date_clone):
+def repo_url_off_sync_by_new_default_branch(
+    repo_url_with_up_to_date_clone,
+) -> tuple[RepoUrl, Dataset, Dataset]:
     """
     This is an extension of the `repo_url_with_up_to_date_clone` fixture with the
     remote repository's default branch changed to a new branch.
