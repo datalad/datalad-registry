@@ -93,3 +93,36 @@ class TestChkUrlToUpdate:
             # Verify that `chk_req_dt` of the `RepoUrl` record identified by the given
             # `url_id` is not modified
             assert repo_url.chk_req_dt == original_chk_req_dt
+
+    @pytest.mark.usefixtures("fix_datetime_now")
+    def test_no_update_available(self, repo_url_with_up_to_date_clone, flask_app):
+        """
+        Test the case that the clone of the dataset in the local cache is up-to-date
+        """
+        repo_url = repo_url_with_up_to_date_clone[0]
+        original_cache_path = repo_url.cache_path
+
+        # Set fields in `repo_url` that are related
+        # to the operation of `chk_url_to_update`
+        with flask_app.app_context():
+            repo_url.n_failed_chks = 7
+            repo_url.last_chk_dt = datetime(2023, 6, 18, 18, 33, 7, tzinfo=timezone.utc)
+            repo_url.chk_req_dt = datetime(2023, 6, 17, 20, 33, 7, tzinfo=timezone.utc)
+
+            db.session.add(repo_url)
+            db.session.commit()
+            db.session.refresh(repo_url)
+
+        assert (
+            chk_url_to_update(repo_url.id, repo_url.last_chk_dt)
+            is ChkUrlStatus.OK_CHK_ONLY
+        )
+
+        # Verify the state of the `repo_url` record after `chk_url_to_update`
+        with flask_app.app_context():
+            db.session.add(repo_url)
+            db.session.refresh(repo_url)
+        assert repo_url.n_failed_chks == 0
+        assert repo_url.last_chk_dt == FIXED_DATETIME_NOW_VALUE
+        assert repo_url.chk_req_dt is None
+        assert repo_url.cache_path == original_cache_path
