@@ -97,14 +97,20 @@ class TestChkUrlToUpdate:
 
     @pytest.mark.usefixtures("fix_datetime_now")
     @pytest.mark.parametrize(
-        "repo_url_name, resulting_in_new_clone",
+        "repo_url_name, update_available, resulting_in_new_clone",
         [
-            ("repo_url_with_up_to_date_clone", False),
-            ("repo_url_off_sync_by_new_default_branch", True),
+            ("repo_url_with_up_to_date_clone", False, False),
+            ("repo_url_outdated_by_new_file", True, False),
+            ("repo_url_off_sync_by_new_default_branch", False, True),
         ],
     )
-    def test_no_update_available(
-        self, repo_url_name, resulting_in_new_clone, request, flask_app
+    def test_success_return(
+        self,
+        repo_url_name,
+        update_available,
+        resulting_in_new_clone,
+        request,
+        flask_app,
     ):
         """
         Test the case that the clone of the dataset in the local cache is up-to-date
@@ -123,9 +129,8 @@ class TestChkUrlToUpdate:
             db.session.commit()
             db.session.refresh(repo_url)
 
-        assert (
-            chk_url_to_update(repo_url.id, repo_url.last_chk_dt)
-            is ChkUrlStatus.OK_CHK_ONLY
+        assert chk_url_to_update(repo_url.id, repo_url.last_chk_dt) is (
+            ChkUrlStatus.OK_UPDATED if update_available else ChkUrlStatus.OK_CHK_ONLY
         )
 
         # Verify the state of the `repo_url` record after `chk_url_to_update`
