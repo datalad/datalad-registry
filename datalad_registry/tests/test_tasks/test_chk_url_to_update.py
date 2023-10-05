@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 
@@ -95,11 +96,20 @@ class TestChkUrlToUpdate:
             assert repo_url.chk_req_dt == original_chk_req_dt
 
     @pytest.mark.usefixtures("fix_datetime_now")
-    def test_no_update_available(self, repo_url_with_up_to_date_clone, flask_app):
+    @pytest.mark.parametrize(
+        "repo_url_name, resulting_in_new_clone",
+        [
+            ("repo_url_with_up_to_date_clone", False),
+            ("repo_url_off_sync_by_new_default_branch", True),
+        ],
+    )
+    def test_no_update_available(
+        self, repo_url_name, resulting_in_new_clone, request, flask_app
+    ):
         """
         Test the case that the clone of the dataset in the local cache is up-to-date
         """
-        repo_url = repo_url_with_up_to_date_clone[0]
+        repo_url: RepoUrl = request.getfixturevalue(repo_url_name)[0]
         original_cache_path = repo_url.cache_path
 
         # Set fields in `repo_url` that are related
@@ -125,4 +135,11 @@ class TestChkUrlToUpdate:
         assert repo_url.n_failed_chks == 0
         assert repo_url.last_chk_dt == FIXED_DATETIME_NOW_VALUE
         assert repo_url.chk_req_dt is None
-        assert repo_url.cache_path == original_cache_path
+
+        if resulting_in_new_clone:
+            assert repo_url.cache_path != original_cache_path
+
+            # Verify that the old clone is removed
+            assert not Path(original_cache_path).is_dir()
+        else:
+            assert repo_url.cache_path == original_cache_path
