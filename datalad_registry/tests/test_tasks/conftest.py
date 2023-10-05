@@ -106,6 +106,7 @@ def repo_url_with_up_to_date_clone(
         # Add representation of the URL to the database
         url = RepoUrl(
             url=two_files_ds_annex_func_scoped.path,
+            head=two_files_ds_annex_func_scoped.repo.get_hexsha(),
             processed=True,
             cache_path=str(clone_path_relative),
         )
