@@ -183,3 +183,25 @@ def repo_url_off_sync_by_new_default_branch(
     url, remote_ds, local_ds_clone = repo_url_with_up_to_date_clone
     _modify_remote(remote_ds, setting_new_default_branch=True, adding_file=False)
     return url, remote_ds, local_ds_clone
+
+
+@pytest.fixture
+def repo_url_outdated_by_new_file_at_new_default_branch(
+    repo_url_with_up_to_date_clone,
+) -> tuple[RepoUrl, Dataset, Dataset]:
+    """
+    This is an extension of the `repo_url_with_up_to_date_clone` fixture with the
+    remote repository advanced by a new commit at a new default branch
+    that includes a new file
+
+    The return of this fixture is the same as the return of
+    the `repo_url_with_up_to_date_clone` fixture. However, because of the advancement
+    of the remote repository, the `RepoUrl` object and the clone of the remote
+    at the local cache are outdated.
+
+    Note: This fixture modifies the remote repository, i.e., the value of the
+          `two_files_ds_annex_func_scoped` fixture
+    """
+    url, remote_ds, local_ds_clone = repo_url_with_up_to_date_clone
+    _modify_remote(remote_ds, setting_new_default_branch=True, adding_file=True)
+    return url, remote_ds, local_ds_clone
