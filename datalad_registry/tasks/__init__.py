@@ -592,7 +592,7 @@ def chk_url_to_update(
 
         if is_new_clone:
             # Remove old clone
-            rm_ds_tree(url.cache_path)
+            rm_ds_tree(url.cache_path_abs)
 
             # Update the cache path in the record to the path of the new clone
             url.cache_path = str(
