@@ -148,3 +148,84 @@ class TestChkUrlToUpdate:
             assert not Path(original_cache_path).is_dir()
         else:
             assert repo_url.cache_path == original_cache_path
+
+    @pytest.mark.usefixtures("fix_datetime_now")
+    @pytest.mark.parametrize(
+        "repo_url_name, resulting_in_new_clone",
+        [
+            ("repo_url_outdated_by_new_file", False),
+            ("repo_url_outdated_by_new_file_at_new_default_branch", True),
+        ],
+    )
+    def test_update_dataset_url_info_failure(
+        self,
+        repo_url_name,
+        resulting_in_new_clone,
+        request,
+        monkeypatch,
+        mocker,
+        flask_app,
+    ):
+        """
+        Test the case of failure in updating the dataset URL representation
+        in the database, i.e., the call of `_update_dataset_url_info`
+        raising an exception
+        """
+        from datalad_registry import tasks
+
+        repo_url, remote_ds, old_clone = request.getfixturevalue(repo_url_name)
+
+        with flask_app.app_context():
+            original_n_failed_chks = repo_url.n_failed_chks
+            original_chk_req_dt = repo_url.chk_req_dt
+            original_cache_path_abs = repo_url.cache_path_abs
+            original_head = repo_url.head
+
+        update_ds_clone_spy = mocker.spy(tasks, "update_ds_clone")
+
+        def mock_update_dataset_url_info(*_args, **_kwargs):
+            raise RuntimeError("Exception from `mock_update_dataset_url_info`")
+
+        monkeypatch.setattr(
+            tasks, "_update_dataset_url_info", mock_update_dataset_url_info
+        )
+
+        with pytest.raises(
+            RuntimeError, match="Exception from `mock_update_dataset_url_info`"
+        ):
+            chk_url_to_update(repo_url.id, repo_url.last_chk_dt)
+
+        # Verify the state of the `repo_url` record after `chk_url_to_update`
+        with flask_app.app_context():
+            db.session.add(repo_url)
+            db.session.refresh(repo_url)
+
+            # Verify that `n_failed_chks` and `last_chk_dt` of the `RepoUrl` records
+            # are updated
+            assert repo_url.n_failed_chks == original_n_failed_chks + 1
+            assert repo_url.last_chk_dt == FIXED_DATETIME_NOW_VALUE
+
+            # Verify that `chk_req_dt` of the `RepoUrl` record is not modified
+            assert repo_url.chk_req_dt == original_chk_req_dt
+
+            # Verify that `cache_path_abs` of the `RepoUrl` record is not modified
+            assert repo_url.cache_path_abs == original_cache_path_abs
+
+            # Verify that `head` of the `RepoUrl` record is not modified
+            assert repo_url.head == original_head
+
+        possible_new_clone, is_clone_new = update_ds_clone_spy.spy_return
+
+        # Verify the state of the clone output by `update_ds_clone` is indeed what's
+        # expected
+        assert is_clone_new == resulting_in_new_clone
+
+        if resulting_in_new_clone:
+            # The new clone should be removed
+            assert not possible_new_clone.pathobj.is_dir()
+        else:
+            # The old clone should have the same HEAD as before
+            assert old_clone.repo.get_hexsha() == original_head
+
+            # The old clone should not have updated to the remote dataset
+            assert old_clone.repo.get_hexsha() != remote_ds.repo.get_hexsha()
