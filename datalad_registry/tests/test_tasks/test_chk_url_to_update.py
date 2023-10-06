@@ -183,7 +183,8 @@ class TestChkUrlToUpdate:
 
         update_ds_clone_spy = mocker.spy(tasks, "update_ds_clone")
 
-        def mock_update_dataset_url_info(*_args, **_kwargs):
+        def mock_update_dataset_url_info(dataset_url: RepoUrl, *_args, **_kwargs):
+            dataset_url.head = remote_ds.repo.get_hexsha()
             raise RuntimeError("Exception from `mock_update_dataset_url_info`")
 
         monkeypatch.setattr(
