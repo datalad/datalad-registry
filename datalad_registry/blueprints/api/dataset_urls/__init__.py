@@ -19,7 +19,10 @@ from datalad_registry.tasks import (
     mark_for_chk,
     process_dataset_url,
 )
-from datalad_registry.utils.flask_tools import json_resp_from_str
+from datalad_registry.utils.flask_tools import (
+    disable_in_read_only_mode,
+    json_resp_from_str,
+)
 
 from .models import (
     DatasetURLPage,
@@ -53,6 +56,7 @@ bp = APIBlueprint(
 
 
 @bp.post("", responses={"201": DatasetURLRespModel, "202": DatasetURLRespModel})
+@disable_in_read_only_mode
 def declare_dataset_url(body: DatasetURLSubmitModel):
     """
     Handle the submission of a dataset URL, adding a new one or updating an existing one
