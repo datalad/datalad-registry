@@ -34,7 +34,7 @@ from .models import (
     PathParams,
     QueryParams,
 )
-from .. import API_URL_PREFIX, COMMON_API_RESPONSES
+from .. import API_URL_PREFIX, COMMON_API_RESPONSES, HTTPExceptionResp
 from ..url_metadata.models import URLMetadataRef
 
 _ORDER_KEY_TO_SQLA_ATTR = {
@@ -55,7 +55,14 @@ bp = APIBlueprint(
 )
 
 
-@bp.post("", responses={"201": DatasetURLRespModel, "202": DatasetURLRespModel})
+@bp.post(
+    "",
+    responses={
+        "201": DatasetURLRespModel,
+        "202": DatasetURLRespModel,
+        "418": HTTPExceptionResp,  # Occurs only when the server is in read-only mode
+    },
+)
 @disable_in_read_only_mode
 def declare_dataset_url(body: DatasetURLSubmitModel):
     """
