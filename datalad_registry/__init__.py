@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 import sys
 
@@ -78,11 +77,9 @@ def create_app() -> Flask:
             # start with the correct headers and status code from the error
             response = e.get_response()
             # replace the body with JSON
-            response.data = json.dumps(
-                HTTPExceptionResp(
-                    code=e.code, name=e.name, description=e.description
-                ).dict()
-            )
+            response.data = HTTPExceptionResp(
+                code=e.code, name=e.name, description=e.description
+            ).json()
             response.content_type = "application/json"
             return response
         else:
