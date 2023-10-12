@@ -36,6 +36,9 @@ class BaseConfig(OperationConfig):
         "metalad_studyminimeta",
         "datacite_gin",
         "bids_dataset",
+        # === DANDI related extractors ===
+        "dandi:dandiset",
+        # "dandi:assets",  # Let's not activate this yet by default
     ]
 
     # === worker, Celery, related configuration  ===
