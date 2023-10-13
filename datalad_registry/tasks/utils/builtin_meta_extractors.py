@@ -53,7 +53,9 @@ def dlreg_meta_extract(extractor: str, url: RepoUrl) -> URLMetadata:
     :raises ValueError: If the argument for `extractor` is not one of the extractors
                         specified in `SUPPORTED_EXTRACTORS`
     """
-    if extractor not in EXTRACTOR_MAP:
-        raise ValueError(f"Extractor {extractor} not supported")
-
-    return EXTRACTOR_MAP[extractor](url)
+    try:
+        extractor_func = EXTRACTOR_MAP[extractor]
+    except KeyError as e:
+        raise ValueError(f"Extractor {extractor} not supported") from e
+    else:
+        return extractor_func(url)
