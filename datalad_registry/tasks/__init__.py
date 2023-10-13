@@ -27,6 +27,8 @@ from datalad_registry.utils.datalad_tls import (
 )
 
 from .utils import allocate_ds_path, update_ds_clone, validate_url_is_processed
+from .utils.builtin_meta_extractors import EXTRACTOR_MAP as BUILTIN_EXTRACTOR_MAP
+from .utils.builtin_meta_extractors import dlreg_meta_extract
 
 lgr = get_task_logger(__name__)
 
@@ -202,50 +204,62 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
                 db.session.delete(data)  # delete the old metadata from the database
                 break
 
-    results = parse_obj_as(
-        list[MetaExtractResult],
-        dl.meta_extract(
-            extractor,
-            dataset=cache_path_abs,
-            result_renderer="disabled",
-            on_failure="stop",
-        ),
-    )
+    if extractor in BUILTIN_EXTRACTOR_MAP:
+        # === The extractor is a built-in extractor ===
+        # === Call upon the built-in extractor to extract metadata ===
 
-    # Assert that `datalad.api.meta_extract()` returns a list of one element
-    # as we understand that `datalad.api.meta_extract()` is supposed to return
-    assert (
-        len(results) == 1
-    ), f"`datalad.api.meta_extract()` returned a list of {len(results)} elements."
-
-    res = results[0]
-    if res.status == "ok":
-        # Record the metadata to the database
-        metadata_record = res.metadata_record
-        url_metadata = URLMetadata(
-            dataset_describe=url.head_describe,
-            dataset_version=metadata_record.dataset_version,
-            extractor_name=metadata_record.extractor_name,
-            extractor_version=metadata_record.extractor_version,
-            extraction_parameter=metadata_record.extraction_parameter,
-            extracted_metadata=metadata_record.extracted_metadata,
-            url=url,
-        )
-        db.session.add(url_metadata)
-        db.session.commit()
-
-        return ExtractMetaStatus.SUCCEEDED
+        url_metadata = dlreg_meta_extract(extractor, url)
     else:
-        lgr.debug(
-            "The result of extractor %s for %s is not 'ok'."
-            "It will not be recorded to the database.",
-            extractor,
-            url.url,
+        # === The extractor is not a built-in extractor ===
+        # === Call upon metalad to extract metadata ===
+
+        results = parse_obj_as(
+            list[MetaExtractResult],
+            dl.meta_extract(
+                extractor,
+                dataset=cache_path_abs,
+                result_renderer="disabled",
+                on_failure="stop",
+            ),
         )
 
-        raise RuntimeError(
-            f"Extractor {extractor} did not produce any valid metadata for {url.url}"
-        )
+        # Assert that `datalad.api.meta_extract()` returns a list of one element
+        # as we understand that `datalad.api.meta_extract()` is supposed to return
+        assert (
+            len(results) == 1
+        ), f"`datalad.api.meta_extract()` returned a list of {len(results)} elements."
+
+        res = results[0]
+        if res.status == "ok":
+            # Record the metadata to the database
+            metadata_record = res.metadata_record
+            url_metadata = URLMetadata(
+                dataset_describe=url.head_describe,
+                dataset_version=metadata_record.dataset_version,
+                extractor_name=metadata_record.extractor_name,
+                extractor_version=metadata_record.extractor_version,
+                extraction_parameter=metadata_record.extraction_parameter,
+                extracted_metadata=metadata_record.extracted_metadata,
+                url=url,
+            )
+        else:
+            lgr.debug(
+                "The result of extractor %s for %s is not 'ok'."
+                "It will not be recorded to the database.",
+                extractor,
+                url.url,
+            )
+
+            raise RuntimeError(
+                f"Extractor {extractor} did not produce any valid metadata for "
+                f"{url.url}"
+            )
+
+    # Record the metadata to the database
+    db.session.add(url_metadata)
+    db.session.commit()
+
+    return ExtractMetaStatus.SUCCEEDED
 
 
 @shared_task(
