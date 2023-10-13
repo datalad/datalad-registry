@@ -14,6 +14,7 @@ def dlreg_dandiset_meta_extract(url: RepoUrl) -> URLMetadata:
                 at which the dataset is located
     :return: A `URLMetadata` object containing the extracted metadata ready
              to be written (committed) to the database
+    :raises FileNotFoundError: If the `dandiset.yaml` file is not found at the dataset
 
     Note: This function implements the `dandi:dandiset` extractor.
     """
@@ -27,6 +28,8 @@ def dlreg_dandi_assets_meta_extract(url: RepoUrl) -> URLMetadata:
 
     :param url: The `RepoUrl` object representing the URL
     :return: A `URLMetadata` object containing the extracted metadata ready
+    :raises FileNotFoundError: If the `.dandi/assets.json` file is not found
+                               at the dataset
 
     Note: This function implements the `dandi:assets` extractor.
     """
