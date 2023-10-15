@@ -1,8 +1,20 @@
 # This file specifies custom metadata extractors, for datalad_registry, and related
 # definitions.
 from collections.abc import Callable
+from json import dumps as json_dumps
+
+from datalad.distribution.dataset import require_dataset
+from yaml import load as yaml_load
+
+try:
+    # Import the C-based YAML loader if available
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    # Otherwise, import the Python-based YAML loader
+    from yaml import SafeLoader  # type: ignore
 
 from datalad_registry.models import RepoUrl, URLMetadata
+from datalad_registry.utils.datalad_tls import get_head_describe
 
 
 def dlreg_dandiset_meta_extract(url: RepoUrl) -> URLMetadata:
@@ -17,8 +29,35 @@ def dlreg_dandiset_meta_extract(url: RepoUrl) -> URLMetadata:
     :raises FileNotFoundError: If the `dandiset.yaml` file is not found at the dataset
 
     Note: This function implements the `dandi:dandiset` extractor.
+    Note: This function is meant to be called inside a Celery task for it requires
+          an active application context of the Flask app
+    Note: This function must be called with a RepoUrl object with a cache path, i.e.,
+          one that must have been processed already.
     """
-    raise NotImplementedError
+    name = "dandi:dandiset"  # Name of this extractor
+    version = "0.0.1"  # Version of this extractor
+
+    assert url.cache_path_abs is not None, (
+        f"Encountered a RepoUrl with no cache path, "
+        f"with a processed flag set to {url.processed}"
+    )
+
+    with open(url.cache_path_abs / "dandiset.yaml", "rb") as f:
+        extracted_metadata = json_dumps(yaml_load(f, Loader=SafeLoader))
+
+    ds = require_dataset(
+        url.cache_path_abs, check_installed=True, purpose="dandiset metadata extraction"
+    )
+
+    return URLMetadata(
+        dataset_describe=get_head_describe(ds),
+        dataset_version=ds.repo.get_hexsha(),
+        extractor_name=name,
+        extractor_version=version,
+        extraction_parameter={},
+        extracted_metadata=extracted_metadata,
+        url=url,
+    )
 
 
 def dlreg_dandi_assets_meta_extract(url: RepoUrl) -> URLMetadata:
