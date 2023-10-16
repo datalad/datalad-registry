@@ -1,5 +1,8 @@
+import pytest
+
 from datalad_registry.tasks.utils.builtin_meta_extractors import (
     dlreg_dandiset_meta_extract,
+    dlreg_meta_extract,
 )
 from datalad_registry.utils.datalad_tls import get_head_describe
 
@@ -19,3 +22,19 @@ def test_dlreg_dandiset_meta_extract(dandi_repo_url_with_up_to_date_clone, flask
     assert url_metadata.extraction_parameter == {}
     assert url_metadata.extracted_metadata == {"name": "test-dandi-ds"}
     assert url_metadata.url == repo_url
+
+
+class TestDlregMetaExtract:
+    def test_unsupported_extractor(
+        self, dandi_repo_url_with_up_to_date_clone, flask_app
+    ):
+        """
+        Test the case that the given extractor is not one that is supported
+        """
+        repo_url = dandi_repo_url_with_up_to_date_clone[0]
+
+        with flask_app.app_context():
+            with pytest.raises(
+                ValueError, match="unsupported_extractor is not supported"
+            ):
+                dlreg_meta_extract("unsupported_extractor", repo_url)
