@@ -100,6 +100,6 @@ def dlreg_meta_extract(extractor: str, url: RepoUrl) -> URLMetadata:
     try:
         extractor_func = EXTRACTOR_MAP[extractor]
     except KeyError as e:
-        raise ValueError(f"Extractor {extractor} not supported") from e
+        raise ValueError(f"Extractor {extractor} is not supported") from e
     else:
         return extractor_func(url)
