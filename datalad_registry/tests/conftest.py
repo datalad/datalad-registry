@@ -225,14 +225,14 @@ def dandi_ds(tmp_path_factory) -> Dataset:
     # Add and commit dandiset.yaml
     with open(ds.pathobj / "dandiset.yaml", "w") as f:
         safe_dump({"name": "test-dandi-ds"}, f)
-    ds.save(message="Add dandiset.yaml")
+    ds.save(message="Add dandiset.yaml", to_git=True)
 
     # Add and commit .dandi/assets.json
     dandi_dir = ds.pathobj / ".dandi"
     dandi_dir.mkdir()
     with open(dandi_dir / "assets.json", "w") as f:
         json.dump([{"asset_id": "123"}], f)
-    ds.save(message="Add .dandi/assets.json")
+    ds.save(message="Add .dandi/assets.json", to_git=True)
 
     return ds
 
