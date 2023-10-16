@@ -136,6 +136,20 @@ def empty_ds_non_annex_func_scoped(empty_ds_non_annex, tmp_path_factory) -> Data
     )
 
 
+def _commit_two_files(ds: Dataset) -> None:
+    """
+    Write two text files to the root directory of a dataset and commit the changes
+
+    :param ds: The dataset
+    """
+    file_names = ["file1.txt", "file2.txt"]
+    for file_name in file_names:
+        with open(ds.pathobj / file_name, "w") as f:
+            f.write(f"Hello in {file_name}\n")
+
+    ds.save(message=f"Add {', '.join(file_names)}")
+
+
 def two_files_ds(annex: bool, tmp_path_factory: TempPathFactory) -> Dataset:
     """
     A dataset with two simple files
@@ -146,13 +160,8 @@ def two_files_ds(annex: bool, tmp_path_factory: TempPathFactory) -> Dataset:
         ),
         annex=annex,
     )
+    _commit_two_files(ds)
 
-    file_names = ["file1.txt", "file2.txt"]
-    for file_name in file_names:
-        with open(ds.pathobj / file_name, "w") as f:
-            f.write(f"Hello in {file_name}\n")
-
-    ds.save(message=f"Add {', '.join(file_names)}")
     return ds
 
 
