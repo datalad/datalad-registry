@@ -1,3 +1,4 @@
+from pathlib import Path
 from uuid import UUID
 
 from datalad.api import Dataset
@@ -9,6 +10,8 @@ from datalad_registry.utils.datalad_tls import (
     get_origin_annex_key_count,
     get_origin_annex_uuid,
     get_origin_branches,
+    get_origin_default_branch,
+    get_origin_upstream_branch,
     get_wt_annexed_file_info,
 )
 
@@ -169,3 +172,105 @@ def test_get_origin_branches(ds_name, request, tmp_path):
                 ["log", "-1", "--format=%aI", b_name]
             ).strip(),
         }
+
+
+def _mock_no_match_re_search(*_args, **_kwargs):
+    return None
+
+
+def _two_level_clone(ds: Dataset, dir_path: Path) -> tuple[Dataset, Dataset]:
+    """
+    Do a two-level clone of a given dataset within a given directory
+
+    :param ds: The given directory
+    :param dir_path: The given directory, which must be empty
+    :return: A tuple consisting of the first and second level clones
+             of the given dataset each residing in a subdirectory of the given directory
+    """
+    l1_clone_path = dir_path / "l1_clone"
+    l2_clone_path = dir_path / "l2_clone"
+
+    l1_clone = clone(source=ds.path, path=l1_clone_path)
+    l2_clone = clone(source=l1_clone.path, path=l2_clone_path)
+
+    return l1_clone, l2_clone
+
+
+class TestGetOriginDefaultBranch:
+    def test_no_match(self, two_files_ds_non_annex, tmp_path, monkeypatch):
+        """
+        Test the case that the default branch name of the origin remote of the given
+        dataset can't be extracted from the output of `git ls-remote`
+        """
+
+        ds_clone = clone(source=two_files_ds_non_annex.path, path=tmp_path)
+
+        with pytest.raises(RuntimeError, match="Failed to extract the name"):
+            with monkeypatch.context() as m:
+                import re
+
+                m.setattr(re, "search", _mock_no_match_re_search)
+                get_origin_default_branch(ds_clone)
+
+    @pytest.mark.parametrize(
+        "ds_name",
+        [
+            "empty_ds_annex",
+            "two_files_ds_annex",
+            "empty_ds_non_annex",
+            "two_files_ds_non_annex",
+        ],
+    )
+    @pytest.mark.parametrize("branch_name", ["foo", "bar"])
+    def test_normal_operation(self, ds_name, branch_name, request, tmp_path):
+        """
+        Test the normal operation of `get_origin_default_branch`
+        """
+        ds: Dataset = request.getfixturevalue(ds_name)
+
+        l1_clone, l2_clone = _two_level_clone(ds, tmp_path)
+
+        l1_clone.repo.call_git(["checkout", "-b", branch_name])
+
+        assert get_origin_default_branch(l2_clone) == branch_name
+
+
+class TestGetOriginUpstreamBranch:
+    def test_no_match(self, two_files_ds_non_annex, tmp_path, monkeypatch):
+        """
+        Test the case that the name of the upstream branch at the origin remote of
+        the current local branch of a given dataset can't be extracted from the output
+        of `git rev-parse`
+        """
+
+        ds_clone = clone(source=two_files_ds_non_annex.path, path=tmp_path)
+
+        with pytest.raises(RuntimeError, match="Failed to extract the name"):
+            with monkeypatch.context() as m:
+                import re
+
+                m.setattr(re, "search", _mock_no_match_re_search)
+                get_origin_upstream_branch(ds_clone)
+
+    @pytest.mark.parametrize(
+        "ds_name",
+        [
+            "empty_ds_annex",
+            "two_files_ds_annex",
+            "empty_ds_non_annex",
+            "two_files_ds_non_annex",
+        ],
+    )
+    @pytest.mark.parametrize("branch_name", ["foo", "bar"])
+    def test_normal_operation(self, ds_name, branch_name, request, tmp_path):
+        """
+        Test the normal operation of `get_origin_upstream_branch`
+        """
+        ds: Dataset = request.getfixturevalue(ds_name)
+
+        _, l2_clone = _two_level_clone(ds, tmp_path)
+
+        l2_clone.repo.call_git(["checkout", "-b", branch_name])
+        l2_clone.repo.call_git(["push", "-u", "origin", branch_name])
+
+        assert get_origin_upstream_branch(l2_clone) == branch_name

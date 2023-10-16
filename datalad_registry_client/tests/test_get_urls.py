@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from itertools import chain
 
 import datalad.api as dl
@@ -33,7 +33,8 @@ dataset_url_resp_model_template = dict(
     annex_key_count=30,
     annexed_files_in_wt_count=45,
     annexed_files_in_wt_size=100,
-    last_update=datetime(2008, 7, 18, 18, 34, 32),
+    last_update=datetime(2008, 7, 18, 18, 34, 32, tzinfo=timezone.utc),
+    last_chk_dt=datetime(2004, 6, 18, 18, 33, 7, tzinfo=timezone.utc),
     git_objects_kb=1200,
     processed=True,
     metadata=[],

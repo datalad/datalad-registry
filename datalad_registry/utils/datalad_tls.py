@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import re
 from typing import Optional
 from uuid import UUID
 
@@ -118,3 +119,52 @@ def get_origin_branches(ds: Dataset) -> list[dict[str, str]]:
         )
         if (branch_name := branch_info["refname:strip=3"]) != "HEAD"
     ]
+
+
+def get_origin_default_branch(ds: Dataset) -> str:
+    """
+    Get the name of the default branch of the origin remote of a given dataset
+
+    :param ds: The given dataset
+    :return: The name of the default branch of the origin remote of the given dataset
+
+    Note: The given dataset must be a git repo with a remote named "origin"
+    """
+    ls_remote_output = ds.repo.call_git(["ls-remote", "--symref", "origin", "HEAD"])
+
+    match = re.search(r"ref: refs/heads/(\S+)\s+HEAD", ls_remote_output)
+
+    if match is None:
+        raise RuntimeError(
+            "Failed to extract the name of the default branch of the original remote "
+            "from the output of `git ls-remote --symref origin HEAD`"
+        )
+
+    return match.group(1)
+
+
+def get_origin_upstream_branch(ds: Dataset) -> str:
+    """
+    Get the name of the upstream branch at the origin remote of the current local branch
+    of a given dataset
+
+    :param ds: The given dataset
+    :return: The name of the upstream branch at the origin remote of the current local
+             branch of the given dataset
+
+    Note: The given dataset must be a git repo with a remote named "origin"
+    """
+    rev_parse_output = ds.repo.call_git(
+        ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"]
+    )
+
+    match = re.search(r"origin/(\S+)", rev_parse_output)
+
+    if match is None:
+        raise RuntimeError(
+            "Failed to extract the name of the upstream branch at the origin remote "
+            "of the current local branch from the output of "
+            "`git rev-parse --abbrev-ref --symbolic-full-name @{u}`"
+        )
+
+    return match.group(1)

@@ -21,8 +21,8 @@ class TestExtractDsMeta:
         Test the case that the given RepoUrl ID argument has no corresponding
         RepoUrl in the database
         """
-        with pytest.raises(ValueError):
-            extract_ds_meta(url_id, _BASIC_EXTRACTOR)
+        status = extract_ds_meta(url_id, _BASIC_EXTRACTOR)
+        assert status is ExtractMetaStatus.NO_RECORD
 
     @pytest.mark.usefixtures("populate_db_with_unprocessed_dataset_urls")
     @pytest.mark.parametrize("url_id", [2, 3, 4, 5, 6])

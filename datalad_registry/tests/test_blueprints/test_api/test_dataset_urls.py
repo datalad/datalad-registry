@@ -1,7 +1,7 @@
-from datetime import datetime, timezone
 from typing import Optional
 
 import pytest
+from pytest_mock import MockerFixture
 from yarl import URL as YURL
 
 from datalad_registry.blueprints.api.dataset_urls import DatasetURLRespModel
@@ -13,7 +13,6 @@ from datalad_registry.blueprints.api.url_metadata.models import (
     URLMetadataModel,
     URLMetadataRef,
 )
-from datalad_registry.models import RepoUrl, db
 
 
 class TestDeclareDatasetURL:
@@ -55,6 +54,8 @@ class TestDeclareDatasetURL:
         from psycopg2.errors import UniqueViolation
         from sqlalchemy.exc import IntegrityError
         from sqlalchemy.orm.scoping import scoped_session
+
+        from datalad_registry.models import RepoUrl
 
         def mock_commit(_scoped_session_obj):
             raise IntegrityError(None, None, UniqueViolation(None, None, None))
@@ -118,33 +119,28 @@ class TestDeclareDatasetURL:
 
     @pytest.mark.usefixtures("populate_with_dataset_urls")
     @pytest.mark.parametrize(
-        "url, original_chk_req_dt, expecting_chk_req_dt_changed",
+        "url, expected_mark_for_chk_delay_args",
         [
-            (
-                "https://www.example.com",
-                datetime(2008, 7, 18, 18, 34, 34, tzinfo=timezone.utc),
-                False,
-            ),
-            ("http://www.datalad.org", None, True),
-            (
-                "https://handbook.datalad.org",
-                datetime(2004, 6, 19, 18, 34, 34, tzinfo=timezone.utc),
-                False,
-            ),
-            ("https://www.dandiarchive.org", None, False),
+            ("https://www.example.com", None),
+            ("http://www.datalad.org", (2,)),
+            ("https://handbook.datalad.org", None),
+            ("https://www.dandiarchive.org", None),
         ],
     )
     def test_resubmission(
         self,
         url,
-        original_chk_req_dt,
-        expecting_chk_req_dt_changed,
-        flask_app,
+        expected_mark_for_chk_delay_args,
         flask_client,
+        mocker: MockerFixture,
     ):
         """
         Test resubmitting URLs that already exist in the database
         """
+
+        from datalad_registry.blueprints.api.dataset_urls import mark_for_chk
+
+        mark_for_chk_delay_mock = mocker.patch.object(mark_for_chk, "delay")
 
         resp = flask_client.post("/api/v2/dataset-urls", json={"url": url})
         assert resp.status_code == 202
@@ -152,22 +148,12 @@ class TestDeclareDatasetURL:
         # Ensure the response body is valid
         DatasetURLRespModel.parse_raw(resp.text)
 
-        # Verify the representation of the URL in the DB
-        with flask_app.app_context():
-            repo_url: RepoUrl = db.session.execute(
-                db.select(RepoUrl).where(RepoUrl.url == url)
-            ).scalar_one()
-
-            if expecting_chk_req_dt_changed:
-                if original_chk_req_dt is None:
-                    assert isinstance(repo_url.chk_req_dt, datetime)
-                else:
-                    raise ValueError("This should not happen")
-            else:
-                if original_chk_req_dt is None:
-                    assert repo_url.chk_req_dt is None
-                else:
-                    assert repo_url.chk_req_dt == original_chk_req_dt
+        if expected_mark_for_chk_delay_args is None:
+            mark_for_chk_delay_mock.assert_not_called()
+        else:
+            mark_for_chk_delay_mock.assert_called_once_with(
+                *expected_mark_for_chk_delay_args
+            )
 
 
 class TestDatasetURLs:

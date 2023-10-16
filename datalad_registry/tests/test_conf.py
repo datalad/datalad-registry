@@ -69,11 +69,12 @@ class TestBaseConfig:
             )
 
     @pytest.mark.parametrize(
-        "broker_url, result_backend, expected_broker_url",
+        "dispatch_cycle_length, broker_url, result_backend, expected_broker_url ",
         [
-            ("redis://localhost", "redis://127.0.0.1", "redis://localhost"),
-            ("redis://broker", "redis://new", "redis://broker"),
+            (None, "redis://localhost", "redis://127.0.0.1", "redis://localhost"),
+            ("10", "redis://broker", "redis://new", "redis://broker"),
             (
+                "400.0",
                 '["redis://localhost", "redis://broker"]',
                 "redis://127.0.0.1",
                 ["redis://localhost", "redis://broker"],
@@ -82,11 +83,27 @@ class TestBaseConfig:
     )
     def test_celery(
         self,
+        dispatch_cycle_length,
         broker_url,
         result_backend,
         expected_broker_url,
         monkeypatch,
     ):
+        expected_dispatch_cycle_length = (
+            float(dispatch_cycle_length) if dispatch_cycle_length is not None else 60.0
+        )
+        expected_beat_schedule = {
+            "url-check-dispatcher": {
+                "task": "datalad_registry.tasks.url_chk_dispatcher",
+                "schedule": expected_dispatch_cycle_length,
+                "options": {"expires": expected_dispatch_cycle_length},
+            }
+        }
+
+        if dispatch_cycle_length is not None:
+            monkeypatch.setenv(
+                "DATALAD_REGISTRY_DISPATCH_CYCLE_LENGTH", dispatch_cycle_length
+            )
         monkeypatch.setenv("CELERY_BROKER_URL", broker_url)
         monkeypatch.setenv("CELERY_RESULT_BACKEND", result_backend)
 
@@ -99,6 +116,7 @@ class TestBaseConfig:
         ).CELERY == dict(
             broker_url=expected_broker_url,
             result_backend=result_backend,
+            beat_schedule=expected_beat_schedule,
             task_ignore_result=True,
             worker_max_tasks_per_child=1000,
             worker_max_memory_per_child=500_000,  # 500 MB
@@ -259,6 +277,7 @@ class TestCompileConfigFromEnv:
         assert config.DATALAD_REGISTRY_DATASET_CACHE == Path(cache_path)
         assert config.CELERY_BROKER_URL == broker_url
         assert config.CELERY_RESULT_BACKEND == result_backend
+        assert config.SQLALCHEMY_DATABASE_URI == sa_db_uri
         assert isinstance(config, config_cls)
 
     def test_invalid_op_mode(self, monkeypatch):

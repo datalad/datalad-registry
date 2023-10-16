@@ -2,7 +2,7 @@ from enum import auto
 from pathlib import Path
 from typing import Any, Literal, Union
 
-from pydantic import BaseSettings, PostgresDsn, validator
+from pydantic import BaseSettings, NonNegativeInt, PositiveFloat, PostgresDsn, validator
 
 from datalad_registry.utils.misc import StrEnum
 
@@ -23,6 +23,13 @@ class OperationConfig(BaseSettings):
 class BaseConfig(OperationConfig):
     DATALAD_REGISTRY_INSTANCE_PATH: Path
     DATALAD_REGISTRY_DATASET_CACHE: Path
+
+    # URL check dispatcher related configuration
+    DATALAD_REGISTRY_MIN_CHK_INTERVAL_PER_URL: NonNegativeInt = 3600  # seconds
+    DATALAD_REGISTRY_MAX_FAILED_CHKS_PER_URL: NonNegativeInt = 10
+    DATALAD_REGISTRY_MAX_URL_CHKS_ISSUED_PER_DISPATCH_CYCLE: NonNegativeInt = 10
+    DATALAD_REGISTRY_DISPATCH_CYCLE_LENGTH: PositiveFloat = 60.0  # seconds
+
     # Metadata extractors to use
     DATALAD_REGISTRY_METADATA_EXTRACTORS: list[str] = [
         "metalad_core",
@@ -41,6 +48,13 @@ class BaseConfig(OperationConfig):
         return dict(
             broker_url=self.CELERY_BROKER_URL,
             result_backend=self.CELERY_RESULT_BACKEND,
+            beat_schedule={
+                "url-check-dispatcher": {
+                    "task": "datalad_registry.tasks.url_chk_dispatcher",
+                    "schedule": self.DATALAD_REGISTRY_DISPATCH_CYCLE_LENGTH,
+                    "options": {"expires": self.DATALAD_REGISTRY_DISPATCH_CYCLE_LENGTH},
+                }
+            },
             task_ignore_result=True,
             worker_max_tasks_per_child=1000,
             worker_max_memory_per_child=1000 * 500,  # 500 MB

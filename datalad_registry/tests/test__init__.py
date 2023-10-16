@@ -33,6 +33,21 @@ class TestCreateApp:
         Verify configuration is correctly passed to the Flask app and the Celery app
         """
 
+        default_beat_schedule = {
+            "url-check-dispatcher": {
+                "task": "datalad_registry.tasks.url_chk_dispatcher",
+                "schedule": 60.0,
+                "options": {"expires": 60.0},
+            }
+        }
+
+        default_metadata_extractors = [
+            "metalad_core",
+            "metalad_studyminimeta",
+            "datacite_gin",
+            "bids_dataset",
+        ]
+
         def mock_compile_config_from_env(*_args, **_kwargs):
             # noinspection PyTypeChecker
             return BaseConfig(
@@ -68,11 +83,23 @@ class TestCreateApp:
         )
         assert flask_app.config["DATALAD_REGISTRY_INSTANCE_PATH"] == Path(instance_path)
         assert flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"] == Path(cache_path)
+        assert flask_app.config["DATALAD_REGISTRY_MIN_CHK_INTERVAL_PER_URL"] == 3600
+        assert flask_app.config["DATALAD_REGISTRY_MAX_FAILED_CHKS_PER_URL"] == 10
+        assert (
+            flask_app.config["DATALAD_REGISTRY_MAX_URL_CHKS_ISSUED_PER_DISPATCH_CYCLE"]
+            == 10
+        )
+        assert flask_app.config["DATALAD_REGISTRY_DISPATCH_CYCLE_LENGTH"] == 60.0
+        assert (
+            flask_app.config["DATALAD_REGISTRY_METADATA_EXTRACTORS"]
+            == default_metadata_extractors
+        )
         assert flask_app.config["CELERY_BROKER_URL"] == broker_url
         assert flask_app.config["CELERY_RESULT_BACKEND"] == result_backend
         assert flask_app.config["CELERY"] == {
             "broker_url": broker_url,
             "result_backend": result_backend,
+            "beat_schedule": default_beat_schedule,
             "task_ignore_result": True,
             "worker_max_tasks_per_child": 1000,
             "worker_max_memory_per_child": 500_000,  # 500 MB
@@ -81,9 +108,13 @@ class TestCreateApp:
             flask_app.config["SQLALCHEMY_DATABASE_URI"]
             == "postgresql+psycopg2://usr:pd@db:5432/dbn"
         )
+        assert flask_app.config["TESTING"] is False
 
         # Verify the loading of configuration to the Celery app
         celery_app: Celery = flask_app.extensions["celery"]
         assert celery_app.conf["broker_url"] == broker_url
         assert celery_app.conf["result_backend"] == result_backend
+        assert celery_app.conf["beat_schedule"] == default_beat_schedule
         assert celery_app.conf["task_ignore_result"] is True
+        assert celery_app.conf["worker_max_tasks_per_child"] == 1000
+        assert celery_app.conf["worker_max_memory_per_child"] == 500_000  # 500 MB

@@ -51,6 +51,28 @@ services:
       retries: 3
       start_period: 3m
 
+  scheduler:
+    image: datalad-registry:dev
+    depends_on:
+      broker:
+        condition: service_healthy
+      worker:
+        condition: service_healthy
+    command: [
+      "bash", "-c",
+      "celery -A datalad_registry.make_celery:celery_app beat -s /data/celerybeat-schedule -l INFO"
+    ]
+    volumes:
+      - ${SCHEDULER_PATH_AT_HOST}/data:/data
+    environment:
+      <<: *env
+    healthcheck:
+      test: celery -A datalad_registry.make_celery:celery_app status --timeout 1 --json | grep pong
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 3m
+
   # Monitor for Celery service
   monitor:
     image: datalad-registry:dev
@@ -78,25 +100,6 @@ services:
       timeout: 30s
       retries: 3
       start_period: 3m
-
-  # TODO: Currently, there is no job to be scheduled.
-  #   Disable this to make debugging easier.
-  #   Once there is a job to be scheduled, we can uncomment this to enable the scheduler
-  #  scheduler:
-  #    build: .
-  #    depends_on:
-  #      broker:
-  #        condition: service_healthy
-  #    command: [
-  #      celery, -A, datalad_registry.runcelery.celery,
-  #      beat,
-  #      --loglevel, DEBUG,
-  #      -s, /app/instance/celerybeat-schedule
-  #    ]
-  #    volumes:
-  #      - ${DL_REGISTRY_INSTANCE_PATH}:/app/instance
-  #    environment:
-  #      <<: *env
 
   broker:
     image: docker.io/rabbitmq:3-management

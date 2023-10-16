@@ -6,10 +6,11 @@ from typing import Optional, Union
 
 from flask import current_app
 import pytest
+from pytest_mock import MockerFixture
 from sqlalchemy import inspect
 
 from datalad_registry.models import RepoUrl, db
-from datalad_registry.tasks import process_dataset_url
+from datalad_registry.tasks import ProcessUrlStatus, process_dataset_url
 
 
 def is_there_file_in_tree(top: Union[Path, str]) -> bool:
@@ -59,13 +60,25 @@ def is_dataset_url_unprocessed(dataset_url_id: int) -> bool:
 class TestProcessDatasetUrl:
     @pytest.mark.usefixtures("populate_db_with_unprocessed_dataset_urls")
     @pytest.mark.parametrize("invalid_dataset_url_id", [-100, -1, 0, 1, 7, 8, 99])
-    def test_invalid_dataset_url_id(self, invalid_dataset_url_id):
+    def test_invalid_dataset_url_id(
+        self, invalid_dataset_url_id, mocker: MockerFixture
+    ):
         """
         Test the case that the given RepoUrl id is not valid, i.e. no RepoUrl
         having the given id exists in the database
+
+        The Celery task is expected to simply return `ProcessUrlStatus.NO_RECORD`
+        without doing anything else because the given argument, a supposed RepoUrl ID,
+        can identify a RepoUrl that has been deleted from the database before
+        the execution of the Celery task.
         """
-        with pytest.raises(ValueError):
-            process_dataset_url(invalid_dataset_url_id)
+        mock_update_dataset_url_info = mocker.patch(
+            "datalad_registry.tasks._update_dataset_url_info"
+        )
+        process_status = process_dataset_url(invalid_dataset_url_id)
+
+        mock_update_dataset_url_info.assert_not_called()
+        assert process_status is ProcessUrlStatus.NO_RECORD
 
     @pytest.mark.usefixtures("populate_db_with_unprocessed_dataset_urls")
     @pytest.mark.parametrize("dataset_url_id", [2, 3, 4, 5, 6])
@@ -160,27 +173,24 @@ class TestProcessDatasetUrl:
 
         url_id = 5  # RepoUrl ID of the `two_files_ds_annex` dataset
 
-        with flask_app.app_context():
-            base_cache_path = current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
-
-        def get_cache_path():
+        def get_cache_path_abs():
             with flask_app.app_context():
                 _dataset_url: Optional[RepoUrl] = db.session.execute(
                     db.select(RepoUrl).filter_by(id=url_id)
                 ).scalar()
 
-                return base_cache_path / Path(_dataset_url.cache_path)
+                return _dataset_url.cache_path_abs
 
-        ds_cache_paths: list[Path] = []
+        abs_ds_cache_paths: list[Path] = []
         for _ in range(3):
             process_dataset_url(url_id)
-            ds_cache_paths.append(get_cache_path())
+            abs_ds_cache_paths.append(get_cache_path_abs())
 
         # Verify that only the cache directory created
         # by the last processing remains
-        assert not ds_cache_paths[0].is_dir()
-        assert not ds_cache_paths[1].is_dir()
-        assert ds_cache_paths[2].is_dir()
+        assert not abs_ds_cache_paths[0].is_dir()
+        assert not abs_ds_cache_paths[1].is_dir()
+        assert abs_ds_cache_paths[2].is_dir()
 
         # Verified that the dataset URL has been processed
         with flask_app.app_context():

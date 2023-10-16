@@ -11,3 +11,4 @@ isort==5.11.4
 mypy
 types-requests
 beautifulsoup4==4.12.2
+pytest-mock==3.11.1

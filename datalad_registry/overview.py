@@ -52,7 +52,7 @@ def overview():  # No type hints due to mypy#7187.
                 RepoUrl.ds_id.ilike(pattern, escape=escape),
                 RepoUrl.head.ilike(pattern, escape=escape),
                 RepoUrl.head_describe.ilike(pattern, escape=escape),
-                RepoUrl.branches.ilike(pattern, escape=escape),
+                RepoUrl.branches.cast(Text).ilike(pattern, escape=escape),
                 RepoUrl.tags.ilike(pattern, escape=escape),
                 RepoUrl.metadata_.any(
                     or_(
