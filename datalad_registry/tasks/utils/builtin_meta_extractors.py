@@ -93,6 +93,9 @@ def dlreg_meta_extract(extractor: str, url: RepoUrl) -> URLMetadata:
              to be written (committed) to the database
     :raises ValueError: If the argument for `extractor` is not one of the extractors
                         specified in `SUPPORTED_EXTRACTORS`
+
+    Note: This function is meant to be called inside a Celery task for it requires
+          an active application context of the Flask app
     """
     try:
         extractor_func = EXTRACTOR_MAP[extractor]
