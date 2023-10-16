@@ -8,7 +8,6 @@ from datalad_registry.utils.datalad_tls import get_head_describe
 
 
 def test_dlreg_dandiset_meta_extract(dandi_repo_url_with_up_to_date_clone, flask_app):
-
     repo_url = dandi_repo_url_with_up_to_date_clone[0]
     ds_clone = dandi_repo_url_with_up_to_date_clone[2]
 
@@ -38,3 +37,14 @@ class TestDlregMetaExtract:
                 ValueError, match="unsupported_extractor is not supported"
             ):
                 dlreg_meta_extract("unsupported_extractor", repo_url)
+
+    def test_supported_extractor(self, dandi_repo_url_with_up_to_date_clone, flask_app):
+        """
+        Test the case that the given extractor is one that is supported
+        """
+        repo_url = dandi_repo_url_with_up_to_date_clone[0]
+
+        with flask_app.app_context():
+            url_metadata = dlreg_meta_extract("dandi:dandiset", repo_url)
+
+        assert url_metadata.extractor_name == "dandi:dandiset"
