@@ -141,6 +141,23 @@ def repo_url_with_up_to_date_clone(
     return repo_url, two_files_ds_annex_func_scoped, ds_clone
 
 
+@pytest.fixture
+def dandi_repo_url_with_up_to_date_clone(dandi_ds, base_cache_path, flask_app):
+    """
+    Return a tuple of the following
+    - A `RepoUrl` object that represents the URL of the value of
+      the `dandi_ds` fixture as a remote repository
+    - A `Dataset` object that represents the remote repository,
+      i.e., the value of the `dandi_ds` fixture
+    - A `Dataset` object that represents a clone of the remote repository
+      at the local cache
+    """
+    repo_url, ds_clone = _establish_repo_url_with_up_to_date_clone(
+        dandi_ds, base_cache_path, flask_app
+    )
+    return repo_url, dandi_ds, ds_clone
+
+
 def _modify_remote(
     remote_ds: Dataset, setting_new_default_branch: bool, adding_file: bool
 ):
