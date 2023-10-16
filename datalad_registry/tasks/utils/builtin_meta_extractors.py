@@ -1,7 +1,6 @@
 # This file specifies custom metadata extractors, for datalad_registry, and related
 # definitions.
 from collections.abc import Callable
-from json import dumps as json_dumps
 
 from datalad.distribution.dataset import require_dataset
 from yaml import load as yaml_load
@@ -43,7 +42,7 @@ def dlreg_dandiset_meta_extract(url: RepoUrl) -> URLMetadata:
     )
 
     with open(url.cache_path_abs / "dandiset.yaml", "rb") as f:
-        extracted_metadata = json_dumps(yaml_load(f, Loader=SafeLoader))
+        extracted_metadata = yaml_load(f, Loader=SafeLoader)
 
     ds = require_dataset(
         url.cache_path_abs, check_installed=True, purpose="dandiset metadata extraction"
