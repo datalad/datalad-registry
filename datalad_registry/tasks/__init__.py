@@ -209,43 +209,37 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
         ),
     )
 
-    if len(results) == 0:
-        lgr.debug(
-            "Extractor %s did not produce any metadata for %s", extractor, url.url
+    # Assert that `datalad.api.meta_extract()` returns a list of one element
+    # as we understand that `datalad.api.meta_extract()` is supposed to return
+    assert (
+        len(results) == 1
+    ), f"`datalad.api.meta_extract()` returned a list of {len(results)} elements."
+
+    res = results[0]
+    if res.status == "ok":
+        # Record the metadata to the database
+        metadata_record = res.metadata_record
+        url_metadata = URLMetadata(
+            dataset_describe=url.head_describe,
+            dataset_version=metadata_record.dataset_version,
+            extractor_name=metadata_record.extractor_name,
+            extractor_version=metadata_record.extractor_version,
+            extraction_parameter=metadata_record.extraction_parameter,
+            extracted_metadata=metadata_record.extracted_metadata,
+            url=url,
         )
-        raise RuntimeError(
-            f"Extractor {extractor} did not produce any metadata for {url.url}"
-        )
-
-    produced_valid_result = False
-    for res in results:
-        if res.status != "ok":
-            lgr.debug(
-                "A result of extractor %s for %s is not 'ok'."
-                "It will not be recorded to the database",
-                extractor,
-                url.url,
-            )
-        else:
-            # Record the metadata to the database
-            metadata_record = res.metadata_record
-            url_metadata = URLMetadata(
-                dataset_describe=url.head_describe,
-                dataset_version=metadata_record.dataset_version,
-                extractor_name=metadata_record.extractor_name,
-                extractor_version=metadata_record.extractor_version,
-                extraction_parameter=metadata_record.extraction_parameter,
-                extracted_metadata=metadata_record.extracted_metadata,
-                url=url,
-            )
-            db.session.add(url_metadata)
-
-            produced_valid_result = True
-
-    if produced_valid_result:
+        db.session.add(url_metadata)
         db.session.commit()
+
         return ExtractMetaStatus.SUCCEEDED
     else:
+        lgr.debug(
+            "The result of extractor %s for %s is not 'ok'."
+            "It will not be recorded to the database.",
+            extractor,
+            url.url,
+        )
+
         raise RuntimeError(
             f"Extractor {extractor} did not produce any valid metadata for {url.url}"
         )
