@@ -43,6 +43,9 @@ class SuppressKnownGitProgressReport(logging.Filter):
 
         op_name = match.group(1)
 
+        # Return False (filtering out the log message) only
+        # if the message matches the pattern of a git progress report and
+        # is of a known git progress report type
         return op_name not in self.known_git_progress_report_types
 
 
