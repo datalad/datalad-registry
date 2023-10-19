@@ -24,8 +24,8 @@ class SuppressKnownGitProgressLogs(logging.Filter):
         "Enumerating objects",
     }
 
-    re_op_absolute = re.compile(r"(remote: )?([\w\s]+):\s+()(\d+)()(.*)")
-    re_op_relative = re.compile(r"(remote: )?([\w\s]+):\s+(\d+)% \((\d+)/(\d+)\)(.*)")
+    re_op_absolute = re.compile(r"(?:remote: )?([\w\s]+):\s+\d+.*")
+    re_op_relative = re.compile(r"(?:remote: )?([\w\s]+):\s+\d+% \(\d+/\d+\).*")
 
     def filter(self, record):
         # The following logic is based on the logic in
@@ -41,7 +41,7 @@ class SuppressKnownGitProgressLogs(logging.Filter):
             # === msg does not match the pattern of a git progress report ===
             return True
 
-        op_name = match.group(2)
+        op_name = match.group(1)
         if op_name not in self.known_git_progress_log_types:
             # === msg matches the pattern of a git progress report
             # but of an unknown type ===
