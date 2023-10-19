@@ -27,13 +27,29 @@ class SuppressKnownGitProgressLogs(logging.Filter):
     re_op_absolute = re.compile(r"(remote: )?([\w\s]+):\s+()(\d+)()(.*)")
     re_op_relative = re.compile(r"(remote: )?([\w\s]+):\s+(\d+)% \((\d+)/(\d+)\)(.*)")
 
-    known_git_progress_log_contents = [t + ":" for t in known_git_progress_log_types]
-
     def filter(self, record):
-        return all(
-            content not in record.getMessage()
-            for content in self.known_git_progress_log_contents
-        )
+        # The following logic is based on the logic in
+        # `datalad.support.gitrepo.GitProgress._parse_progress_line`
+
+        msg = record.getMessage()
+
+        match = self.re_op_relative.match(msg)
+        if match is None:
+            match = self.re_op_absolute.match(msg)
+
+        if match is None:
+            # === msg does not match the pattern of a git progress report ===
+            return True
+
+        op_name = match.group(2)
+        if op_name not in self.known_git_progress_log_types:
+            # === msg matches the pattern of a git progress report
+            # but of an unknown type ===
+            return True
+        else:
+            # === msg must be a git progress report as indicated by having
+            # the matching pattern and is of a known type ===
+            return False
 
 
 # Retrieve a reference to the "datalad.gitrepo" logger
