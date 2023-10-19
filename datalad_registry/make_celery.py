@@ -1,6 +1,7 @@
 # This file provides Celery commands access to the Celery app created through
 # the factory functions in datalad_registry/__init__.py
 import logging
+import re
 
 from celery import Celery
 
@@ -22,6 +23,9 @@ class SuppressKnownGitProgressLogs(logging.Filter):
         "Checking out files",
         "Enumerating objects",
     ]
+
+    re_op_absolute = re.compile(r"(remote: )?([\w\s]+):\s+()(\d+)()(.*)")
+    re_op_relative = re.compile(r"(remote: )?([\w\s]+):\s+(\d+)% \((\d+)/(\d+)\)(.*)")
 
     known_git_progress_log_contents = [t + ":" for t in known_git_progress_log_types]
 
