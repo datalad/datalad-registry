@@ -13,7 +13,7 @@ class SuppressKnownGitProgressReport(logging.Filter):
     # Known git progress log types
     # These types can be found in the definition of
     # `datalad.support.gitrepo.GitProgress`
-    known_git_progress_log_types = {
+    known_git_progress_report_types = {
         "Counting objects",
         "Compressing objects",
         "Writing objects",
@@ -42,7 +42,7 @@ class SuppressKnownGitProgressReport(logging.Filter):
             return True
 
         op_name = match.group(1)
-        if op_name not in self.known_git_progress_log_types:
+        if op_name not in self.known_git_progress_report_types:
             # === msg matches the pattern of a git progress report
             # but of an unknown type ===
             return True
