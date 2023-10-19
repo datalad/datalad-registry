@@ -42,14 +42,8 @@ class SuppressKnownGitProgressReport(logging.Filter):
             return True
 
         op_name = match.group(1)
-        if op_name not in self.known_git_progress_report_types:
-            # === msg matches the pattern of a git progress report
-            # but of an unknown type ===
-            return True
-        else:
-            # === msg must be a git progress report as indicated by having
-            # the matching pattern and is of a known type ===
-            return False
+
+        return op_name not in self.known_git_progress_report_types
 
 
 # Retrieve a reference to the "datalad.gitrepo" logger
