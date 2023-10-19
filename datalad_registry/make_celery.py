@@ -9,7 +9,7 @@ from . import create_app
 
 
 # === Code for suppressing known git progress logs ===
-class SuppressKnownGitProgressLogs(logging.Filter):
+class SuppressKnownGitProgressReport(logging.Filter):
     # Known git progress log types
     # These types can be found in the definition of
     # `datalad.support.gitrepo.GitProgress`
@@ -56,7 +56,7 @@ class SuppressKnownGitProgressLogs(logging.Filter):
 dl_gitrepo_lgr = logging.getLogger("datalad.gitrepo")
 
 # Add a filter to the "datalad.gitrepo" logger to suppress known git progress logs
-dl_gitrepo_lgr.addFilter(SuppressKnownGitProgressLogs())
+dl_gitrepo_lgr.addFilter(SuppressKnownGitProgressReport())
 # === End of code for suppressing known git progress logs ===
 
 flask_app = create_app()
