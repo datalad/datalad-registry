@@ -13,7 +13,7 @@ class SuppressKnownGitProgressLogs(logging.Filter):
     # Known git progress log types
     # These types can be found in the definition of
     # `datalad.support.gitrepo.GitProgress`
-    known_git_progress_log_types = [
+    known_git_progress_log_types = {
         "Counting objects",
         "Compressing objects",
         "Writing objects",
@@ -22,7 +22,7 @@ class SuppressKnownGitProgressLogs(logging.Filter):
         "Finding sources",
         "Checking out files",
         "Enumerating objects",
-    ]
+    }
 
     re_op_absolute = re.compile(r"(remote: )?([\w\s]+):\s+()(\d+)()(.*)")
     re_op_relative = re.compile(r"(remote: )?([\w\s]+):\s+(\d+)% \((\d+)/(\d+)\)(.*)")
