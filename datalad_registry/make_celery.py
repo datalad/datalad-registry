@@ -8,9 +8,9 @@ from celery import Celery
 from . import create_app
 
 
-# === Code for suppressing known git progress logs ===
+# === Code for suppressing known git progress reports ===
 class SuppressKnownGitProgressReport(logging.Filter):
-    # Known git progress log types
+    # Known git progress report types
     # These types can be found in the definition of
     # `datalad.support.gitrepo.GitProgress`
     known_git_progress_report_types = {
@@ -55,9 +55,9 @@ class SuppressKnownGitProgressReport(logging.Filter):
 # Retrieve a reference to the "datalad.gitrepo" logger
 dl_gitrepo_lgr = logging.getLogger("datalad.gitrepo")
 
-# Add a filter to the "datalad.gitrepo" logger to suppress known git progress logs
+# Add a filter to the "datalad.gitrepo" logger to suppress known git progress reports
 dl_gitrepo_lgr.addFilter(SuppressKnownGitProgressReport())
-# === End of code for suppressing known git progress logs ===
+# === End of code for suppressing known git progress reports ===
 
 flask_app = create_app()
 celery_app: Celery = flask_app.extensions["celery"]
