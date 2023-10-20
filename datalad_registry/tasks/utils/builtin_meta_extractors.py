@@ -16,6 +16,14 @@ from datalad_registry.models import RepoUrl, URLMetadata
 from datalad_registry.utils.datalad_tls import get_head_describe
 
 
+class InvalidRequiredFileError(Exception):
+    """
+    Raised when a required file doesn't conform to the expected format
+    """
+
+    pass
+
+
 def dlreg_dandiset_meta_extract(url: RepoUrl) -> URLMetadata:
     """
     Extract the metadata specified in the `dandiset.yaml` file of the DANDI dataset
@@ -26,6 +34,7 @@ def dlreg_dandiset_meta_extract(url: RepoUrl) -> URLMetadata:
     :return: A `URLMetadata` object containing the extracted metadata ready
              to be written (committed) to the database
     :raises FileNotFoundError: If the `dandiset.yaml` file is not found at the dataset
+    :raises InvalidRequiredFileError: If the `dandiset.yaml` file has no document
 
     Note: This function implements the `dandi:dandiset` extractor.
     Note: This function is meant to be called inside a Celery task for it requires
@@ -43,6 +52,9 @@ def dlreg_dandiset_meta_extract(url: RepoUrl) -> URLMetadata:
 
     with open(url.cache_path_abs / "dandiset.yaml", "rb") as f:
         extracted_metadata = yaml_load(f, Loader=SafeLoader)
+
+    if extracted_metadata is None:
+        raise InvalidRequiredFileError("dandiset.yaml has no document.")
 
     ds = require_dataset(
         url.cache_path_abs, check_installed=True, purpose="dandiset metadata extraction"
