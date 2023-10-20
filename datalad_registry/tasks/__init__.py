@@ -29,7 +29,7 @@ from datalad_registry.utils.datalad_tls import (
 
 from .utils import allocate_ds_path, update_ds_clone, validate_url_is_processed
 from .utils.builtin_meta_extractors import EXTRACTOR_MAP as BUILTIN_EXTRACTOR_MAP
-from .utils.builtin_meta_extractors import dlreg_meta_extract
+from .utils.builtin_meta_extractors import InvalidRequiredFileError, dlreg_meta_extract
 
 lgr = get_task_logger(__name__)
 
@@ -143,9 +143,10 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
                  valid metadata. In this case, the metadata has been recorded to
                  the database upon return.
              `ExtractMetaStatus.ABORTED` if the extraction has been aborted due to some
-                 required files not being present in the dataset. For example,
-                 `.studyminimeta.yaml` is not present in the dataset for running
-                 the studyminimeta extractor.
+                 required files not being present in the dataset or a required file
+                 fails to meet the requirements for the metadata extraction.
+                 For example, `.studyminimeta.yaml` is not present in the dataset
+                 for running the studyminimeta extractor.
              `ExtractMetaStatus.SKIPPED` if the extraction has been skipped because the
                  metadata to be extracted is already present in the database,
                  as identified by the extractor name, RepoUrl, and dataset version.
@@ -209,7 +210,11 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
         # === The extractor is a built-in extractor ===
         # === Call upon the built-in extractor to extract metadata ===
 
-        url_metadata = dlreg_meta_extract(extractor, url)
+        try:
+            url_metadata = dlreg_meta_extract(extractor, url)
+        except InvalidRequiredFileError:
+            # A required file is invalid. Abort the extraction
+            return ExtractMetaStatus.ABORTED
     else:
         # === The extractor is not a built-in extractor ===
         # === Call upon metalad to extract metadata ===

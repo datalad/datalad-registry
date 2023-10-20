@@ -18,7 +18,8 @@ from datalad_registry.utils.datalad_tls import get_head_describe
 
 class InvalidRequiredFileError(Exception):
     """
-    Raised when a required file doesn't conform to the expected format
+    Raised when a required file fails to meet the requirements
+    for the metadata extraction
     """
 
     pass
