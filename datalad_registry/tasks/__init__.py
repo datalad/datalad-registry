@@ -257,8 +257,8 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
             )
 
             raise RuntimeError(
-                f"Extractor {extractor} did not produce any valid metadata for "
-                f"{url.url}"
+                f"The returned execution status from {extractor} for "
+                f"{url.url} is {res.status}."
             )
 
     # Record the metadata to the database
