@@ -105,7 +105,7 @@ class TestExtractDsMeta:
                 "datalad": "http://dx.datalad.org/",
             }
 
-    def test_aborted(self, flask_app, processed_ds_urls):
+    def test_aborted_due_to_missing_file(self, flask_app, processed_ds_urls):
         """
         Test that metadata extraction returns ExtractMetaStatus.ABORTED when
         some required file is missing for the given extractor
