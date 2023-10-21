@@ -1,6 +1,7 @@
 import pytest
 
 from datalad_registry.tasks.utils.builtin_meta_extractors import (
+    InvalidRequiredFileError,
     dlreg_dandiset_meta_extract,
     dlreg_meta_extract,
 )
@@ -26,6 +27,23 @@ class TestDlregDandisetMetaExtract:
         assert url_metadata.extraction_parameter == {}
         assert url_metadata.extracted_metadata == {"name": "test-dandi-ds"}
         assert url_metadata.url == repo_url
+
+    def test_no_document(self, dandi_repo_url_with_up_to_date_clone, flask_app):
+        """
+        Test the case that the `dandiset.yaml` file has no document
+        """
+        repo_url = dandi_repo_url_with_up_to_date_clone[0]
+        ds_clone = dandi_repo_url_with_up_to_date_clone[2]
+
+        # Empty the `dandiset.yaml` file
+        with open(ds_clone.pathobj / "dandiset.yaml", "w") as f:
+            f.write("")
+
+        with flask_app.app_context():
+            with pytest.raises(
+                InvalidRequiredFileError, match="dandiset.yaml has no document"
+            ):
+                dlreg_dandiset_meta_extract(repo_url)
 
 
 class TestDlregMetaExtract:
