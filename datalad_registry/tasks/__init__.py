@@ -157,7 +157,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
                 the RepoUrl has been deleted from the database.)
     :raise: ValueError if the RepoUrl of the specified ID does not exist or has not
                 been processed yet.
-            RuntimeError if the extraction has produced no valid metadata.
+    :raise: RuntimeError if the extractor returns an execution status other than "ok"
 
     """
 
