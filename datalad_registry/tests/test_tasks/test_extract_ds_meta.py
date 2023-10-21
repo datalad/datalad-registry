@@ -4,6 +4,9 @@ import pytest
 from datalad_registry.blueprints.api.url_metadata import URLMetadataModel
 from datalad_registry.models import RepoUrl, URLMetadata, db
 from datalad_registry.tasks import ExtractMetaStatus, extract_ds_meta
+from datalad_registry.tasks.utils.builtin_meta_extractors import (
+    InvalidRequiredFileError,
+)
 from datalad_registry.utils.datalad_tls import get_head_describe
 
 from . import TEST_MIN_REPO_COMMIT_HEXSHA, TEST_MIN_REPO_TAG
@@ -225,3 +228,24 @@ class TestExtractDsMeta:
         assert url_metadata.extraction_parameter == {}
         assert url_metadata.extracted_metadata == {"name": "test-dandi-ds"}
         assert url_metadata.url_id == repo_url.id
+
+    def test_invalid_required_file_for_builtin_extractor(
+        self, dandi_repo_url_with_up_to_date_clone, monkeypatch
+    ):
+        """
+        Test the case that the given extractor is one of the built-in ones and
+        the given repo URL, by ID, has a corresponding dataset with an invalid
+        required file for the given extractor
+        """
+        repo_url = dandi_repo_url_with_up_to_date_clone[0]
+
+        def mock_dlreg_meta_extract(*_args, **_kwargs):
+            raise InvalidRequiredFileError
+
+        from datalad_registry import tasks
+
+        monkeypatch.setattr(tasks, "dlreg_meta_extract", mock_dlreg_meta_extract)
+
+        assert (
+            extract_ds_meta(repo_url.id, "dandi:dandiset") is ExtractMetaStatus.ABORTED
+        )
