@@ -4,6 +4,7 @@ import pytest
 from datalad_registry.blueprints.api.url_metadata import URLMetadataModel
 from datalad_registry.models import RepoUrl, URLMetadata, db
 from datalad_registry.tasks import ExtractMetaStatus, extract_ds_meta
+from datalad_registry.utils.datalad_tls import get_head_describe
 
 from . import TEST_MIN_REPO_COMMIT_HEXSHA, TEST_MIN_REPO_TAG
 
@@ -201,3 +202,26 @@ class TestExtractDsMeta:
 
             assert current_metadata.dataset_version != dated_metadata_ds_version
             assert current_metadata.dataset_version == TEST_MIN_REPO_COMMIT_HEXSHA
+
+    def test_builtin_extractor(self, dandi_repo_url_with_up_to_date_clone, flask_app):
+        """
+        Test the case that the given extractor is one of the built-in ones
+        """
+        repo_url = dandi_repo_url_with_up_to_date_clone[0]
+        ds_clone = dandi_repo_url_with_up_to_date_clone[2]
+
+        assert (
+            extract_ds_meta(repo_url.id, "dandi:dandiset")
+            is ExtractMetaStatus.SUCCEEDED
+        )
+
+        with flask_app.app_context():
+            url_metadata = db.session.execute(db.select(URLMetadata)).scalar_one()
+
+        assert url_metadata.dataset_describe == get_head_describe(ds_clone)
+        assert url_metadata.dataset_version == ds_clone.repo.get_hexsha()
+        assert url_metadata.extractor_name == "dandi:dandiset"
+        assert url_metadata.extractor_version == "0.0.1"
+        assert url_metadata.extraction_parameter == {}
+        assert url_metadata.extracted_metadata == {"name": "test-dandi-ds"}
+        assert url_metadata.url_id == repo_url.id
