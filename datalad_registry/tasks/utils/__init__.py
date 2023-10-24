@@ -47,27 +47,6 @@ def allocate_ds_path() -> Path:
             return path
 
 
-def validate_url_is_processed(repo_url: RepoUrl) -> None:
-    """
-    Validate that a given RepoUrl has been marked processed and has a cache path
-
-    :raise: ValueError if the given RepoUrl has not been marked processed
-    :raise: Otherwise, AssertionError if the given RepoUrl has no cache path
-
-    Note: This function is meant to be called inside a Celery task for it requires
-          an active application context of the Flask app
-    """
-
-    if not repo_url.processed:
-        raise ValueError(
-            f"RepoUrl {repo_url.url}, of ID: {repo_url.id}, has not been processed yet"
-        )
-
-    assert (
-        repo_url.cache_path is not None
-    ), "Encountered a processed RepoUrl with no cache path"
-
-
 def update_ds_clone(repo_url: RepoUrl) -> tuple[Dataset, bool]:
     """
     Update the local clone of the dataset at a given URL
@@ -81,6 +60,7 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Dataset, bool]:
                the returning tuple, is a newly created clone of the dataset,
                which is different from the one located at the current value of
                `cache_path` of the given RepoUrl object
+    :raise ValueError: If the given URL has not been processed
 
     Note: This function is meant to be called inside a Celery task for it requires
           an active application context of the Flask app
@@ -121,7 +101,11 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Dataset, bool]:
         else:
             return ds_clone
 
-    validate_url_is_processed(repo_url)
+    # Validate that the given RepoUrl has been marked processed
+    if not repo_url.processed:
+        raise ValueError(
+            f"RepoUrl {repo_url.url}, of ID: {repo_url.id}, has not been processed yet"
+        )
 
     base_cache_path: Path = current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
 
