@@ -52,9 +52,6 @@ def validate_url_is_processed(repo_url: RepoUrl) -> None:
     Validate that a given RepoUrl has been marked processed
 
     :raise: ValueError if the given RepoUrl has not been marked processed
-
-    Note: This function is meant to be called inside a Celery task for it requires
-          an active application context of the Flask app
     """
 
     if not repo_url.processed:
