@@ -219,11 +219,17 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
         # === The extractor is not a built-in extractor ===
         # === Call upon metalad to extract metadata ===
 
+        ds = require_dataset(
+            cache_path_abs,
+            check_installed=True,
+            purpose=f"{extractor} metadata extraction",
+        )
+
         results = parse_obj_as(
             list[MetaExtractResult],
             dl.meta_extract(
                 extractor,
-                dataset=cache_path_abs,
+                dataset=ds,
                 result_renderer="disabled",
                 on_failure="stop",
             ),
@@ -240,7 +246,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
             # Record the metadata to the database
             metadata_record = res.metadata_record
             url_metadata = URLMetadata(
-                dataset_describe=url.head_describe,
+                dataset_describe=get_head_describe(ds),
                 dataset_version=metadata_record.dataset_version,
                 extractor_name=metadata_record.extractor_name,
                 extractor_version=metadata_record.extractor_version,
