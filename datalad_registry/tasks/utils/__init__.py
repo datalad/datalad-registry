@@ -47,6 +47,22 @@ def allocate_ds_path() -> Path:
             return path
 
 
+def validate_url_is_processed(repo_url: RepoUrl) -> None:
+    """
+    Validate that a given RepoUrl has been marked processed
+
+    :raise: ValueError if the given RepoUrl has not been marked processed
+
+    Note: This function is meant to be called inside a Celery task for it requires
+          an active application context of the Flask app
+    """
+
+    if not repo_url.processed:
+        raise ValueError(
+            f"RepoUrl {repo_url.url}, of ID: {repo_url.id}, has not been processed yet"
+        )
+
+
 def update_ds_clone(repo_url: RepoUrl) -> tuple[Dataset, bool]:
     """
     Update the local clone of the dataset at a given URL
@@ -102,10 +118,7 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Dataset, bool]:
             return ds_clone
 
     # Validate that the given RepoUrl has been marked processed
-    if not repo_url.processed:
-        raise ValueError(
-            f"RepoUrl {repo_url.url}, of ID: {repo_url.id}, has not been processed yet"
-        )
+    validate_url_is_processed(repo_url)
 
     base_cache_path: Path = current_app.config["DATALAD_REGISTRY_DATASET_CACHE"]
 
