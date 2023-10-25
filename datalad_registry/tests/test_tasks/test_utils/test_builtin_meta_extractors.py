@@ -48,14 +48,14 @@ class TestDlregDandisetMetaExtract:
         valid corresponding dandi dataset in the local cache
         """
         from datalad_registry.tasks.utils.builtin_meta_extractors import (
-            dlreg_dandiset_meta_extract,
+            dlreg_dandi_meta_extract,
         )
 
         repo_url = dandi_repo_url_with_up_to_date_clone[0]
         ds_clone = dandi_repo_url_with_up_to_date_clone[2]
 
         with flask_app.app_context():
-            url_metadata = dlreg_dandiset_meta_extract(repo_url)
+            url_metadata = dlreg_dandi_meta_extract(repo_url)
 
         assert url_metadata.dataset_describe == get_head_describe(ds_clone)
         assert url_metadata.dataset_version == ds_clone.repo.get_hexsha()
@@ -71,7 +71,7 @@ class TestDlregDandisetMetaExtract:
         """
         from datalad_registry.tasks.utils.builtin_meta_extractors import (
             InvalidRequiredFileError,
-            dlreg_dandiset_meta_extract,
+            dlreg_dandi_meta_extract,
         )
 
         repo_url = dandi_repo_url_with_up_to_date_clone[0]
@@ -85,7 +85,7 @@ class TestDlregDandisetMetaExtract:
             with pytest.raises(
                 InvalidRequiredFileError, match="dandiset.yaml has no document"
             ):
-                dlreg_dandiset_meta_extract(repo_url)
+                dlreg_dandi_meta_extract(repo_url)
 
 
 class TestDlregMetaExtract:

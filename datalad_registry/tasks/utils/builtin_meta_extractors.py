@@ -25,7 +25,7 @@ class InvalidRequiredFileError(Exception):
     pass
 
 
-def dlreg_dandiset_meta_extract(url: RepoUrl) -> URLMetadata:
+def dlreg_dandi_meta_extract(url: RepoUrl) -> URLMetadata:
     """
     This function implements the "dandi" extractor: it extracts the metadata specified
     in the `dandiset.yaml` file of the DANDI dataset at a given URL
@@ -90,7 +90,7 @@ def dlreg_dandi_assets_meta_extract(url: RepoUrl) -> URLMetadata:
 # A mapping from the names of the supported extractors to the functions
 # that implement those extractors respectively
 EXTRACTOR_MAP: dict[str, Callable[[RepoUrl], URLMetadata]] = {
-    "dandi": dlreg_dandiset_meta_extract,
+    "dandi": dlreg_dandi_meta_extract,
     "dandi:assets": dlreg_dandi_assets_meta_extract,
 }
 
