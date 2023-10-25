@@ -20,6 +20,7 @@ from datalad_registry.models import RepoUrl, URLMetadata, db
 from datalad_registry.utils import StrEnum
 from datalad_registry.utils.datalad_tls import (
     clone,
+    get_head_describe,
     get_origin_annex_key_count,
     get_origin_annex_uuid,
     get_origin_branches,
@@ -27,6 +28,8 @@ from datalad_registry.utils.datalad_tls import (
 )
 
 from .utils import allocate_ds_path, update_ds_clone, validate_url_is_processed
+from .utils.builtin_meta_extractors import EXTRACTOR_MAP as BUILTIN_EXTRACTOR_MAP
+from .utils.builtin_meta_extractors import InvalidRequiredFileError, dlreg_meta_extract
 
 lgr = get_task_logger(__name__)
 
@@ -91,7 +94,7 @@ def _update_dataset_url_info(dataset_url: RepoUrl, ds: Dataset) -> None:
         dataset_url.annexed_files_in_wt_size = None
 
     dataset_url.head = ds.repo.get_hexsha("origin/HEAD")
-    dataset_url.head_describe = ds.repo.describe("origin/HEAD", tags=True, always=True)
+    dataset_url.head_describe = get_head_describe(ds)
 
     dataset_url.branches = get_origin_branches(ds)
 
@@ -110,6 +113,9 @@ _EXTRACTOR_REQUIRED_FILES = {
     "metalad_studyminimeta": [".studyminimeta.yaml"],
     "datacite_gin": ["datacite.yml"],
     "bids_dataset": ["dataset_description.json"],
+    # === DANDI related extractors ===
+    "dandi": ["dandiset.yaml"],
+    "dandi:files": [".dandi/assets.json"],
 }
 
 
@@ -137,9 +143,10 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
                  valid metadata. In this case, the metadata has been recorded to
                  the database upon return.
              `ExtractMetaStatus.ABORTED` if the extraction has been aborted due to some
-                 required files not being present in the dataset. For example,
-                 `.studyminimeta.yaml` is not present in the dataset for running
-                 the studyminimeta extractor.
+                 required files not being present in the dataset or a required file
+                 fails to meet the requirements for the metadata extraction.
+                 For example, `.studyminimeta.yaml` is not present in the dataset
+                 for running the studyminimeta extractor.
              `ExtractMetaStatus.SKIPPED` if the extraction has been skipped because the
                  metadata to be extracted is already present in the database,
                  as identified by the extractor name, RepoUrl, and dataset version.
@@ -150,7 +157,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
                 the RepoUrl has been deleted from the database.)
     :raise: ValueError if the RepoUrl of the specified ID does not exist or has not
                 been processed yet.
-            RuntimeError if the extraction has produced no valid metadata.
+    :raise: RuntimeError if the extractor returns an execution status other than "ok"
 
     """
 
@@ -199,50 +206,66 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
                 db.session.delete(data)  # delete the old metadata from the database
                 break
 
-    results = parse_obj_as(
-        list[MetaExtractResult],
-        dl.meta_extract(
-            extractor,
-            dataset=cache_path_abs,
-            result_renderer="disabled",
-            on_failure="stop",
-        ),
-    )
+    if extractor in BUILTIN_EXTRACTOR_MAP:
+        # === The extractor is a built-in extractor ===
+        # === Call upon the built-in extractor to extract metadata ===
 
-    # Assert that `datalad.api.meta_extract()` returns a list of one element
-    # as we understand that `datalad.api.meta_extract()` is supposed to return
-    assert (
-        len(results) == 1
-    ), f"`datalad.api.meta_extract()` returned a list of {len(results)} elements."
-
-    res = results[0]
-    if res.status == "ok":
-        # Record the metadata to the database
-        metadata_record = res.metadata_record
-        url_metadata = URLMetadata(
-            dataset_describe=url.head_describe,
-            dataset_version=metadata_record.dataset_version,
-            extractor_name=metadata_record.extractor_name,
-            extractor_version=metadata_record.extractor_version,
-            extraction_parameter=metadata_record.extraction_parameter,
-            extracted_metadata=metadata_record.extracted_metadata,
-            url=url,
-        )
-        db.session.add(url_metadata)
-        db.session.commit()
-
-        return ExtractMetaStatus.SUCCEEDED
+        try:
+            url_metadata = dlreg_meta_extract(extractor, url)
+        except InvalidRequiredFileError:
+            # A required file is invalid. Abort the extraction
+            return ExtractMetaStatus.ABORTED
     else:
-        lgr.debug(
-            "The result of extractor %s for %s is not 'ok'."
-            "It will not be recorded to the database.",
-            extractor,
-            url.url,
+        # === The extractor is not a built-in extractor ===
+        # === Call upon metalad to extract metadata ===
+
+        results = parse_obj_as(
+            list[MetaExtractResult],
+            dl.meta_extract(
+                extractor,
+                dataset=cache_path_abs,
+                result_renderer="disabled",
+                on_failure="stop",
+            ),
         )
 
-        raise RuntimeError(
-            f"Extractor {extractor} did not produce any valid metadata for {url.url}"
-        )
+        # Assert that `datalad.api.meta_extract()` returns a list of one element
+        # as we understand that `datalad.api.meta_extract()` is supposed to return
+        assert (
+            len(results) == 1
+        ), f"`datalad.api.meta_extract()` returned a list of {len(results)} elements."
+
+        res = results[0]
+        if res.status == "ok":
+            # Record the metadata to the database
+            metadata_record = res.metadata_record
+            url_metadata = URLMetadata(
+                dataset_describe=url.head_describe,
+                dataset_version=metadata_record.dataset_version,
+                extractor_name=metadata_record.extractor_name,
+                extractor_version=metadata_record.extractor_version,
+                extraction_parameter=metadata_record.extraction_parameter,
+                extracted_metadata=metadata_record.extracted_metadata,
+                url=url,
+            )
+        else:
+            lgr.debug(
+                "The result of extractor %s for %s is not 'ok'."
+                "It will not be recorded to the database.",
+                extractor,
+                url.url,
+            )
+
+            raise RuntimeError(
+                f"The returned execution status from {extractor} for "
+                f"{url.url} is {res.status}."
+            )
+
+    # Record the metadata to the database
+    db.session.add(url_metadata)
+    db.session.commit()
+
+    return ExtractMetaStatus.SUCCEEDED
 
 
 @shared_task(

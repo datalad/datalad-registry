@@ -2,8 +2,13 @@ from datalad.distribution.dataset import require_dataset
 import pytest
 
 from datalad_registry.blueprints.api.url_metadata import URLMetadataModel
+from datalad_registry.com_models import MetadataRecord, MetaExtractResult
 from datalad_registry.models import RepoUrl, URLMetadata, db
 from datalad_registry.tasks import ExtractMetaStatus, extract_ds_meta
+from datalad_registry.tasks.utils.builtin_meta_extractors import (
+    InvalidRequiredFileError,
+)
+from datalad_registry.utils.datalad_tls import get_head_describe
 
 from . import TEST_MIN_REPO_COMMIT_HEXSHA, TEST_MIN_REPO_TAG
 
@@ -105,7 +110,7 @@ class TestExtractDsMeta:
                 "datalad": "http://dx.datalad.org/",
             }
 
-    def test_aborted(self, flask_app, processed_ds_urls):
+    def test_aborted_due_to_missing_file(self, flask_app, processed_ds_urls):
         """
         Test that metadata extraction returns ExtractMetaStatus.ABORTED when
         some required file is missing for the given extractor
@@ -201,3 +206,76 @@ class TestExtractDsMeta:
 
             assert current_metadata.dataset_version != dated_metadata_ds_version
             assert current_metadata.dataset_version == TEST_MIN_REPO_COMMIT_HEXSHA
+
+    def test_non_ok_execution_status(
+        self, repo_url_with_up_to_date_clone, monkeypatch, flask_app
+    ):
+        """
+        Test the case that the given extractor returns a non-OK execution status
+        """
+        repo_url = repo_url_with_up_to_date_clone[0]
+
+        def mock_parse_obj_as(*_args, **_kwargs):
+            return [
+                MetaExtractResult(
+                    action="meta_extract",
+                    status="FAILED",
+                    metadata_record=MetadataRecord(
+                        dataset_version="abcde",
+                        extractor_name=_BASIC_EXTRACTOR,
+                        extractor_version="0.0.1",
+                        extraction_parameter={},
+                        extracted_metadata={"hello": "world"},
+                    ),
+                )
+            ]
+
+        from datalad_registry import tasks
+
+        monkeypatch.setattr(tasks, "parse_obj_as", mock_parse_obj_as)
+
+        with pytest.raises(RuntimeError, match="The returned execution status"):
+            extract_ds_meta(repo_url.id, _BASIC_EXTRACTOR)
+
+        # Ensure no metadata was saved to database
+        with flask_app.app_context():
+            assert len(db.session.execute(db.select(URLMetadata)).all()) == 0
+
+    def test_builtin_extractor(self, dandi_repo_url_with_up_to_date_clone, flask_app):
+        """
+        Test the case that the given extractor is one of the built-in ones
+        """
+        repo_url = dandi_repo_url_with_up_to_date_clone[0]
+        ds_clone = dandi_repo_url_with_up_to_date_clone[2]
+
+        assert extract_ds_meta(repo_url.id, "dandi") is ExtractMetaStatus.SUCCEEDED
+
+        with flask_app.app_context():
+            url_metadata = db.session.execute(db.select(URLMetadata)).scalar_one()
+
+        assert url_metadata.dataset_describe == get_head_describe(ds_clone)
+        assert url_metadata.dataset_version == ds_clone.repo.get_hexsha()
+        assert url_metadata.extractor_name == "dandi"
+        assert url_metadata.extractor_version == "0.0.1"
+        assert url_metadata.extraction_parameter == {}
+        assert url_metadata.extracted_metadata == {"name": "test-dandi-ds"}
+        assert url_metadata.url_id == repo_url.id
+
+    def test_invalid_required_file_for_builtin_extractor(
+        self, dandi_repo_url_with_up_to_date_clone, monkeypatch
+    ):
+        """
+        Test the case that the given extractor is one of the built-in ones and
+        the given repo URL, by ID, has a corresponding dataset with an invalid
+        required file for the given extractor
+        """
+        repo_url = dandi_repo_url_with_up_to_date_clone[0]
+
+        def mock_dlreg_meta_extract(*_args, **_kwargs):
+            raise InvalidRequiredFileError
+
+        from datalad_registry import tasks
+
+        monkeypatch.setattr(tasks, "dlreg_meta_extract", mock_dlreg_meta_extract)
+
+        assert extract_ds_meta(repo_url.id, "dandi") is ExtractMetaStatus.ABORTED

@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import json
 from pathlib import Path
 
 from celery import Celery
@@ -7,6 +8,7 @@ from datalad.api import Dataset
 from datalad.utils import rmtree as rm_ds_tree
 import pytest
 from pytest import TempPathFactory
+from yaml import safe_dump
 
 from datalad_registry import create_app
 
@@ -138,6 +140,20 @@ def empty_ds_non_annex_func_scoped(empty_ds_non_annex, tmp_path_factory) -> Data
     )
 
 
+def _commit_two_files(ds: Dataset) -> None:
+    """
+    Write two text files to the root directory of a dataset and commit the changes
+
+    :param ds: The dataset
+    """
+    file_names = ["file1.txt", "file2.txt"]
+    for file_name in file_names:
+        with open(ds.pathobj / file_name, "w") as f:
+            f.write(f"Hello in {file_name}\n")
+
+    ds.save(message=f"Add {', '.join(file_names)}")
+
+
 def two_files_ds(annex: bool, tmp_path_factory: TempPathFactory) -> Dataset:
     """
     A dataset with two simple files
@@ -148,13 +164,8 @@ def two_files_ds(annex: bool, tmp_path_factory: TempPathFactory) -> Dataset:
         ),
         annex=annex,
     )
+    _commit_two_files(ds)
 
-    file_names = ["file1.txt", "file2.txt"]
-    for file_name in file_names:
-        with open(ds.pathobj / file_name, "w") as f:
-            f.write(f"Hello in {file_name}\n")
-
-    ds.save(message=f"Add {', '.join(file_names)}")
     return ds
 
 
@@ -200,6 +211,32 @@ def two_files_ds_non_annex_func_scoped(
         on_failure="stop",
         result_renderer="disabled",
     )
+
+
+@pytest.fixture(scope="session")
+def dandi_ds(tmp_path_factory) -> Dataset:
+    """
+    A DANDI dataset with two simple files
+    """
+    ds: Dataset = dl.create(
+        path=tmp_path_factory.mktemp("dandi_ds"),
+        annex=True,
+    )
+    _commit_two_files(ds)
+
+    # Add and commit dandiset.yaml
+    with open(ds.pathobj / "dandiset.yaml", "w") as f:
+        safe_dump({"name": "test-dandi-ds"}, f)
+    ds.save(message="Add dandiset.yaml", to_git=True)
+
+    # Add and commit .dandi/assets.json
+    dandi_dir = ds.pathobj / ".dandi"
+    dandi_dir.mkdir()
+    with open(dandi_dir / "assets.json", "w") as f:
+        json.dump([{"asset_id": "123"}], f)
+    ds.save(message="Add .dandi/assets.json", to_git=True)
+
+    return ds
 
 
 @pytest.fixture
