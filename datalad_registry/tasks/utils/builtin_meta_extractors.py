@@ -72,7 +72,7 @@ def dlreg_dandi_meta_extract(url: RepoUrl) -> URLMetadata:
     )
 
 
-def dlreg_dandi_assets_meta_extract(url: RepoUrl) -> URLMetadata:
+def dlreg_dandi_files_meta_extract(url: RepoUrl) -> URLMetadata:
     """
     This function implements the "dandi:files" extractor: it extracts the metadata
     specified in the `.dandi/assets.json` file of the DANDI dataset at a given URL
@@ -89,7 +89,7 @@ def dlreg_dandi_assets_meta_extract(url: RepoUrl) -> URLMetadata:
 # that implement those extractors respectively
 EXTRACTOR_MAP: dict[str, Callable[[RepoUrl], URLMetadata]] = {
     "dandi": dlreg_dandi_meta_extract,
-    "dandi:files": dlreg_dandi_assets_meta_extract,
+    "dandi:files": dlreg_dandi_files_meta_extract,
 }
 
 
