@@ -27,8 +27,8 @@ class InvalidRequiredFileError(Exception):
 
 def dlreg_dandiset_meta_extract(url: RepoUrl) -> URLMetadata:
     """
-    Extract the metadata specified in the `dandiset.yaml` file of the DANDI dataset
-    at a given URL
+    This function implements the "dandi" extractor: it extracts the metadata specified
+    in the `dandiset.yaml` file of the DANDI dataset at a given URL
 
     :param url: The `RepoUrl` object representing the URL
                 at which the dataset is located
