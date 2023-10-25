@@ -74,15 +74,13 @@ def dlreg_dandi_meta_extract(url: RepoUrl) -> URLMetadata:
 
 def dlreg_dandi_assets_meta_extract(url: RepoUrl) -> URLMetadata:
     """
-    Extract the metadata specified in the `.dandi/assets.json` file of the DANDI dataset
-    at a given URL
+    This function implements the "dandi:files" extractor: it extracts the metadata
+    specified in the `.dandi/assets.json` file of the DANDI dataset at a given URL
 
     :param url: The `RepoUrl` object representing the URL
     :return: A `URLMetadata` object containing the extracted metadata ready
     :raises FileNotFoundError: If the `.dandi/assets.json` file is not found
                                at the dataset
-
-    Note: This function implements the `dandi:files` extractor.
     """
     raise NotImplementedError
 
