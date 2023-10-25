@@ -37,7 +37,7 @@ class BaseConfig(OperationConfig):
         "datacite_gin",
         "bids_dataset",
         # === DANDI related extractors ===
-        "dandi:dandiset",
+        "dandi",
         # "dandi:assets",  # Let's not activate this yet by default
     ]
 
