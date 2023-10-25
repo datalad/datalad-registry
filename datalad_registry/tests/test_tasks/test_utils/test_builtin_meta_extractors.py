@@ -41,25 +41,25 @@ def test_fallback_to_safe_loader():
     assert builtin_meta_extractors.SafeLoader.__name__ == "SafeLoader"
 
 
-class TestDlregDandisetMetaExtract:
+class TestDlregDandiMetaExtract:
     def test_valid_input(self, dandi_repo_url_with_up_to_date_clone, flask_app):
         """
         Test the case that the argument `url` is a valid `RepoUrl` object with a
         valid corresponding dandi dataset in the local cache
         """
         from datalad_registry.tasks.utils.builtin_meta_extractors import (
-            dlreg_dandiset_meta_extract,
+            dlreg_dandi_meta_extract,
         )
 
         repo_url = dandi_repo_url_with_up_to_date_clone[0]
         ds_clone = dandi_repo_url_with_up_to_date_clone[2]
 
         with flask_app.app_context():
-            url_metadata = dlreg_dandiset_meta_extract(repo_url)
+            url_metadata = dlreg_dandi_meta_extract(repo_url)
 
         assert url_metadata.dataset_describe == get_head_describe(ds_clone)
         assert url_metadata.dataset_version == ds_clone.repo.get_hexsha()
-        assert url_metadata.extractor_name == "dandi:dandiset"
+        assert url_metadata.extractor_name == "dandi"
         assert url_metadata.extractor_version == "0.0.1"
         assert url_metadata.extraction_parameter == {}
         assert url_metadata.extracted_metadata == {"name": "test-dandi-ds"}
@@ -71,7 +71,7 @@ class TestDlregDandisetMetaExtract:
         """
         from datalad_registry.tasks.utils.builtin_meta_extractors import (
             InvalidRequiredFileError,
-            dlreg_dandiset_meta_extract,
+            dlreg_dandi_meta_extract,
         )
 
         repo_url = dandi_repo_url_with_up_to_date_clone[0]
@@ -85,7 +85,7 @@ class TestDlregDandisetMetaExtract:
             with pytest.raises(
                 InvalidRequiredFileError, match="dandiset.yaml has no document"
             ):
-                dlreg_dandiset_meta_extract(repo_url)
+                dlreg_dandi_meta_extract(repo_url)
 
 
 class TestDlregMetaExtract:
@@ -118,6 +118,6 @@ class TestDlregMetaExtract:
         repo_url = dandi_repo_url_with_up_to_date_clone[0]
 
         with flask_app.app_context():
-            url_metadata = dlreg_meta_extract("dandi:dandiset", repo_url)
+            url_metadata = dlreg_meta_extract("dandi", repo_url)
 
-        assert url_metadata.extractor_name == "dandi:dandiset"
+        assert url_metadata.extractor_name == "dandi"

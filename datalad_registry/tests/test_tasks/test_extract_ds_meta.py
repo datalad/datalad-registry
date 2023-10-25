@@ -248,17 +248,14 @@ class TestExtractDsMeta:
         repo_url = dandi_repo_url_with_up_to_date_clone[0]
         ds_clone = dandi_repo_url_with_up_to_date_clone[2]
 
-        assert (
-            extract_ds_meta(repo_url.id, "dandi:dandiset")
-            is ExtractMetaStatus.SUCCEEDED
-        )
+        assert extract_ds_meta(repo_url.id, "dandi") is ExtractMetaStatus.SUCCEEDED
 
         with flask_app.app_context():
             url_metadata = db.session.execute(db.select(URLMetadata)).scalar_one()
 
         assert url_metadata.dataset_describe == get_head_describe(ds_clone)
         assert url_metadata.dataset_version == ds_clone.repo.get_hexsha()
-        assert url_metadata.extractor_name == "dandi:dandiset"
+        assert url_metadata.extractor_name == "dandi"
         assert url_metadata.extractor_version == "0.0.1"
         assert url_metadata.extraction_parameter == {}
         assert url_metadata.extracted_metadata == {"name": "test-dandi-ds"}
@@ -281,6 +278,4 @@ class TestExtractDsMeta:
 
         monkeypatch.setattr(tasks, "dlreg_meta_extract", mock_dlreg_meta_extract)
 
-        assert (
-            extract_ds_meta(repo_url.id, "dandi:dandiset") is ExtractMetaStatus.ABORTED
-        )
+        assert extract_ds_meta(repo_url.id, "dandi") is ExtractMetaStatus.ABORTED
