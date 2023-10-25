@@ -25,10 +25,10 @@ class InvalidRequiredFileError(Exception):
     pass
 
 
-def dlreg_dandiset_meta_extract(url: RepoUrl) -> URLMetadata:
+def dlreg_dandi_meta_extract(url: RepoUrl) -> URLMetadata:
     """
-    Extract the metadata specified in the `dandiset.yaml` file of the DANDI dataset
-    at a given URL
+    This function implements the "dandi" extractor: it extracts the metadata specified
+    in the `dandiset.yaml` file of the DANDI dataset at a given URL
 
     :param url: The `RepoUrl` object representing the URL
                 at which the dataset is located
@@ -37,13 +37,13 @@ def dlreg_dandiset_meta_extract(url: RepoUrl) -> URLMetadata:
     :raises FileNotFoundError: If the `dandiset.yaml` file is not found at the dataset
     :raises InvalidRequiredFileError: If the `dandiset.yaml` file has no document
 
-    Note: This function implements the `dandi:dandiset` extractor.
+    Note: This function implements the `dandi` extractor.
     Note: This function is meant to be called inside a Celery task for it requires
           an active application context of the Flask app
     Note: This function must be called with a RepoUrl object with a cache path, i.e.,
           one that must have been processed already.
     """
-    name = "dandi:dandiset"  # Name of this extractor
+    name = "dandi"  # Name of this extractor
     version = "0.0.1"  # Version of this extractor
 
     assert url.cache_path_abs is not None, (
@@ -72,17 +72,15 @@ def dlreg_dandiset_meta_extract(url: RepoUrl) -> URLMetadata:
     )
 
 
-def dlreg_dandi_assets_meta_extract(url: RepoUrl) -> URLMetadata:
+def dlreg_dandi_files_meta_extract(url: RepoUrl) -> URLMetadata:
     """
-    Extract the metadata specified in the `.dandi/assets.json` file of the DANDI dataset
-    at a given URL
+    This function implements the "dandi:files" extractor: it extracts the metadata
+    specified in the `.dandi/assets.json` file of the DANDI dataset at a given URL
 
     :param url: The `RepoUrl` object representing the URL
     :return: A `URLMetadata` object containing the extracted metadata ready
     :raises FileNotFoundError: If the `.dandi/assets.json` file is not found
                                at the dataset
-
-    Note: This function implements the `dandi:assets` extractor.
     """
     raise NotImplementedError
 
@@ -90,8 +88,8 @@ def dlreg_dandi_assets_meta_extract(url: RepoUrl) -> URLMetadata:
 # A mapping from the names of the supported extractors to the functions
 # that implement those extractors respectively
 EXTRACTOR_MAP: dict[str, Callable[[RepoUrl], URLMetadata]] = {
-    "dandi:dandiset": dlreg_dandiset_meta_extract,
-    "dandi:assets": dlreg_dandi_assets_meta_extract,
+    "dandi": dlreg_dandi_meta_extract,
+    "dandi:files": dlreg_dandi_files_meta_extract,
 }
 
 

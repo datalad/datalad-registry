@@ -114,8 +114,8 @@ _EXTRACTOR_REQUIRED_FILES = {
     "datacite_gin": ["datacite.yml"],
     "bids_dataset": ["dataset_description.json"],
     # === DANDI related extractors ===
-    "dandi:dandiset": ["dandiset.yaml"],
-    "dandi:assets": [".dandi/assets.json"],
+    "dandi": ["dandiset.yaml"],
+    "dandi:files": [".dandi/assets.json"],
 }
 
 
