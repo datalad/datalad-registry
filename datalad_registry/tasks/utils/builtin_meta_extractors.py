@@ -82,7 +82,7 @@ def dlreg_dandi_assets_meta_extract(url: RepoUrl) -> URLMetadata:
     :raises FileNotFoundError: If the `.dandi/assets.json` file is not found
                                at the dataset
 
-    Note: This function implements the `dandi:assets` extractor.
+    Note: This function implements the `dandi:files` extractor.
     """
     raise NotImplementedError
 
@@ -91,7 +91,7 @@ def dlreg_dandi_assets_meta_extract(url: RepoUrl) -> URLMetadata:
 # that implement those extractors respectively
 EXTRACTOR_MAP: dict[str, Callable[[RepoUrl], URLMetadata]] = {
     "dandi": dlreg_dandi_meta_extract,
-    "dandi:assets": dlreg_dandi_assets_meta_extract,
+    "dandi:files": dlreg_dandi_assets_meta_extract,
 }
 
 

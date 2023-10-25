@@ -38,7 +38,7 @@ class BaseConfig(OperationConfig):
         "bids_dataset",
         # === DANDI related extractors ===
         "dandi",
-        # "dandi:assets",  # Let's not activate this yet by default
+        # "dandi:files",  # Let's not activate this yet by default
     ]
 
     # === worker, Celery, related configuration  ===

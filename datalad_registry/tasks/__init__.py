@@ -115,7 +115,7 @@ _EXTRACTOR_REQUIRED_FILES = {
     "bids_dataset": ["dataset_description.json"],
     # === DANDI related extractors ===
     "dandi": ["dandiset.yaml"],
-    "dandi:assets": [".dandi/assets.json"],
+    "dandi:files": [".dandi/assets.json"],
 }
 
 
