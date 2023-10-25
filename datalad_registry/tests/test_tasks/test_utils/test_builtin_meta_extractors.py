@@ -41,7 +41,7 @@ def test_fallback_to_safe_loader():
     assert builtin_meta_extractors.SafeLoader.__name__ == "SafeLoader"
 
 
-class TestDlregDandisetMetaExtract:
+class TestDlregDandiMetaExtract:
     def test_valid_input(self, dandi_repo_url_with_up_to_date_clone, flask_app):
         """
         Test the case that the argument `url` is a valid `RepoUrl` object with a
