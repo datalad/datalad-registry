@@ -155,8 +155,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
                 supposed ID of a RepoUrl that doesn't identify any RepoUrl in
                 the database at the time of the execution of this task because
                 the RepoUrl has been deleted from the database.)
-    :raise: ValueError if the RepoUrl of the specified ID does not exist or has not
-                been processed yet.
+    :raise: ValueError if the RepoUrl of the specified ID has not been processed yet.
     :raise: RuntimeError if the extractor returns an execution status other than "ok"
 
     """
@@ -174,6 +173,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
         # === there is no RepoUrl in the database with the specified ID ===
         return ExtractMetaStatus.NO_RECORD
 
+    # Validate that the RepoUrl has been processed
     validate_url_is_processed(url)
 
     # Absolute path of the dataset clone in cache
@@ -510,8 +510,7 @@ def chk_url_to_update(
                    in the database
     :param initial_last_chk_dt: The value of `last_chk_dt` of the `RepoUrl`
                                 when this check was initiated.
-    :raise: ValueError if the RepoUrl of the specified ID does not exist or has not
-            been processed yet.
+    :raise: ValueError if the RepoUrl of the specified ID has not been processed yet.
     """
 
     # Select and lock the RepoUrl identified by the given ID if it is not locked
@@ -536,6 +535,7 @@ def chk_url_to_update(
     # locked by the current transaction
     # ===
 
+    # Validate that the RepoUrl has been processed
     validate_url_is_processed(url)
 
     if url.last_chk_dt != initial_last_chk_dt:
