@@ -2,6 +2,7 @@ from pathlib import Path
 import sys
 
 from celery import Celery, Task
+import datalad
 from flask import Flask, request
 from flask_openapi3 import Info, OpenAPI
 from kombu.serialization import register
@@ -19,16 +20,13 @@ else:
 
 __version__ = version("datalad-registry")
 
+datalad.enable_librarymode()
+
 
 def create_app() -> Flask:
     """
     Factory function for producing Flask app
     """
-
-    import datalad
-
-    datalad.enable_librarymode()
-
     config = compile_config_from_env()
 
     app = OpenAPI(
