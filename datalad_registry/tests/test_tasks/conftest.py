@@ -1,6 +1,8 @@
 from datetime import datetime
+from pathlib import Path
 
 from datalad.api import Dataset
+from flask import Flask
 import pytest
 
 from datalad_registry.models import RepoUrl, db
@@ -77,27 +79,28 @@ def fix_datetime_now(monkeypatch):
     monkeypatch.setattr(tasks, "datetime", MockDateTime)
 
 
-@pytest.fixture
-def repo_url_with_up_to_date_clone(
-    two_files_ds_annex_func_scoped, base_cache_path, flask_app
-) -> tuple[RepoUrl, Dataset, Dataset]:
+def _establish_repo_url_with_up_to_date_clone(
+    remote_repo: Dataset, base_cache_path: Path, flask_app: Flask
+) -> tuple[RepoUrl, Dataset]:
     """
-    Return a tuple of the following
-    - A `RepoUrl` object that represents a remote repository
-      at the URL of the repository in the database
-      Note: This repository is actually the value
-            of the `two_files_ds_annex_func_scoped` fixture
-    - A `Dataset` object that represents the remote repository,
-      i.e., the value of the `two_files_ds_annex_func_scoped` fixture
-    - A `Dataset` object that represents a clone of the remote repository
-      at the local cache
+    Establish a `RepoUrl` object/record in the database with a corresponding clone
+    of the remote repository at the local cache
+
+    :param remote_repo: The remote repository to be cloned
+    :param base_cache_path: The base path of the local cache
+    :param flask_app: The Flask app
+    :return: A tuple of the following
+        - A `RepoUrl` object that represents the URL of a remote repository
+          in the database
+        - A `Dataset` object that represents a clone of the remote repository
+          at the local cache
     """
     with flask_app.app_context():
         clone_path_relative = allocate_ds_path()
         clone_path_abs = base_cache_path / clone_path_relative
 
         ds_clone = clone(
-            source=two_files_ds_annex_func_scoped,
+            source=remote_repo,
             path=clone_path_abs,
             on_failure="stop",
             result_renderer="disabled",
@@ -105,8 +108,8 @@ def repo_url_with_up_to_date_clone(
 
         # Add representation of the URL to the database
         url = RepoUrl(
-            url=two_files_ds_annex_func_scoped.path,
-            head=two_files_ds_annex_func_scoped.repo.get_hexsha(),
+            url=remote_repo.path,
+            head=remote_repo.repo.get_hexsha(),
             processed=True,
             cache_path=str(clone_path_relative),
         )
@@ -116,7 +119,43 @@ def repo_url_with_up_to_date_clone(
         # Reload the `url` object from the database
         db.session.refresh(url)
 
-        return url, two_files_ds_annex_func_scoped, ds_clone
+        return url, ds_clone
+
+
+@pytest.fixture
+def repo_url_with_up_to_date_clone(
+    two_files_ds_annex_func_scoped, base_cache_path, flask_app
+) -> tuple[RepoUrl, Dataset, Dataset]:
+    """
+    Return a tuple of the following
+    - A `RepoUrl` object that represents the URL of the value of
+      the `two_files_ds_annex_func_scoped` fixture as a remote repository
+    - A `Dataset` object that represents the remote repository,
+      i.e., the value of the `two_files_ds_annex_func_scoped` fixture
+    - A `Dataset` object that represents a clone of the remote repository
+      at the local cache
+    """
+    repo_url, ds_clone = _establish_repo_url_with_up_to_date_clone(
+        two_files_ds_annex_func_scoped, base_cache_path, flask_app
+    )
+    return repo_url, two_files_ds_annex_func_scoped, ds_clone
+
+
+@pytest.fixture
+def dandi_repo_url_with_up_to_date_clone(dandi_ds, base_cache_path, flask_app):
+    """
+    Return a tuple of the following
+    - A `RepoUrl` object that represents the URL of the value of
+      the `dandi_ds` fixture as a remote repository
+    - A `Dataset` object that represents the remote repository,
+      i.e., the value of the `dandi_ds` fixture
+    - A `Dataset` object that represents a clone of the remote repository
+      at the local cache
+    """
+    repo_url, ds_clone = _establish_repo_url_with_up_to_date_clone(
+        dandi_ds, base_cache_path, flask_app
+    )
+    return repo_url, dandi_ds, ds_clone
 
 
 def _modify_remote(

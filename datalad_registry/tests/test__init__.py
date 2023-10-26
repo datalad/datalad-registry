@@ -46,6 +46,7 @@ class TestCreateApp:
             "metalad_studyminimeta",
             "datacite_gin",
             "bids_dataset",
+            "dandi",
         ]
 
         def mock_compile_config_from_env(*_args, **_kwargs):

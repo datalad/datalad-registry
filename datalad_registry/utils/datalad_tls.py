@@ -94,6 +94,16 @@ def get_wt_annexed_file_info(ds: Dataset) -> Optional[WtAnnexedFileInfo]:
         return None
 
 
+def get_head_describe(ds: Dataset) -> str:
+    """
+    Get the output of `git describe --tags --always` of a given dataset
+
+    :param ds: The given dataset
+    :return: The output of `git describe --tags --always` of the given dataset
+    """
+    return ds.repo.describe(tags=True, always=True)
+
+
 def get_origin_branches(ds: Dataset) -> list[dict[str, str]]:
     """
     Get the branches of the origin remote of a given dataset
