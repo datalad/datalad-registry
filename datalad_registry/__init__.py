@@ -25,6 +25,10 @@ def create_app() -> Flask:
     Factory function for producing Flask app
     """
 
+    import datalad
+
+    datalad.enable_librarymode()
+
     config = compile_config_from_env()
 
     app = OpenAPI(
