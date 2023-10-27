@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 import sys
 
@@ -21,6 +22,14 @@ else:
 __version__ = version("datalad-registry")
 
 datalad.enable_librarymode()
+
+# === A temporary solution for removing the custom log handlers set
+# by the datalad package
+# (until https://github.com/datalad/datalad/pull/7521 is resolved and released) ===
+datalad_lgr = logging.getLogger("datalad")
+for h in datalad_lgr.handlers:
+    datalad_lgr.removeHandler(h)
+# === End of temporary solution ===
 
 
 def create_app() -> Flask:
