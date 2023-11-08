@@ -8,7 +8,7 @@ from kombu.serialization import register
 from werkzeug.exceptions import HTTPException
 
 from . import overview, root
-from .conf import compile_config_from_env
+from .conf import OperationMode, compile_config_from_env
 from .models import db, init_db_command, migrate
 from .utils.pydantic_json import pydantic_dumps, pydantic_loads
 
@@ -43,8 +43,9 @@ def create_app() -> Flask:
     # Ensure instance path exists
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
 
-    # Integrate a Celery app
-    celery_init_app(app)
+    if app.config["DATALAD_REGISTRY_OPERATION_MODE"] is not OperationMode.READ_ONLY:
+        # Integrate a Celery app
+        celery_init_app(app)
 
     # Integrate Flask-SQLAlchemy
     db.init_app(app)

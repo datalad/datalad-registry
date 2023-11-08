@@ -110,11 +110,14 @@ class TestCreateApp:
         )
         assert flask_app.config["TESTING"] is False
 
-        # Verify the loading of configuration to the Celery app
-        celery_app: Celery = flask_app.extensions["celery"]
-        assert celery_app.conf["broker_url"] == broker_url
-        assert celery_app.conf["result_backend"] == result_backend
-        assert celery_app.conf["beat_schedule"] == default_beat_schedule
-        assert celery_app.conf["task_ignore_result"] is True
-        assert celery_app.conf["worker_max_tasks_per_child"] == 1000
-        assert celery_app.conf["worker_max_memory_per_child"] == 500_000  # 500 MB
+        if op_mode != "READ_ONLY":
+            # Verify the loading of configuration to the Celery app
+            celery_app: Celery = flask_app.extensions["celery"]
+            assert celery_app.conf["broker_url"] == broker_url
+            assert celery_app.conf["result_backend"] == result_backend
+            assert celery_app.conf["beat_schedule"] == default_beat_schedule
+            assert celery_app.conf["task_ignore_result"] is True
+            assert celery_app.conf["worker_max_tasks_per_child"] == 1000
+            assert celery_app.conf["worker_max_memory_per_child"] == 500_000  # 500 MB
+        else:
+            assert "celery" not in flask_app.extensions
