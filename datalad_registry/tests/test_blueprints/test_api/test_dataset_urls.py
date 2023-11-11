@@ -13,6 +13,7 @@ from datalad_registry.blueprints.api.url_metadata.models import (
     URLMetadataModel,
     URLMetadataRef,
 )
+from datalad_registry.conf import OperationMode
 
 
 class TestDeclareDatasetURL:
@@ -154,6 +155,32 @@ class TestDeclareDatasetURL:
             mark_for_chk_delay_mock.assert_called_once_with(
                 *expected_mark_for_chk_delay_args
             )
+
+    def test_read_only_mode(self, flask_client, monkeypatch):
+        """
+        Test that the endpoint is disabled in read-only mode
+        """
+
+        from datalad_registry.utils import flask_tools
+
+        monkeypatch.setattr(
+            flask_tools,
+            "current_app",
+            type(
+                "mock_current_app",
+                (),
+                {
+                    "config": {
+                        "DATALAD_REGISTRY_OPERATION_MODE": OperationMode.READ_ONLY
+                    }
+                },
+            ),
+        )
+
+        resp = flask_client.post(
+            "/api/v2/dataset-urls", json={"url": "https://www.example.com"}
+        )
+        assert resp.status_code == 418
 
 
 class TestDatasetURLs:
