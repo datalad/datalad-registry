@@ -14,7 +14,7 @@ services:
     environment:
       FLASK_APP: "datalad_registry:create_app"
 
-      DATALAD_REGISTRY_OPERATION_MODE: "${DATALAD_REGISTRY_OPERATION_MODE}"
+      DATALAD_REGISTRY_OPERATION_MODE: "READ_ONLY"
       DATALAD_REGISTRY_INSTANCE_PATH: /app/instance
 
       # db service access info
