@@ -56,8 +56,6 @@ services:
     depends_on:
       broker:
         condition: service_healthy
-      worker:
-        condition: service_healthy
     command: [
       "bash", "-c",
       "celery -A datalad_registry.make_celery:celery_app beat -s /data/celerybeat-schedule -l INFO"
@@ -78,8 +76,6 @@ services:
     image: datalad-registry:dev
     depends_on:
       broker:
-        condition: service_healthy
-      worker:
         condition: service_healthy
     environment:
       <<: *env
