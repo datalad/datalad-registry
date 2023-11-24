@@ -5,7 +5,7 @@ set -eu
 topp="/srv/datasets.datalad.org/www"
 
 ssh falkor.datalad.org find "$topp" -iname .git -type d | sed -e "s,$topp/\(.*\),https://datasets.datalad.org/\1,g" \
-| while read url; do
+| while read -r url; do
 curl -X 'POST' \
   'http://localhost:5000/api/v2/dataset-urls' \
   -H 'accept: application/json' \
