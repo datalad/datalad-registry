@@ -1,0 +1,130 @@
+services:
+  web:
+    build:
+      dockerfile: dev.Dockerfile
+      ## Old docker-compose asked for context but this was still insufficient
+      ## since it could then "link" the built image here to be used for the worker
+      # context: .
+    image: datalad-registry:dev
+    depends_on:
+      broker:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment: &env
+      FLASK_APP: "datalad_registry:create_app"
+
+      DATALAD_REGISTRY_OPERATION_MODE: "${DATALAD_REGISTRY_OPERATION_MODE}"
+      DATALAD_REGISTRY_INSTANCE_PATH: /app/instance
+      DATALAD_REGISTRY_DATASET_CACHE: /data/cache
+
+      CELERY_BROKER_URL: "${CELERY_BROKER_URL}"
+      CELERY_RESULT_BACKEND: "redis://backend:6379"
+
+      # db service access info
+      SQLALCHEMY_DATABASE_URI: "${SQLALCHEMY_DATABASE_URI}"
+    command: [ "bash", "-c", "flask init-db && flask run --host=0.0.0.0" ]
+    volumes:
+      - ${WEB_PATH_AT_HOST}/instance:/app/instance
+
+  scheduler:
+    image: datalad-registry:dev
+    depends_on:
+      broker:
+        condition: service_healthy
+    command: [
+      "bash", "-c",
+      "celery -A datalad_registry.make_celery:celery_app beat -s /data/celerybeat-schedule -l INFO"
+    ]
+    volumes:
+      - ${SCHEDULER_PATH_AT_HOST}/data:/data
+    environment:
+      <<: *env
+    healthcheck:
+      test: celery -A datalad_registry.make_celery:celery_app status --timeout 1 --json | grep pong
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 3m
+
+  # Monitor for Celery service
+  monitor:
+    image: datalad-registry:dev
+    depends_on:
+      broker:
+        condition: service_healthy
+    environment:
+      <<: *env
+      FLOWER_BROKER_API: "${FLOWER_BROKER_API}"
+      FLOWER_PERSISTENT: "True"
+      FLOWER_DB: "/data/flower"
+      FLOWER_STATE_SAVE_INTERVAL: "1000"  # In milliseconds
+      FLOWER_NATURAL_TIME: "True"
+      FLOWER_BASIC_AUTH: "$FLOWER_BASIC_AUTH"
+    ports:
+      - "127.0.0.1:5555:5555"
+    command: [ "bash", "-c", "celery -A datalad_registry.make_celery:celery_app flower" ]
+    volumes:
+      - ${MONITOR_PATH_AT_HOST}/data:/data
+    healthcheck:
+      test: RESPONSE=$$(curl -s http://localhost:5555/healthcheck); echo $$RESPONSE; if [ "$$RESPONSE" = "OK" ]; then exit 0; else exit 1; fi
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 3m
+
+  broker:
+    image: docker.io/rabbitmq:3-management
+    hostname: dlreg-broker
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_DEFAULT_USER}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS}"
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbit consumer_timeout 43200000"  # 12 hours in milliseconds
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    userns_mode: "keep-id"  # This has an effect only after podman-compose 1.0.3 possibly
+      # See https://github.com/containers/podman-compose/issues/166
+      # for details.
+      # For podman-compose 1.0.3 or earlier, use
+      # `PODMAN_USERNS=keep-id podman-compose up`
+    volumes:
+      - ${BROKER_PATH_AT_HOST}/home:/var/lib/rabbitmq
+    healthcheck: # https://www.rabbitmq.com/monitoring.html#health-checks
+      test: rabbitmq-diagnostics ping
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 1m
+
+  # Result backend for Celery
+  backend:
+    image: docker.io/redis:7
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  db:
+    image: docker.io/postgres:latest
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_INITDB_ARGS: --encoding utf8 --locale C
+    ports:
+      - "5432:5432"
+    userns_mode: "keep-id"  # This has an effect only after podman-compose 1.0.3 possibly
+      # See https://github.com/containers/podman-compose/issues/166
+      # for details.
+      # For podman-compose 1.0.3 or earlier, use
+      # `PODMAN_USERNS=keep-id podman-compose up`
+
+    volumes:
+      - ${DB_PATH_AT_HOST}/data:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 1m
