@@ -94,13 +94,14 @@ def send_report(id_, path):
             repo_url_row = repo_url_row[0]
             metadatas = {}
             for mr in repo_url_row.metadata_:
+                if mr.extractor_name not in {'metalad_core', 'bids_dataset', 'metalad_studyminimeta'}:
+                    continue
                 m = mr.extracted_metadata
                 m['type'] = 'dataset'
                 m['dataset_id'] = repo_url_row.ds_id
                 # Didn't want to translate yet
-                # metadatas[mr.extractor_name] = dl.catalog_translate(m)
-                # TEMP: get it without translation
-                metadatas[mr.extractor_name] = m
+                metadatas[mr.extractor_name] = dl.catalog_translate(m)
+                # metadatas[mr.extractor_name] = m
             lgr.warning(f"ROW: {metadatas}")
     # TODO: figure out how to pass all the metadata goodness to the catalog
     return send_from_directory('/app-catalog', path)
