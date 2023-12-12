@@ -96,10 +96,13 @@ def send_report(id_, path):
             for mr in repo_url_row.metadata_:
                 if mr.extractor_name not in {'metalad_core', 'bids_dataset', 'metalad_studyminimeta'}:
                     continue
+                # TODO: here metadta record had only @context and @graph and no other fields
+                # figure out if enough....
                 m = mr.extracted_metadata
                 m['type'] = 'dataset'
                 m['dataset_id'] = repo_url_row.ds_id
                 # Didn't want to translate yet
+                lgr.warning(f"Translating record with keys {m.keys()}")
                 metadatas[mr.extractor_name] = dl.catalog_translate(m)
                 # metadatas[mr.extractor_name] = m
             lgr.warning(f"ROW: {metadatas}")
