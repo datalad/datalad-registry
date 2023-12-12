@@ -69,3 +69,38 @@ def overview():  # No type hints due to mypy#7187.
         search_query=query,
         search_error=search_error,
     )
+
+import json
+from flask import send_from_directory
+import datalad.api as dl
+
+
+# @bp.route('/catalog/', defaults={'path': ''})
+# TODO: move from placing dataset identifier within path -- place into query
+# TODO: do not use ID may be but use URL, or allow for both -- that would make it possible to make those URLs
+#  pointing to datasets easier to create/digest for humans
+@bp.route('/catalog/<int:id_>/<path:path>')
+def send_report(id_, path):
+    # ds_id = request.args.get("id", None, type=int)
+    if not path:
+        path = "index.html"
+    if path == "index.html":
+        lgr.warning(f"PATH: {path}  id: {id_}")
+        # let's get metadata for the ds_id
+        repo_url_row = db.session.execute(
+            db.select(RepoUrl).filter_by(id=id_)
+        ).one_or_none()
+        if repo_url_row:
+            repo_url_row = repo_url_row[0]
+            metadatas = {}
+            for mr in repo_url_row.metadata_:
+                m = mr.extracted_metadata
+                m['type'] = 'dataset'
+                m['dataset_id'] = repo_url_row.ds_id
+                # Didn't want to translate yet
+                # metadatas[mr.extractor_name] = dl.catalog_translate(m)
+                # TEMP: get it without translation
+                metadatas[mr.extractor_name] = m
+            lgr.warning(f"ROW: {metadatas}")
+    # TODO: figure out how to pass all the metadata goodness to the catalog
+    return send_from_directory('/app-catalog', path)
