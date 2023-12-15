@@ -1,26 +1,26 @@
 from functools import wraps
 from http import HTTPStatus
-from typing import Optional, Union
 
-from flask import abort, current_app
+from flask import Response, abort, current_app
 
 from datalad_registry.conf import OperationMode
 
 
-def json_resp_from_str(
-    json_str: str, status: Optional[Union[int, str, HTTPStatus]] = None
-):
+def json_resp_from_str(json_str: str, *args, **kwargs) -> Response:
     """
-    Return a Flask response object with the given JSON string as the response body
+    Return a Flask response object, an object of the response class referenced by
+    `Flask.response_class`, with the given JSON string as the response body
 
     :param json_str: The JSON string to use as the response body
-    :param status: The HTTP response status code of the response
     :return: The Flask response object with the given JSON string as the response body
 
     Note: This requires an active request or application context of Flask
+    Note: Any extra position and keyword arguments are passed to the constructor
+          of the response class except the `mimetype` keyword argument, which is
+          fixed to `application/json`.
     """
     return current_app.response_class(
-        json_str, mimetype="application/json", status=status
+        json_str, *args, mimetype="application/json", **kwargs
     )
 
 
