@@ -1,9 +1,17 @@
 # Use this file to override docker-compose.read-only.yml
-# so that you can spawn a read-only stack of Datalad-Registry
+# so that you can spawn a read-only stack of Datalad-Registry with
+# the read-only web service running in debug mode
 # in parallel to a full stack of Datalad-Registry within the same host.
 
 services:
   read-only-web:
+    command: [ "bash", "-c",
+               "pip3 install -U -e . && flask init-db && flask run --host=0.0.0.0 --debug" ]
+
+    volumes:
+      - ./:/app
+      - ./instance:/app/instance
+
     networks:
       - datalad-registry_default
 
