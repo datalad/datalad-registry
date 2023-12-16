@@ -31,8 +31,9 @@ from .models import (
     PathParams,
     QueryParams,
 )
-from .. import API_URL_PREFIX, COMMON_API_RESPONSES
+from .. import API_URL_PREFIX, COMMON_API_RESPONSES, HTTPExceptionResp
 from ..url_metadata.models import URLMetadataRef
+from ..utils import disable_in_read_only_mode
 
 _ORDER_KEY_TO_SQLA_ATTR = {
     OrderKey.url: RepoUrl.url,
@@ -52,7 +53,15 @@ bp = APIBlueprint(
 )
 
 
-@bp.post("", responses={"201": DatasetURLRespModel, "202": DatasetURLRespModel})
+@bp.post(
+    "",
+    responses={
+        "201": DatasetURLRespModel,
+        "202": DatasetURLRespModel,
+        "405": HTTPExceptionResp,  # Occurs only when the server is in read-only mode
+    },
+)
+@disable_in_read_only_mode
 def declare_dataset_url(body: DatasetURLSubmitModel):
     """
     Handle the submission of a dataset URL, adding a new one or updating an existing one
@@ -144,7 +153,8 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
             raise RuntimeError(f"Failed to add the URL, {url_as_str}, to the database.")
 
         return json_resp_from_str(
-            DatasetURLRespModel.from_orm(repo_url_to_resp).json(exclude_none=True), 201
+            DatasetURLRespModel.from_orm(repo_url_to_resp).json(exclude_none=True),
+            status=201,
         )
 
     else:
@@ -160,7 +170,7 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
             # for check for update of the dataset at the URL ===
             mark_for_chk.delay(repo_url.id)
 
-        return json_resp_from_str(resp_model, 202)
+        return json_resp_from_str(resp_model, status=202)
 
 
 @bp.get("", responses={"200": DatasetURLPage})
