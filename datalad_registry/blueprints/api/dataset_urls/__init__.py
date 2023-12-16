@@ -19,10 +19,7 @@ from datalad_registry.tasks import (
     mark_for_chk,
     process_dataset_url,
 )
-from datalad_registry.utils.flask_tools import (
-    disable_in_read_only_mode,
-    json_resp_from_str,
-)
+from datalad_registry.utils.flask_tools import json_resp_from_str
 
 from .models import (
     DatasetURLPage,
@@ -36,6 +33,7 @@ from .models import (
 )
 from .. import API_URL_PREFIX, COMMON_API_RESPONSES, HTTPExceptionResp
 from ..url_metadata.models import URLMetadataRef
+from ..utils import disable_in_read_only_mode
 
 _ORDER_KEY_TO_SQLA_ATTR = {
     OrderKey.url: RepoUrl.url,
@@ -60,7 +58,7 @@ bp = APIBlueprint(
     responses={
         "201": DatasetURLRespModel,
         "202": DatasetURLRespModel,
-        "418": HTTPExceptionResp,  # Occurs only when the server is in read-only mode
+        "405": HTTPExceptionResp,  # Occurs only when the server is in read-only mode
     },
 )
 @disable_in_read_only_mode
