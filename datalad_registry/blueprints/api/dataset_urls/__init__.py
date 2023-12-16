@@ -153,7 +153,8 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
             raise RuntimeError(f"Failed to add the URL, {url_as_str}, to the database.")
 
         return json_resp_from_str(
-            DatasetURLRespModel.from_orm(repo_url_to_resp).json(exclude_none=True), 201
+            DatasetURLRespModel.from_orm(repo_url_to_resp).json(exclude_none=True),
+            status=201,
         )
 
     else:
@@ -169,7 +170,7 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
             # for check for update of the dataset at the URL ===
             mark_for_chk.delay(repo_url.id)
 
-        return json_resp_from_str(resp_model, 202)
+        return json_resp_from_str(resp_model, status=202)
 
 
 @bp.get("", responses={"200": DatasetURLPage})
