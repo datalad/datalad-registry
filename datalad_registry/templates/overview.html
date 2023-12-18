@@ -79,7 +79,11 @@
       {%- for i in pagination -%}
         <tr>
           <td><a href="{{ i.url }}">{{ i.url }}</a></td>
-          <td class="mono">{{ i.ds_id if i.ds_id is not none }}</td>
+          <td class="mono">
+			{% if i.ds_id is not none %}
+			<a href="{{ url_for('.overview', filter=i.ds_id) }}">{{ i.ds_id }}</a>
+			{% endif %}
+		  </td>
           <td class="mono">
             {{ i.head_describe if i.head_describe is not none }}
           </td>
