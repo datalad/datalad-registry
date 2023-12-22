@@ -2,7 +2,7 @@
 # Docker file for the container of the web, worker, scheduler, and monitor services
 #
 
-FROM docker.io/debian:11
+FROM docker.io/phusion/baseimage:jammy-1.0.1
 WORKDIR /app
 
 # Install dependencies
@@ -27,7 +27,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 RUN git config --system user.name "dl-registry" && \
     git config --system user.email "dl-registry@example.com"
 
-RUN ["pip3", "install", "--no-cache-dir", "-U","pip", "setuptools"]
+# Updating blinker in this step as well because it can't be uninstalled
+# and reinstalled to the latest version in two separate steps
+RUN ["pip3", "install", "--no-cache-dir", "-U","pip", "setuptools", "blinker"]
 
 COPY requirements.txt requirements.txt
 
