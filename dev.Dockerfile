@@ -5,6 +5,12 @@
 FROM docker.io/phusion/baseimage:jammy-1.0.1
 WORKDIR /app
 
+# A workaround for setting the HOME environment variable
+# when /sbin/my_init is used as the init process.
+# See https://github.com/phusion/baseimage-docker?tab=readme-ov-file#environment-variables
+# for more information.
+RUN echo /root > /etc/container_environment/HOME
+
 # Install dependencies
 # TODO: Consider removing the eatmydata dependency. It may not be needed.
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
