@@ -38,8 +38,7 @@ services:
         condition: service_healthy
     command: [
       "/sbin/my_init", "--",
-      "bash", "-c",
-      "exec celery -A datalad_registry.make_celery:celery_app worker --loglevel INFO --pool prefork"
+      "celery", "-A", "datalad_registry.make_celery:celery_app", "worker", "--loglevel", "INFO", "--pool", "prefork"
     ]
     volumes:
       - ${WORKER_PATH_AT_HOST}/data/cache:/data/cache
@@ -59,8 +58,7 @@ services:
         condition: service_healthy
     command: [
       "/sbin/my_init", "--",
-      "bash", "-c",
-      "exec celery -A datalad_registry.make_celery:celery_app beat -s /data/celerybeat-schedule -l INFO"
+      "celery", "-A", "datalad_registry.make_celery:celery_app", "beat", "-s", "/data/celerybeat-schedule", "-l", "INFO"
     ]
     volumes:
       - ${SCHEDULER_PATH_AT_HOST}/data:/data
@@ -89,7 +87,7 @@ services:
       FLOWER_BASIC_AUTH: "$FLOWER_BASIC_AUTH"
     ports:
       - "127.0.0.1:5555:5555"
-    command: [ "/sbin/my_init", "--", "bash", "-c", "exec celery -A datalad_registry.make_celery:celery_app flower" ]
+    command: [ "/sbin/my_init", "--", "celery", "-A", "datalad_registry.make_celery:celery_app", "flower" ]
     volumes:
       - ${MONITOR_PATH_AT_HOST}/data:/data
     healthcheck:
