@@ -9,6 +9,7 @@ WORKDIR /app
 # TODO: Consider removing the eatmydata dependency. It may not be needed.
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends eatmydata && \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -o Dpkg::Options::="--force-confold" && \
     DEBIAN_FRONTEND=noninteractive eatmydata apt-get install -y --no-install-recommends gnupg locales && \
     echo "en_US.UTF-8 UTF-8" >>/etc/locale.gen && locale-gen && \
     DEBIAN_FRONTEND=noninteractive eatmydata apt-get install -y --no-install-recommends \
