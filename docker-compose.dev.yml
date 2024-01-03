@@ -25,7 +25,7 @@ services:
 
       # db service access info
       SQLALCHEMY_DATABASE_URI: "${SQLALCHEMY_DATABASE_URI}"
-    command: [ "/sbin/my_init", "--", "bash", "-c", "flask init-db && flask run --host=0.0.0.0" ]
+    command: [ "/sbin/my_init", "--", "bash", "-c", "flask init-db && exec flask run --host=0.0.0.0" ]
     volumes:
       - ${WEB_PATH_AT_HOST}/instance:/app/instance
 
@@ -39,7 +39,7 @@ services:
     command: [
       "/sbin/my_init", "--",
       "bash", "-c",
-      "celery -A datalad_registry.make_celery:celery_app worker --loglevel INFO --pool prefork"
+      "exec celery -A datalad_registry.make_celery:celery_app worker --loglevel INFO --pool prefork"
     ]
     volumes:
       - ${WORKER_PATH_AT_HOST}/data/cache:/data/cache
@@ -60,7 +60,7 @@ services:
     command: [
       "/sbin/my_init", "--",
       "bash", "-c",
-      "celery -A datalad_registry.make_celery:celery_app beat -s /data/celerybeat-schedule -l INFO"
+      "exec celery -A datalad_registry.make_celery:celery_app beat -s /data/celerybeat-schedule -l INFO"
     ]
     volumes:
       - ${SCHEDULER_PATH_AT_HOST}/data:/data
@@ -89,7 +89,7 @@ services:
       FLOWER_BASIC_AUTH: "$FLOWER_BASIC_AUTH"
     ports:
       - "127.0.0.1:5555:5555"
-    command: [ "/sbin/my_init", "--", "bash", "-c", "celery -A datalad_registry.make_celery:celery_app flower" ]
+    command: [ "/sbin/my_init", "--", "bash", "-c", "exec celery -A datalad_registry.make_celery:celery_app flower" ]
     volumes:
       - ${MONITOR_PATH_AT_HOST}/data:/data
     healthcheck:
