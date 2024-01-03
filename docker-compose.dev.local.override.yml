@@ -4,8 +4,11 @@
 
 services:
   web:
-    command: [ "bash", "-c",
-               "git config --global --add safe.directory /app && pip3 install -U -e . && flask init-db && flask run --host=0.0.0.0 --debug" ]
+    command: [
+      "/sbin/my_init", "--",
+      "bash", "-c",
+      "git config --global --add safe.directory /app && pip3 install -U -e . && flask init-db && exec flask run --host=0.0.0.0 --debug"
+    ]
     volumes:
       - ./:/app
       - ./instance:/app/instance
