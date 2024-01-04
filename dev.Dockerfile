@@ -26,17 +26,22 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
       libpq-dev \
       python3-dev \
       python3-pip \
+      python3-venv \
       python3-gdbm \
       && \
     DEBIAN_FRONTEND=noninteractive apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Create a Python virtual environment
+RUN python3 -m venv /venv
+
+# Activate the virtual environment
+ENV PATH="/venv/bin:$PATH"
 
 # Set user info for git (needed for datalad operations)
 RUN git config --system user.name "dl-registry" && \
     git config --system user.email "dl-registry@example.com"
 
-# Updating blinker in this step as well because it can't be uninstalled
-# and reinstalled to the latest version in two separate steps
-RUN ["pip3", "install", "--no-cache-dir", "-U","pip", "setuptools", "blinker"]
+RUN ["pip3", "install", "--no-cache-dir", "-U","pip", "setuptools"]
 
 COPY requirements.txt requirements.txt
 
