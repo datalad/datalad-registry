@@ -5,10 +5,17 @@
 FROM docker.io/phusion/baseimage:jammy-1.0.1
 WORKDIR /app
 
+# A workaround for setting the HOME environment variable
+# when /sbin/my_init is used as the init process.
+# See https://github.com/phusion/baseimage-docker?tab=readme-ov-file#environment-variables
+# for more information.
+RUN echo /root > /etc/container_environment/HOME
+
 # Install dependencies
 # TODO: Consider removing the eatmydata dependency. It may not be needed.
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends eatmydata && \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -o Dpkg::Options::="--force-confold" && \
     DEBIAN_FRONTEND=noninteractive eatmydata apt-get install -y --no-install-recommends gnupg locales && \
     echo "en_US.UTF-8 UTF-8" >>/etc/locale.gen && locale-gen && \
     DEBIAN_FRONTEND=noninteractive eatmydata apt-get install -y --no-install-recommends \
