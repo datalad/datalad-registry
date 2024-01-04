@@ -8,7 +8,7 @@ services:
     command: [
       "/sbin/my_init", "--",
       "bash", "-c",
-      "pip3 install -U -e . && flask init-db && exec flask run --host=0.0.0.0 --debug"
+      "git config --global --add safe.directory /app && pip3 install -U -e . && flask init-db && exec flask run --host=0.0.0.0 --debug"
     ]
 
     volumes:
