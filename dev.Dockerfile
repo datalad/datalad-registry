@@ -41,9 +41,7 @@ ENV PATH="/venv/bin:$PATH"
 RUN git config --system user.name "dl-registry" && \
     git config --system user.email "dl-registry@example.com"
 
-# Updating blinker in this step as well because it can't be uninstalled
-# and reinstalled to the latest version in two separate steps
-RUN ["pip3", "install", "--no-cache-dir", "-U","pip", "setuptools", "blinker"]
+RUN ["pip3", "install", "--no-cache-dir", "-U","pip", "setuptools"]
 
 COPY requirements.txt requirements.txt
 
