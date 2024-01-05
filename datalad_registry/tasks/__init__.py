@@ -631,3 +631,16 @@ def chk_url_to_update(
         db.session.commit()
 
     return ChkUrlStatus.OK_UPDATED if is_record_updated else ChkUrlStatus.OK_CHK_ONLY
+
+
+@shared_task
+def usage_dashboard_sync() -> None:
+    """
+    A task intended to be periodically initiated by the scheduler service to sync
+    Datalad-Registry with the datalad-usage-dashboard,
+    https://github.com/datalad/datalad-usage-dashboard.
+
+    Note: Syncing in this context means ensuring all the active datasets in
+          datalad-usage-dashboard are registered in Datalad-Registry.
+    """
+    pass

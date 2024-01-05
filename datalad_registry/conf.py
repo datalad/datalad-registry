@@ -30,6 +30,11 @@ class BaseConfig(OperationConfig):
     DATALAD_REGISTRY_MAX_URL_CHKS_ISSUED_PER_DISPATCH_CYCLE: NonNegativeInt = 10
     DATALAD_REGISTRY_DISPATCH_CYCLE_LENGTH: PositiveFloat = 60.0  # seconds
 
+    # Configurations related to syncing with the usage dashboard
+    DATALAD_REGISTRY_USAGE_DASHBOARD_SYNC_CYCLE_LENGTH: PositiveFloat = (
+        60.0 * 60 * 24
+    )  # A day in seconds
+
     # Metadata extractors to use
     DATALAD_REGISTRY_METADATA_EXTRACTORS: list[str] = [
         "metalad_core",
@@ -56,7 +61,14 @@ class BaseConfig(OperationConfig):
                     "task": "datalad_registry.tasks.url_chk_dispatcher",
                     "schedule": self.DATALAD_REGISTRY_DISPATCH_CYCLE_LENGTH,
                     "options": {"expires": self.DATALAD_REGISTRY_DISPATCH_CYCLE_LENGTH},
-                }
+                },
+                "usage-dashboard-sync": {
+                    "task": "datalad_registry.tasks.usage_dashboard_sync",
+                    "schedule": self.DATALAD_REGISTRY_USAGE_DASHBOARD_SYNC_CYCLE_LENGTH,
+                    "options": {
+                        "expires": self.DATALAD_REGISTRY_USAGE_DASHBOARD_SYNC_CYCLE_LENGTH
+                    },
+                },
             },
             task_ignore_result=True,
             worker_max_tasks_per_child=1000,
