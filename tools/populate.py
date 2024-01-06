@@ -4,28 +4,18 @@
 # Note: Currently, this script can only populate the datalad-registry instance with
 #       active datasets on GitHub listed in datalad-usage-dashboard.
 
-from enum import auto
 from typing import Optional
 
 import click
 from pydantic import BaseModel, HttpUrl, StrictBool, StrictInt, StrictStr
 import requests
 
-from datalad_registry.utils import StrEnum
+from datalad_registry.tasks.utils.usage_dashboard import Status
 from datalad_registry_client.submit_urls import RegistrySubmitURLs
 
 DASHBOARD_COLLECTION_URL = (
     "https://github.com/datalad/datalad-usage-dashboard/raw/master/datalad-repos.json"
 )
-
-
-class Status(StrEnum):
-    """
-    Enum for representing the status of repo
-    """
-
-    active = auto()
-    gone = auto()
 
 
 class Repo(BaseModel):
