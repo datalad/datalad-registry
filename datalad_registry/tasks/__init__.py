@@ -640,7 +640,7 @@ def usage_dashboard_sync() -> None:
     Datalad-Registry with the datalad-usage-dashboard,
     https://github.com/datalad/datalad-usage-dashboard.
 
-    Note: Syncing in this context means ensuring all the active datasets in
+    Note: Syncing in this context means ensuring all the active repositories listed in
           datalad-usage-dashboard are registered in Datalad-Registry.
     """
     pass
