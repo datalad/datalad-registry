@@ -645,4 +645,16 @@ def usage_dashboard_sync() -> None:
     Note: Currently, this script excludes the OSF repositories listed in the
           datalad-usage-dashboard.
     """
+    # Fetch repositories from datalad-usage-dashboard
+    # Filter out non-active repositories
+
+    # Fetch repositories from database
+
+    # Calculate the set of active repositories that exist in the usage dashboard
+    # but not in the database
+
+    # Submit (register) this set of repositories to Datalad-Registry through the web API
+
+    # Return the result of the submissions
+
     pass
