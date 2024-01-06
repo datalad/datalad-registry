@@ -642,5 +642,7 @@ def usage_dashboard_sync() -> None:
 
     Note: Syncing in this context means ensuring all the active repositories listed in
           datalad-usage-dashboard are registered in Datalad-Registry.
+    Note: Currently, this script excludes the OSF repositories listed in the
+          datalad-usage-dashboard.
     """
     pass
