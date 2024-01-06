@@ -633,6 +633,13 @@ def chk_url_to_update(
     return ChkUrlStatus.OK_UPDATED if is_record_updated else ChkUrlStatus.OK_CHK_ONLY
 
 
+# URL of the JSON representation of all the repositories in the datalad-usage-dashboard
+DASHBOARD_COLLECTION_URL = (
+    "https://raw.githubusercontent.com/datalad/"
+    "datalad-usage-dashboard/master/datalad-repos.json"
+)
+
+
 @shared_task
 def usage_dashboard_sync() -> None:
     """
