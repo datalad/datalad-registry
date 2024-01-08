@@ -38,7 +38,12 @@ class TestCreateApp:
                 "task": "datalad_registry.tasks.url_chk_dispatcher",
                 "schedule": 60.0,
                 "options": {"expires": 60.0},
-            }
+            },
+            "usage-dashboard-sync": {
+                "task": "datalad_registry.tasks.usage_dashboard_sync",
+                "schedule": 60.0 * 60 * 24,
+                "options": {"expires": 60.0 * 60 * 24},
+            },
         }
 
         default_metadata_extractors = [

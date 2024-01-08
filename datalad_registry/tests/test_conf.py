@@ -69,12 +69,20 @@ class TestBaseConfig:
             )
 
     @pytest.mark.parametrize(
-        "dispatch_cycle_length, broker_url, result_backend, expected_broker_url ",
+        "dispatch_cycle_length, usage_dashboard_sync_cycle_length, "
+        "broker_url, result_backend, expected_broker_url ",
         [
-            (None, "redis://localhost", "redis://127.0.0.1", "redis://localhost"),
-            ("10", "redis://broker", "redis://new", "redis://broker"),
+            (
+                None,
+                "400",
+                "redis://localhost",
+                "redis://127.0.0.1",
+                "redis://localhost",
+            ),
+            ("10", None, "redis://broker", "redis://new", "redis://broker"),
             (
                 "400.0",
+                "3600.0",
                 '["redis://localhost", "redis://broker"]',
                 "redis://127.0.0.1",
                 ["redis://localhost", "redis://broker"],
@@ -84,6 +92,7 @@ class TestBaseConfig:
     def test_celery(
         self,
         dispatch_cycle_length,
+        usage_dashboard_sync_cycle_length,
         broker_url,
         result_backend,
         expected_broker_url,
@@ -92,17 +101,32 @@ class TestBaseConfig:
         expected_dispatch_cycle_length = (
             float(dispatch_cycle_length) if dispatch_cycle_length is not None else 60.0
         )
+        expected_usage_dashboard_sync_cycle_length = (
+            float(usage_dashboard_sync_cycle_length)
+            if usage_dashboard_sync_cycle_length is not None
+            else 60.0 * 60 * 24
+        )
         expected_beat_schedule = {
             "url-check-dispatcher": {
                 "task": "datalad_registry.tasks.url_chk_dispatcher",
                 "schedule": expected_dispatch_cycle_length,
                 "options": {"expires": expected_dispatch_cycle_length},
-            }
+            },
+            "usage-dashboard-sync": {
+                "task": "datalad_registry.tasks.usage_dashboard_sync",
+                "schedule": expected_usage_dashboard_sync_cycle_length,
+                "options": {"expires": expected_usage_dashboard_sync_cycle_length},
+            },
         }
 
         if dispatch_cycle_length is not None:
             monkeypatch.setenv(
                 "DATALAD_REGISTRY_DISPATCH_CYCLE_LENGTH", dispatch_cycle_length
+            )
+        if usage_dashboard_sync_cycle_length is not None:
+            monkeypatch.setenv(
+                "DATALAD_REGISTRY_USAGE_DASHBOARD_SYNC_CYCLE_LENGTH",
+                usage_dashboard_sync_cycle_length,
             )
         monkeypatch.setenv("CELERY_BROKER_URL", broker_url)
         monkeypatch.setenv("CELERY_RESULT_BACKEND", result_backend)
