@@ -9,12 +9,12 @@ from typing import Optional
 import click
 import requests
 
-from datalad_registry.tasks.utils.usage_dashboard import DashboardCollection, Status
-from datalad_registry_client.submit_urls import RegistrySubmitURLs
-
-DASHBOARD_COLLECTION_URL = (
-    "https://github.com/datalad/datalad-usage-dashboard/raw/master/datalad-repos.json"
+from datalad_registry.tasks.utils.usage_dashboard import (
+    DASHBOARD_COLLECTION_URL,
+    DashboardCollection,
+    Status,
 )
+from datalad_registry_client.submit_urls import RegistrySubmitURLs
 
 
 @click.command()
