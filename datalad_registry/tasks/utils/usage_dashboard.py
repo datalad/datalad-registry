@@ -2,6 +2,8 @@
 # by the datalad-usage-dashboard, https://github.com/datalad/datalad-usage-dashboard.
 from enum import auto
 
+from pydantic import BaseModel
+
 from datalad_registry.utils import StrEnum
 
 # URL of the JSON representation of all the repositories in the datalad-usage-dashboard
@@ -18,3 +20,39 @@ class Status(StrEnum):
 
     active = auto()
     gone = auto()
+
+
+class Repo(BaseModel):
+    """
+    Pydantic model for representing a git repo represented
+    in the datalad-usage-dashboard
+    """
+
+    pass
+
+
+class GHRepo(Repo):
+    """
+    Pydantic model for representing a git repo residing on GitHub represented
+    in the datalad-usage-dashboard
+    """
+
+    pass
+
+
+class OSFRepo(Repo):
+    """
+    Pydantic model for representing a git repo residing on OSF represented
+    in the datalad-usage-dashboard
+    """
+
+    pass
+
+
+class GinRepo(Repo):
+    """
+    Pydantic model for representing a git repo residing on GIN represented
+    in the datalad-usage-dashboard
+    """
+
+    pass
