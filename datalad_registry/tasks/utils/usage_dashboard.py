@@ -1,8 +1,9 @@
 # This file contains definitions for accessing information made available
 # by the datalad-usage-dashboard, https://github.com/datalad/datalad-usage-dashboard.
 from enum import auto
+from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl, StrictInt, StrictStr
 
 from datalad_registry.utils import StrEnum
 
@@ -28,7 +29,9 @@ class Repo(BaseModel):
     in the datalad-usage-dashboard
     """
 
-    pass
+    name: StrictStr
+    url: HttpUrl
+    status: Status
 
 
 class GHRepo(Repo):
@@ -37,7 +40,11 @@ class GHRepo(Repo):
     in the datalad-usage-dashboard
     """
 
-    pass
+    id: Optional[StrictInt]
+    stars: StrictInt
+    dataset: bool
+    run: bool
+    container_run: bool
 
 
 class OSFRepo(Repo):
@@ -46,7 +53,7 @@ class OSFRepo(Repo):
     in the datalad-usage-dashboard
     """
 
-    pass
+    id: StrictStr
 
 
 class GinRepo(Repo):
@@ -55,7 +62,8 @@ class GinRepo(Repo):
     in the datalad-usage-dashboard
     """
 
-    pass
+    id: StrictInt
+    stars: StrictInt
 
 
 class DashboardCollection(BaseModel):
