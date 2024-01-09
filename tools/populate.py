@@ -7,57 +7,14 @@
 from typing import Optional
 
 import click
-from pydantic import BaseModel, HttpUrl, StrictBool, StrictInt, StrictStr
 import requests
 
-from datalad_registry.tasks.utils.usage_dashboard import Status
+from datalad_registry.tasks.utils.usage_dashboard import DashboardCollection, Status
 from datalad_registry_client.submit_urls import RegistrySubmitURLs
 
 DASHBOARD_COLLECTION_URL = (
     "https://github.com/datalad/datalad-usage-dashboard/raw/master/datalad-repos.json"
 )
-
-
-class Repo(BaseModel):
-    """
-    Pydantic model for representing a git repo found in datalad-usage-dashboard
-    """
-
-    name: StrictStr
-    url: HttpUrl
-    status: Status
-
-
-class GitHubRepo(Repo):
-    """
-    Pydantic model for representing GitHub repository information found in
-    datalad-usage-dashboard
-    """
-
-    id: Optional[StrictInt]
-    stars: StrictInt
-    dataset: StrictBool
-    run: StrictBool
-    container_run: StrictBool
-
-
-class OSFRepo(Repo):
-    """
-    Pydantic model for representing OSF repository information found in
-    datalad-usage-dashboard
-    """
-
-    id: StrictStr
-
-
-class DashboardCollection(BaseModel):
-    """
-    Pydantic model for representing a collection of git repos found in
-    datalad-usage-dashboard
-    """
-
-    github: list[GitHubRepo]
-    osf: list[OSFRepo]
 
 
 @click.command()
