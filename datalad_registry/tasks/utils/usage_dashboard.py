@@ -56,3 +56,14 @@ class GinRepo(Repo):
     """
 
     pass
+
+
+class DashboardCollection(BaseModel):
+    """
+    Pydantic model for representing the collection of git repos represented
+    in the datalad-usage-dashboard
+    """
+
+    github: list[GHRepo]
+    osf: list[OSFRepo]
+    gin: list[GinRepo]
