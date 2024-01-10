@@ -1,5 +1,6 @@
 # This file contains definitions for accessing information made available
 # by the datalad-usage-dashboard, https://github.com/datalad/datalad-usage-dashboard.
+import abc
 from enum import auto
 from typing import Optional
 
@@ -23,7 +24,7 @@ class Status(StrEnum):
     gone = auto()
 
 
-class Repo(BaseModel):
+class Repo(BaseModel, abc.ABC):
     """
     Pydantic model for representing a git repo represented
     in the datalad-usage-dashboard
@@ -32,6 +33,14 @@ class Repo(BaseModel):
     name: StrictStr
     url: HttpUrl
     status: Status
+
+    @property
+    @abc.abstractmethod
+    def clone_url(self) -> str:
+        """
+        The URL used for cloning the repo
+        """
+        pass
 
 
 class GHRepo(Repo):
@@ -46,6 +55,10 @@ class GHRepo(Repo):
     run: bool
     container_run: bool
 
+    @property
+    def clone_url(self) -> str:
+        return str(self.url) + ".git"
+
 
 class OSFRepo(Repo):
     """
@@ -54,6 +67,10 @@ class OSFRepo(Repo):
     """
 
     id: StrictStr
+
+    @property
+    def clone_url(self) -> str:
+        raise NotImplementedError
 
 
 class GinRepo(Repo):
@@ -64,6 +81,10 @@ class GinRepo(Repo):
 
     id: StrictInt
     stars: StrictInt
+
+    @property
+    def clone_url(self) -> str:
+        return str(self.url)
 
 
 class DashboardCollection(BaseModel):
