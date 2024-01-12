@@ -32,6 +32,7 @@ class TestBaseConfig:
         # noinspection PyTypeChecker
         config = BaseConfig(
             DATALAD_REGISTRY_OPERATION_MODE=OperationMode.PRODUCTION,
+            DATALAD_REGISTRY_WEB_API_URL="http://web/api",
             CELERY_BROKER_URL="redis://localhost",
             CELERY_RESULT_BACKEND="redis://localhost",
             SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
@@ -136,6 +137,7 @@ class TestBaseConfig:
             DATALAD_REGISTRY_OPERATION_MODE=OperationMode.PRODUCTION,
             DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
             DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
+            DATALAD_REGISTRY_WEB_API_URL="http://web/api",
             SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
         ).CELERY == dict(
             broker_url=expected_broker_url,
@@ -165,6 +167,7 @@ class TestUpperLevelConfigs:
             DATALAD_REGISTRY_OPERATION_MODE=OperationMode(operation_mode),
             DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
             DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
+            DATALAD_REGISTRY_WEB_API_URL="http://web/api",
             CELERY_BROKER_URL="redis://localhost",
             CELERY_RESULT_BACKEND="redis://localhost",
             SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
@@ -177,6 +180,7 @@ class TestUpperLevelConfigs:
             config = config_cls(
                 DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
                 DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
+                DATALAD_REGISTRY_WEB_API_URL="http://web/api",
                 CELERY_BROKER_URL="redis://localhost",
                 CELERY_RESULT_BACKEND="redis://localhost",
                 SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
@@ -201,6 +205,7 @@ class TestUpperLevelConfigs:
                 DATALAD_REGISTRY_OPERATION_MODE=OperationMode(operation_mode),
                 DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
                 DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
+                DATALAD_REGISTRY_WEB_API_URL="http://web/api",
                 CELERY_BROKER_URL="redis://localhost",
                 CELERY_RESULT_BACKEND="redis://localhost",
                 SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
@@ -215,6 +220,7 @@ class TestUpperLevelConfigs:
                 config_cls(
                     DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
                     DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
+                    DATALAD_REGISTRY_WEB_API_URL="http://web/api",
                     CELERY_BROKER_URL="redis://localhost",
                     CELERY_RESULT_BACKEND="redis://localhost",
                     SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
@@ -227,6 +233,7 @@ class TestCompileConfigFromEnv:
             "op_mode",
             "instance_path",
             "cache_path",
+            "web_api_url",
             "broker_url",
             "result_backend",
             "sa_db_uri",
@@ -237,6 +244,7 @@ class TestCompileConfigFromEnv:
                 "PRODUCTION",
                 "/a/b",
                 "/c/d",
+                "http://web:5000/api/v2",
                 "redis://localhost",
                 "redis://localhost",
                 "postgresql+psycopg2://user:pd@db:5432/dbn",
@@ -246,6 +254,7 @@ class TestCompileConfigFromEnv:
                 "DEVELOPMENT",
                 "/a",
                 "/",
+                "http://web/api/v2",
                 "redis://localhost",
                 "redis://localhost",
                 "postgresql+psycopg2://usr:passd@db:5432/dbn",
@@ -255,6 +264,7 @@ class TestCompileConfigFromEnv:
                 "TESTING",
                 "/a/b/c",
                 "/c/d/",
+                "http://web",
                 "redis://localhost",
                 "redis://localhost",
                 "postgresql+psycopg2://usr:pd@db:5432/db_name",
@@ -264,6 +274,7 @@ class TestCompileConfigFromEnv:
                 "READ_ONLY",
                 "/ab",
                 "/cd",
+                "https://web:5000/api/v2",
                 "redis://localhost",
                 "redis://localhost",
                 "postgresql+psycopg2://usr:pd@db:1111/dbn",
@@ -276,6 +287,7 @@ class TestCompileConfigFromEnv:
         op_mode,
         instance_path,
         cache_path,
+        web_api_url,
         broker_url,
         result_backend,
         sa_db_uri,
@@ -290,6 +302,7 @@ class TestCompileConfigFromEnv:
         monkeypatch.setenv("DATALAD_REGISTRY_OPERATION_MODE", op_mode)
         monkeypatch.setenv("DATALAD_REGISTRY_INSTANCE_PATH", instance_path)
         monkeypatch.setenv("DATALAD_REGISTRY_DATASET_CACHE", cache_path)
+        monkeypatch.setenv("DATALAD_REGISTRY_WEB_API_URL", web_api_url)
         monkeypatch.setenv("CELERY_BROKER_URL", broker_url)
         monkeypatch.setenv("CELERY_RESULT_BACKEND", result_backend)
         monkeypatch.setenv("SQLALCHEMY_DATABASE_URI", sa_db_uri)
@@ -299,6 +312,7 @@ class TestCompileConfigFromEnv:
         assert config.DATALAD_REGISTRY_OPERATION_MODE is OperationMode(op_mode)
         assert config.DATALAD_REGISTRY_INSTANCE_PATH == Path(instance_path)
         assert config.DATALAD_REGISTRY_DATASET_CACHE == Path(cache_path)
+        assert str(config.DATALAD_REGISTRY_WEB_API_URL) == web_api_url
         assert config.CELERY_BROKER_URL == broker_url
         assert config.CELERY_RESULT_BACKEND == result_backend
         assert config.SQLALCHEMY_DATABASE_URI == sa_db_uri
