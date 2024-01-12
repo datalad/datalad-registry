@@ -134,12 +134,10 @@ class ReadOnlyConfig(BaseConfig):
     DATALAD_REGISTRY_OPERATION_MODE: Literal[OperationMode.READ_ONLY]
 
     # The Celery service is not available in read-only mode.
-    # The following are just dummy values to serve as defaults to satisfy
-    # the configuration requirements and make the corresponding fields optional.
+    # The following overrides unneeded fields from `BaseConfig` with default values
+    # to make them optional.
     DATALAD_REGISTRY_DATASET_CACHE: Path = Path("/dummy/path")
-
     DATALAD_REGISTRY_WEB_API_URL: AnyHttpUrl = "http://dummy.url"
-
     CELERY_BROKER_URL: str = "dummy://"
     CELERY_RESULT_BACKEND: str = "dummy://"
 
