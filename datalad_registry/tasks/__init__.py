@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta, timezone
 from enum import auto
+from itertools import chain
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TypedDict
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
@@ -13,6 +14,7 @@ from datalad.support.exceptions import IncompleteResultsError
 from datalad.utils import rmtree as rm_ds_tree
 from flask import current_app
 from pydantic import StrictInt, StrictStr, parse_obj_as, validate_arguments
+import requests
 from sqlalchemy import and_, case, not_, or_, select
 
 from datalad_registry.com_models import MetaExtractResult
@@ -30,6 +32,7 @@ from datalad_registry.utils.datalad_tls import (
 from .utils import allocate_ds_path, update_ds_clone, validate_url_is_processed
 from .utils.builtin_meta_extractors import EXTRACTOR_MAP as BUILTIN_EXTRACTOR_MAP
 from .utils.builtin_meta_extractors import InvalidRequiredFileError, dlreg_meta_extract
+from .utils.usage_dashboard import DASHBOARD_COLLECTION_URL, DashboardCollection, Status
 
 lgr = get_task_logger(__name__)
 
@@ -633,8 +636,30 @@ def chk_url_to_update(
     return ChkUrlStatus.OK_UPDATED if is_record_updated else ChkUrlStatus.OK_CHK_ONLY
 
 
+class FailedSubmission(TypedDict):
+    """
+    A TypedDict a failed submission of a repo URL to Datalad-Registry
+    """
+
+    status_code: int
+    url: str
+
+
+class UsageDashboardSyncResult(TypedDict):
+    """
+    A TypedDict representing the result of the task `usage_dashboard_sync`
+    """
+
+    failed_submissions_count: int
+    update_requested_repos_count: int
+    newly_registered_repos_count: int
+    failed_submissions: list[FailedSubmission]
+    update_requested_repos: list[str]
+    newly_registered_repos: list[str]
+
+
 @shared_task
-def usage_dashboard_sync() -> None:
+def usage_dashboard_sync() -> UsageDashboardSyncResult:
     """
     A task intended to be periodically initiated by the scheduler service to sync
     Datalad-Registry with the datalad-usage-dashboard,
@@ -646,15 +671,60 @@ def usage_dashboard_sync() -> None:
           datalad-usage-dashboard.
     """
     # Fetch repositories from datalad-usage-dashboard
-    # Filter out non-active repositories
+    resp = requests.get(DASHBOARD_COLLECTION_URL)
+    resp.raise_for_status()
+    dashboard_collection = DashboardCollection.parse_raw(resp.text)
 
-    # Fetch repositories from database
+    # Get the set of active repositories from the usage dashboard identified by their
+    # URL for cloning in `str` form
+    # Note: Currently, this script excludes the OSF repositories listed in the
+    #       datalad-usage-dashboard. (as specified in the doc string of this task)
+    active_repos: set[str] = set(
+        item.clone_url
+        for item in chain.from_iterable(
+            collection
+            for service, collection in dashboard_collection
+            if service != "osf"
+        )
+        if item.status is Status.active
+    )
+
+    # Fetch repositories from database, the registered repositories
+    registered_repos = set(db.session.execute(select(RepoUrl.url)).scalars().all())
 
     # Calculate the set of active repositories that exist in the usage dashboard
-    # but not in the database
+    # but not in the database, not registered
+    active_repos_to_register = active_repos - registered_repos
 
     # Submit (register) this set of repositories to Datalad-Registry through the web API
+    with requests.Session() as session:
+        newly_registered_repos: list[str] = []
+        update_requested_repos: list[str] = []
+        failed_submissions: list[FailedSubmission] = []
+
+        for repo in active_repos_to_register:
+            resp = session.post(
+                "http://web:5000/api/v2" + "/dataset-urls",  # todo: Replace hard-coded
+                json={"url": repo},
+            )
+
+            resp_status_code = resp.status_code
+
+            if resp_status_code == 201:
+                newly_registered_repos.append(repo)
+            elif resp_status_code == 202:
+                update_requested_repos.append(repo)
+            else:
+                failed_submissions.append(
+                    FailedSubmission(status_code=resp_status_code, url=repo)
+                )
 
     # Return the result of the submissions
-
-    pass
+    return UsageDashboardSyncResult(
+        failed_submissions_count=len(failed_submissions),
+        update_requested_repos_count=len(update_requested_repos),
+        newly_registered_repos_count=len(newly_registered_repos),
+        failed_submissions=failed_submissions,
+        update_requested_repos=update_requested_repos,
+        newly_registered_repos=newly_registered_repos,
+    )
