@@ -20,6 +20,9 @@ services:
       DATALAD_REGISTRY_INSTANCE_PATH: /app/instance
       DATALAD_REGISTRY_DATASET_CACHE: /data/cache
 
+      # URL for any service to reach the web service API
+      DATALAD_REGISTRY_WEB_API_URL: "http://web:5000/api/v2"
+
       CELERY_BROKER_URL: "${CELERY_BROKER_URL}"
       CELERY_RESULT_BACKEND: "redis://backend:6379"
 

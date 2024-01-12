@@ -2,7 +2,14 @@ from enum import auto
 from pathlib import Path
 from typing import Any, Literal, Union
 
-from pydantic import BaseSettings, NonNegativeInt, PositiveFloat, PostgresDsn, validator
+from pydantic import (
+    AnyHttpUrl,
+    BaseSettings,
+    NonNegativeInt,
+    PositiveFloat,
+    PostgresDsn,
+    validator,
+)
 
 from datalad_registry.utils.misc import StrEnum
 
@@ -23,6 +30,9 @@ class OperationConfig(BaseSettings):
 class BaseConfig(OperationConfig):
     DATALAD_REGISTRY_INSTANCE_PATH: Path
     DATALAD_REGISTRY_DATASET_CACHE: Path
+
+    # URL for any service to reach the web service API of the DataLad-Registry instance
+    DATALAD_REGISTRY_WEB_API_URL: AnyHttpUrl
 
     # URL check dispatcher related configuration
     DATALAD_REGISTRY_MIN_CHK_INTERVAL_PER_URL: NonNegativeInt = 3600  # seconds
@@ -122,6 +132,8 @@ class ReadOnlyConfig(BaseConfig):
     # The following are just dummy values to serve as defaults to satisfy
     # the configuration requirements and make the corresponding fields optional.
     DATALAD_REGISTRY_DATASET_CACHE: Path = Path("/dummy/path")
+
+    DATALAD_REGISTRY_WEB_API_URL: AnyHttpUrl = "http://dummy.url"
 
     CELERY_BROKER_URL: str = "dummy://"
     CELERY_RESULT_BACKEND: str = "dummy://"
