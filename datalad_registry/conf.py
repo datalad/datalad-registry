@@ -115,6 +115,11 @@ class TestingConfig(BaseConfig):
     # Restrict to operation mode appropriate for this type of configuration
     DATALAD_REGISTRY_OPERATION_MODE: Literal[OperationMode.TESTING]
 
+    # Web service is not available in testing mode.
+    # The following overrides unneeded fields from `BaseConfig` with default values
+    # to make them optional.
+    DATALAD_REGISTRY_WEB_API_URL: AnyHttpUrl = "http://dummy.url"
+
     TESTING: bool = True
 
 
