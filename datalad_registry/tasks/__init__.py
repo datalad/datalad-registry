@@ -16,7 +16,9 @@ from flask import current_app
 from pydantic import StrictInt, StrictStr, parse_obj_as, validate_arguments
 import requests
 from sqlalchemy import and_, case, not_, or_, select
+from yarl import URL
 
+from datalad_registry.blueprints.api.dataset_urls import DATASET_URLS_PATH
 from datalad_registry.com_models import MetaExtractResult
 from datalad_registry.models import RepoUrl, URLMetadata, db
 from datalad_registry.utils import StrEnum
@@ -702,9 +704,13 @@ def usage_dashboard_sync() -> UsageDashboardSyncResult:
         update_requested_repos: list[str] = []
         failed_submissions: list[FailedSubmission] = []
 
+        submission_endpoint = str(
+            URL(str(current_app.config["DATALAD_REGISTRY_WEB_API_URL"]))
+            / DATASET_URLS_PATH
+        )
         for repo in active_repos_to_register:
             resp = session.post(
-                "http://web:5000/api/v2" + "/dataset-urls",  # todo: Replace hard-coded
+                submission_endpoint,
                 json={"url": repo},
             )
 
