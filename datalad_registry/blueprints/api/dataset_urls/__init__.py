@@ -44,10 +44,15 @@ _ORDER_KEY_TO_SQLA_ATTR = {
     OrderKey.git_objects_kb: RepoUrl.git_objects_kb,
 }
 
+# The path of the dataset URLs resource on the DataLad Registry instance relative to
+# the base API endpoint of the instance.
+DATASET_URLS_PATH = "dataset-urls"
+
+
 bp = APIBlueprint(
     "dataset_urls_api",
     __name__,
-    url_prefix=f"{API_URL_PREFIX}/dataset-urls",
+    url_prefix=f"{API_URL_PREFIX}/{DATASET_URLS_PATH}",
     abp_tags=[Tag(name="Dataset URLs", description="API endpoints for dataset URLs")],
     abp_responses=COMMON_API_RESPONSES,
 )
