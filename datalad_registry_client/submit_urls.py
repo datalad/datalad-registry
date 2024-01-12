@@ -9,7 +9,7 @@ from datalad.support.param import Parameter
 import requests
 from yarl import URL
 
-from datalad_registry.blueprints.api.dataset_urls import DATASET_URLS_PATH
+from datalad_registry.blueprints.api import DATASET_URLS_PATH
 
 from . import DEFAULT_BASE_ENDPOINT
 

@@ -2,6 +2,10 @@ from pydantic import BaseModel, Field
 
 API_URL_PREFIX = "/api/v2"
 
+# The path of the dataset URL resources on the DataLad Registry instance relative to
+# the base API endpoint of the instance.
+DATASET_URLS_PATH = "dataset-urls"
+
 
 class HTTPExceptionResp(BaseModel):
     """

@@ -18,7 +18,6 @@ import requests
 from sqlalchemy import and_, case, not_, or_, select
 from yarl import URL
 
-from datalad_registry.blueprints.api.dataset_urls import DATASET_URLS_PATH
 from datalad_registry.com_models import MetaExtractResult
 from datalad_registry.models import RepoUrl, URLMetadata, db
 from datalad_registry.utils import StrEnum
@@ -35,6 +34,7 @@ from .utils import allocate_ds_path, update_ds_clone, validate_url_is_processed
 from .utils.builtin_meta_extractors import EXTRACTOR_MAP as BUILTIN_EXTRACTOR_MAP
 from .utils.builtin_meta_extractors import InvalidRequiredFileError, dlreg_meta_extract
 from .utils.usage_dashboard import DASHBOARD_COLLECTION_URL, DashboardCollection, Status
+from ..blueprints.api import DATASET_URLS_PATH
 
 lgr = get_task_logger(__name__)
 
