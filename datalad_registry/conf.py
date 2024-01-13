@@ -146,7 +146,7 @@ class ReadOnlyConfig(BaseConfig):
         return {}
 
 
-operation_mode_to_config_cls = {
+OPERATION_MODE_TO_CONFIG_CLS = {
     OperationMode.PRODUCTION: ProductionConfig,
     OperationMode.DEVELOPMENT: DevelopmentConfig,
     OperationMode.TESTING: TestingConfig,
@@ -161,7 +161,7 @@ def compile_config_from_env() -> BaseConfig:
     """
     operation_mode = OperationConfig().DATALAD_REGISTRY_OPERATION_MODE
 
-    config_cls = operation_mode_to_config_cls.get(operation_mode)
+    config_cls = OPERATION_MODE_TO_CONFIG_CLS.get(operation_mode)
 
     if config_cls is not None:
         return config_cls()
