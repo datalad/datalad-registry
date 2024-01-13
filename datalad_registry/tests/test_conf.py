@@ -302,7 +302,7 @@ class TestCompileConfigFromEnv:
         from datalad_registry import conf
 
         monkeypatch.setattr(
-            conf, "operation_mode_to_config_cls", MockOperationModeToConfigCls()
+            conf, "OPERATION_MODE_TO_CONFIG_CLS", MockOperationModeToConfigCls()
         )
 
         with pytest.raises(ValueError, match="Unexpected operation mode"):
