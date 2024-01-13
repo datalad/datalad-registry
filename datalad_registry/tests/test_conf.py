@@ -286,13 +286,6 @@ class TestCompileConfigFromEnv:
         that is not valid, one that is not mapped to a config class.
         """
         monkeypatch.setenv("DATALAD_REGISTRY_OPERATION_MODE", "DEVELOPMENT")
-        monkeypatch.setenv("DATALAD_REGISTRY_INSTANCE_PATH", "/a/b")
-        monkeypatch.setenv("DATALAD_REGISTRY_DATASET_CACHE", "/c/d")
-        monkeypatch.setenv("CELERY_BROKER_URL", "redis://localhost")
-        monkeypatch.setenv("CELERY_RESULT_BACKEND", "redis://localhost")
-        monkeypatch.setenv(
-            "SQLALCHEMY_DATABASE_URI", "postgresql+psycopg2://usr:pd@db:5432/dbn"
-        )
 
         class MockOperationModeToConfigCls:
             # noinspection PyMethodMayBeStatic
