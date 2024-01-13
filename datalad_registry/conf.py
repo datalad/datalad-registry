@@ -118,7 +118,9 @@ class TestingConfig(BaseConfig):
     # Web service is not available in testing mode.
     # The following overrides unneeded fields from `BaseConfig` with default values
     # to make them optional.
-    DATALAD_REGISTRY_WEB_API_URL: AnyHttpUrl = "http://dummy.url"
+    DATALAD_REGISTRY_WEB_API_URL: AnyHttpUrl = AnyHttpUrl(
+        url="http://dummy.url", scheme="http"
+    )
 
     TESTING: bool = True
 
@@ -137,7 +139,9 @@ class ReadOnlyConfig(BaseConfig):
     # The following overrides unneeded fields from `BaseConfig` with default values
     # to make them optional.
     DATALAD_REGISTRY_DATASET_CACHE: Path = Path("/dummy/path")
-    DATALAD_REGISTRY_WEB_API_URL: AnyHttpUrl = "http://dummy.url"
+    DATALAD_REGISTRY_WEB_API_URL: AnyHttpUrl = AnyHttpUrl(
+        url="http://dummy.url", scheme="http"
+    )
     CELERY_BROKER_URL: str = "dummy://"
     CELERY_RESULT_BACKEND: str = "dummy://"
 
