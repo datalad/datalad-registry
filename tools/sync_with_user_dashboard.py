@@ -2,6 +2,9 @@
 # on demand. Thus, can be used to ensure that the active repositories listed in
 # datalad-usage-dashboard is are registered in datalad-registry on demand.
 
+# Note: This script must be invoked in an environment where the Datalad-Registry
+#       Flask app or Celery app can be initialized.
+
 
 from datalad_registry import create_app
 from datalad_registry.tasks import usage_dashboard_sync
