@@ -62,7 +62,7 @@ import pytest
                             "name": "AIDAqc_datasets/117_m_RT_Vr",
                             "url": "https://gin.g-node.org/AIDAqc_datasets/117_m_RT_Vr",
                             "stars": 0,
-                            "status": "gone"
+                            "status": "active"
                         },
                         {
                             "id": 10158,
@@ -81,7 +81,6 @@ import pytest
             },
             {
                 "https://github.com/1104HARI/fail2ban.git",
-                "https://github.com/314eter/recoll.git",
                 "https://gin.g-node.org/AIDAqc_datasets/117_m_RT_Vr",
             },
         ),
