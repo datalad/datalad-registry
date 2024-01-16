@@ -91,6 +91,7 @@ def test_usage_dashboard_sync(
     dashboard_collection: str,
     registered_repos: set[str],
     expected_submitted_repos: set[str],
+    flask_app,
 ):
     """
     Test running the Celery task `usage_dashboard_sync`
