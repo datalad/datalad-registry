@@ -640,7 +640,7 @@ def chk_url_to_update(
 
 class FailedSubmission(TypedDict):
     """
-    A TypedDict a failed submission of a repo URL to Datalad-Registry
+    A failed submission of a repo URL to Datalad-Registry
     """
 
     status_code: int
