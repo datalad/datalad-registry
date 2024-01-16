@@ -89,6 +89,95 @@ from datalad_registry.tasks.utils.usage_dashboard import DASHBOARD_COLLECTION_UR
                 "https://gin.g-node.org/AIDAqc_datasets/117_m_RT_Vr",
             },
         ),
+        (
+            """
+                    {
+                        "github": [],
+                        "osf": [],
+                        "gin": []
+                    }""",
+            {
+                "https://github.com/1104HARI/s3cmd.git",
+                "https://gin.g-node.org/AIDAqc_datasets/7_m_RT_Bo",
+                "http://db/example.git",
+            },
+            set(),
+        ),
+        (
+            """
+                {
+                    "github": [
+                        {
+                            "id": 728117155,
+                            "name": "1104HARI/fail2ban",
+                            "url": "https://github.com/1104HARI/fail2ban",
+                            "stars": 0,
+                            "dataset": false,
+                            "run": true,
+                            "container_run": false,
+                            "status": "active"
+                        },
+                        {
+                            "id": 728117263,
+                            "name": "1104HARI/s3cmd",
+                            "url": "https://github.com/1104HARI/s3cmd",
+                            "stars": 0,
+                            "dataset": false,
+                            "run": true,
+                            "container_run": false,
+                            "status": "active"
+                        },
+                        {
+                            "id": 271283042,
+                            "name": "314eter/recoll",
+                            "url": "https://github.com/314eter/recoll",
+                            "stars": 30,
+                            "dataset": false,
+                            "run": true,
+                            "container_run": false,
+                            "status": "gone"
+                        }
+                    ],
+                    "osf": [
+                        {
+                            "url": "https://osf.io/4cdw3/",
+                            "id": "4cdw3",
+                            "name": "3am-complex-orientation-phantoms",
+                            "status": "active"
+                        },
+                        {
+                            "url": "https://osf.io/u5w4j/",
+                            "id": "u5w4j",
+                            "name": "AOMICPIOP2DemoDataset",
+                            "status": "active"
+                        }
+                    ],
+                    "gin": [
+                        {
+                            "id": 10064,
+                            "name": "AIDAqc_datasets/117_m_RT_Vr",
+                            "url": "https://gin.g-node.org/AIDAqc_datasets/117_m_RT_Vr",
+                            "stars": 0,
+                            "status": "active"
+                        },
+                        {
+                            "id": 10158,
+                            "name": "AIDAqc_datasets/7_m_RT_Bo",
+                            "url": "https://gin.g-node.org/AIDAqc_datasets/7_m_RT_Bo",
+                            "stars": 0,
+                            "status": "active"
+                        }
+                    ]
+                }
+                """,
+            set(),
+            {
+                "https://github.com/1104HARI/fail2ban.git",
+                "https://github.com/1104HARI/s3cmd.git",
+                "https://gin.g-node.org/AIDAqc_datasets/117_m_RT_Vr",
+                "https://gin.g-node.org/AIDAqc_datasets/7_m_RT_Bo",
+            },
+        ),
     ],
 )
 @pytest.mark.parametrize("post_resp_status_code", [201, 202, 400])
