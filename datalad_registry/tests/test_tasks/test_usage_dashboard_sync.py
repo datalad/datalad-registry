@@ -91,11 +91,13 @@ from datalad_registry.tasks.utils.usage_dashboard import DASHBOARD_COLLECTION_UR
         ),
     ],
 )
+@pytest.mark.parametrize("post_resp_status_code", [201, 202, 400])
 @responses.activate
 def test_usage_dashboard_sync(
     dashboard_collection: str,
     registered_repos: set[str],
     expected_submitted_repos: set[str],
+    post_resp_status_code,
     flask_app,
 ):
     """
@@ -122,14 +124,43 @@ def test_usage_dashboard_sync(
     # Mock the response from POSTing to the DataLad-Registry instance
     responses.post(
         flask_app.config["DATALAD_REGISTRY_WEB_API_URL"] + f"/{DATASET_URLS_PATH}",
-        status=201,
+        status=post_resp_status_code,
     )
 
     sync_result = usage_dashboard_sync()
 
-    assert sync_result["failed_submissions_count"] == 0
-    assert sync_result["update_requested_repos_count"] == 0
-    assert sync_result["newly_registered_repos_count"] == len(expected_submitted_repos)
-    assert sync_result["failed_submissions"] == []
-    assert sync_result["update_requested_repos"] == []
-    assert set(sync_result["newly_registered_repos"]) == expected_submitted_repos
+    if post_resp_status_code == 201:
+        assert sync_result["failed_submissions_count"] == 0
+        assert sync_result["update_requested_repos_count"] == 0
+        assert sync_result["newly_registered_repos_count"] == len(
+            expected_submitted_repos
+        )
+        assert sync_result["failed_submissions"] == []
+        assert sync_result["update_requested_repos"] == []
+        assert set(sync_result["newly_registered_repos"]) == expected_submitted_repos
+    elif post_resp_status_code == 202:
+        assert sync_result["failed_submissions_count"] == 0
+        assert sync_result["update_requested_repos_count"] == len(
+            expected_submitted_repos
+        )
+        assert sync_result["newly_registered_repos_count"] == 0
+        assert sync_result["failed_submissions"] == []
+        assert set(sync_result["update_requested_repos"]) == expected_submitted_repos
+        assert sync_result["newly_registered_repos"] == []
+    else:
+        assert sync_result["failed_submissions_count"] == len(expected_submitted_repos)
+        assert sync_result["update_requested_repos_count"] == 0
+        assert sync_result["newly_registered_repos_count"] == 0
+
+        failed_submissions = sync_result["failed_submissions"]
+        assert all(
+            submission["status_code"] == post_resp_status_code
+            for submission in failed_submissions
+        )
+        assert (
+            set(submission["url"] for submission in failed_submissions)
+            == expected_submitted_repos
+        )
+
+        assert sync_result["update_requested_repos"] == []
+        assert sync_result["newly_registered_repos"] == []
