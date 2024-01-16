@@ -1,9 +1,14 @@
+import json
+
 import pytest
+import responses
+
+from datalad_registry.blueprints.api import DATASET_URLS_PATH
+from datalad_registry.models import RepoUrl, db
+from datalad_registry.tasks import usage_dashboard_sync
+from datalad_registry.tasks.utils.usage_dashboard import DASHBOARD_COLLECTION_URL
 
 
-# Use fixture `flask_app` to ensure that the Celery app is initialized,
-# and the db and the cache are clean
-@pytest.mark.usefixtures("flask_app")
 @pytest.mark.parametrize(
     ("dashboard_collection", "registered_repos", "expected_submitted_repos"),
     [
@@ -86,6 +91,7 @@ import pytest
         ),
     ],
 )
+@responses.activate
 def test_usage_dashboard_sync(
     dashboard_collection: str,
     registered_repos: set[str],
@@ -105,4 +111,25 @@ def test_usage_dashboard_sync(
                                      DataLad-Registry instance for registration
 
     """
-    pass
+    # Mock the response from the datalad-usage-dashboard
+    responses.get(DASHBOARD_COLLECTION_URL, json=json.loads(dashboard_collection))
+
+    # Insert the registered repos to the database
+    with flask_app.app_context():
+        db.session.add_all(RepoUrl(url=url) for url in registered_repos)
+        db.session.commit()
+
+    # Mock the response from POSTing to the DataLad-Registry instance
+    responses.post(
+        flask_app.config["DATALAD_REGISTRY_WEB_API_URL"] + f"/{DATASET_URLS_PATH}",
+        status=201,
+    )
+
+    sync_result = usage_dashboard_sync()
+
+    assert sync_result["failed_submissions_count"] == 0
+    assert sync_result["update_requested_repos_count"] == 0
+    assert sync_result["newly_registered_repos_count"] == len(expected_submitted_repos)
+    assert sync_result["failed_submissions"] == []
+    assert sync_result["update_requested_repos"] == []
+    assert set(sync_result["newly_registered_repos"]) == expected_submitted_repos
