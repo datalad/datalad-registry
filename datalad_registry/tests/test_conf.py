@@ -32,6 +32,7 @@ class TestBaseConfig:
         # noinspection PyTypeChecker
         config = BaseConfig(
             DATALAD_REGISTRY_OPERATION_MODE=OperationMode.PRODUCTION,
+            DATALAD_REGISTRY_WEB_API_URL="http://web/api",
             CELERY_BROKER_URL="redis://localhost",
             CELERY_RESULT_BACKEND="redis://localhost",
             SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
@@ -69,12 +70,20 @@ class TestBaseConfig:
             )
 
     @pytest.mark.parametrize(
-        "dispatch_cycle_length, broker_url, result_backend, expected_broker_url ",
+        "dispatch_cycle_length, usage_dashboard_sync_cycle_length, "
+        "broker_url, result_backend, expected_broker_url ",
         [
-            (None, "redis://localhost", "redis://127.0.0.1", "redis://localhost"),
-            ("10", "redis://broker", "redis://new", "redis://broker"),
+            (
+                None,
+                "400",
+                "redis://localhost",
+                "redis://127.0.0.1",
+                "redis://localhost",
+            ),
+            ("10", None, "redis://broker", "redis://new", "redis://broker"),
             (
                 "400.0",
+                "3600.0",
                 '["redis://localhost", "redis://broker"]',
                 "redis://127.0.0.1",
                 ["redis://localhost", "redis://broker"],
@@ -84,6 +93,7 @@ class TestBaseConfig:
     def test_celery(
         self,
         dispatch_cycle_length,
+        usage_dashboard_sync_cycle_length,
         broker_url,
         result_backend,
         expected_broker_url,
@@ -92,17 +102,32 @@ class TestBaseConfig:
         expected_dispatch_cycle_length = (
             float(dispatch_cycle_length) if dispatch_cycle_length is not None else 60.0
         )
+        expected_usage_dashboard_sync_cycle_length = (
+            float(usage_dashboard_sync_cycle_length)
+            if usage_dashboard_sync_cycle_length is not None
+            else 60.0 * 60 * 24
+        )
         expected_beat_schedule = {
             "url-check-dispatcher": {
                 "task": "datalad_registry.tasks.url_chk_dispatcher",
                 "schedule": expected_dispatch_cycle_length,
                 "options": {"expires": expected_dispatch_cycle_length},
-            }
+            },
+            "usage-dashboard-sync": {
+                "task": "datalad_registry.tasks.usage_dashboard_sync",
+                "schedule": expected_usage_dashboard_sync_cycle_length,
+                "options": {"expires": expected_usage_dashboard_sync_cycle_length},
+            },
         }
 
         if dispatch_cycle_length is not None:
             monkeypatch.setenv(
                 "DATALAD_REGISTRY_DISPATCH_CYCLE_LENGTH", dispatch_cycle_length
+            )
+        if usage_dashboard_sync_cycle_length is not None:
+            monkeypatch.setenv(
+                "DATALAD_REGISTRY_USAGE_DASHBOARD_SYNC_CYCLE_LENGTH",
+                usage_dashboard_sync_cycle_length,
             )
         monkeypatch.setenv("CELERY_BROKER_URL", broker_url)
         monkeypatch.setenv("CELERY_RESULT_BACKEND", result_backend)
@@ -112,6 +137,7 @@ class TestBaseConfig:
             DATALAD_REGISTRY_OPERATION_MODE=OperationMode.PRODUCTION,
             DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
             DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
+            DATALAD_REGISTRY_WEB_API_URL="http://web/api",
             SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
         ).CELERY == dict(
             broker_url=expected_broker_url,
@@ -141,6 +167,7 @@ class TestUpperLevelConfigs:
             DATALAD_REGISTRY_OPERATION_MODE=OperationMode(operation_mode),
             DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
             DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
+            DATALAD_REGISTRY_WEB_API_URL="http://web/api",
             CELERY_BROKER_URL="redis://localhost",
             CELERY_RESULT_BACKEND="redis://localhost",
             SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
@@ -153,6 +180,7 @@ class TestUpperLevelConfigs:
             config = config_cls(
                 DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
                 DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
+                DATALAD_REGISTRY_WEB_API_URL="http://web/api",
                 CELERY_BROKER_URL="redis://localhost",
                 CELERY_RESULT_BACKEND="redis://localhost",
                 SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
@@ -177,6 +205,7 @@ class TestUpperLevelConfigs:
                 DATALAD_REGISTRY_OPERATION_MODE=OperationMode(operation_mode),
                 DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
                 DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
+                DATALAD_REGISTRY_WEB_API_URL="http://web/api",
                 CELERY_BROKER_URL="redis://localhost",
                 CELERY_RESULT_BACKEND="redis://localhost",
                 SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
@@ -191,6 +220,7 @@ class TestUpperLevelConfigs:
                 config_cls(
                     DATALAD_REGISTRY_INSTANCE_PATH=Path("/a/b"),
                     DATALAD_REGISTRY_DATASET_CACHE=Path("/a/b"),
+                    DATALAD_REGISTRY_WEB_API_URL="http://web/api",
                     CELERY_BROKER_URL="redis://localhost",
                     CELERY_RESULT_BACKEND="redis://localhost",
                     SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
@@ -203,6 +233,7 @@ class TestCompileConfigFromEnv:
             "op_mode",
             "instance_path",
             "cache_path",
+            "web_api_url",
             "broker_url",
             "result_backend",
             "sa_db_uri",
@@ -213,6 +244,7 @@ class TestCompileConfigFromEnv:
                 "PRODUCTION",
                 "/a/b",
                 "/c/d",
+                "http://web:5000/api/v2",
                 "redis://localhost",
                 "redis://localhost",
                 "postgresql+psycopg2://user:pd@db:5432/dbn",
@@ -222,6 +254,7 @@ class TestCompileConfigFromEnv:
                 "DEVELOPMENT",
                 "/a",
                 "/",
+                "http://web/api/v2",
                 "redis://localhost",
                 "redis://localhost",
                 "postgresql+psycopg2://usr:passd@db:5432/dbn",
@@ -231,6 +264,7 @@ class TestCompileConfigFromEnv:
                 "TESTING",
                 "/a/b/c",
                 "/c/d/",
+                "http://web",
                 "redis://localhost",
                 "redis://localhost",
                 "postgresql+psycopg2://usr:pd@db:5432/db_name",
@@ -240,6 +274,7 @@ class TestCompileConfigFromEnv:
                 "READ_ONLY",
                 "/ab",
                 "/cd",
+                "https://web:5000/api/v2",
                 "redis://localhost",
                 "redis://localhost",
                 "postgresql+psycopg2://usr:pd@db:1111/dbn",
@@ -252,6 +287,7 @@ class TestCompileConfigFromEnv:
         op_mode,
         instance_path,
         cache_path,
+        web_api_url,
         broker_url,
         result_backend,
         sa_db_uri,
@@ -266,6 +302,7 @@ class TestCompileConfigFromEnv:
         monkeypatch.setenv("DATALAD_REGISTRY_OPERATION_MODE", op_mode)
         monkeypatch.setenv("DATALAD_REGISTRY_INSTANCE_PATH", instance_path)
         monkeypatch.setenv("DATALAD_REGISTRY_DATASET_CACHE", cache_path)
+        monkeypatch.setenv("DATALAD_REGISTRY_WEB_API_URL", web_api_url)
         monkeypatch.setenv("CELERY_BROKER_URL", broker_url)
         monkeypatch.setenv("CELERY_RESULT_BACKEND", result_backend)
         monkeypatch.setenv("SQLALCHEMY_DATABASE_URI", sa_db_uri)
@@ -275,6 +312,7 @@ class TestCompileConfigFromEnv:
         assert config.DATALAD_REGISTRY_OPERATION_MODE is OperationMode(op_mode)
         assert config.DATALAD_REGISTRY_INSTANCE_PATH == Path(instance_path)
         assert config.DATALAD_REGISTRY_DATASET_CACHE == Path(cache_path)
+        assert str(config.DATALAD_REGISTRY_WEB_API_URL) == web_api_url
         assert config.CELERY_BROKER_URL == broker_url
         assert config.CELERY_RESULT_BACKEND == result_backend
         assert config.SQLALCHEMY_DATABASE_URI == sa_db_uri

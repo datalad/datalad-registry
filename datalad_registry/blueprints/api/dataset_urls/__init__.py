@@ -31,7 +31,12 @@ from .models import (
     PathParams,
     QueryParams,
 )
-from .. import API_URL_PREFIX, COMMON_API_RESPONSES, HTTPExceptionResp
+from .. import (
+    API_URL_PREFIX,
+    COMMON_API_RESPONSES,
+    DATASET_URLS_PATH,
+    HTTPExceptionResp,
+)
 from ..url_metadata.models import URLMetadataRef
 from ..utils import disable_in_read_only_mode
 
@@ -47,7 +52,7 @@ _ORDER_KEY_TO_SQLA_ATTR = {
 bp = APIBlueprint(
     "dataset_urls_api",
     __name__,
-    url_prefix=f"{API_URL_PREFIX}/dataset-urls",
+    url_prefix=f"{API_URL_PREFIX}/{DATASET_URLS_PATH}",
     abp_tags=[Tag(name="Dataset URLs", description="API endpoints for dataset URLs")],
     abp_responses=COMMON_API_RESPONSES,
 )

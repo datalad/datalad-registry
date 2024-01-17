@@ -12,12 +12,47 @@ from datalad_registry.conf import BaseConfig, OperationMode
 
 class TestCreateApp:
     @pytest.mark.parametrize(
-        ("op_mode", "instance_path", "cache_path", "broker_url", "result_backend"),
+        (
+            "op_mode",
+            "instance_path",
+            "cache_path",
+            "web_api_url",
+            "broker_url",
+            "result_backend",
+        ),
         [
-            ("PRODUCTION", "/a/b", "/c/d", "redis://localhost", "redis://localhost"),
-            ("DEVELOPMENT", "/a", "/", "redis://localhost", "redis://localhost"),
-            ("TESTING", "/a/b/c", "/c/d/", "redis://localhost", "redis://localhost"),
-            ("READ_ONLY", "/ab", "/cd", "redis://localhost", "redis://localhost"),
+            (
+                "PRODUCTION",
+                "/a/b",
+                "/c/d",
+                "http://web:5000/api/v2",
+                "redis://localhost",
+                "redis://localhost",
+            ),
+            (
+                "DEVELOPMENT",
+                "/a",
+                "/",
+                "http://web/api/v2",
+                "redis://localhost",
+                "redis://localhost",
+            ),
+            (
+                "TESTING",
+                "/a/b/c",
+                "/c/d/",
+                "http://web",
+                "redis://localhost",
+                "redis://localhost",
+            ),
+            (
+                "READ_ONLY",
+                "/ab",
+                "/cd",
+                "https://web:5000/api/v2",
+                "redis://localhost",
+                "redis://localhost",
+            ),
         ],
     )
     def test_configuration(
@@ -25,6 +60,7 @@ class TestCreateApp:
         op_mode,
         instance_path,
         cache_path,
+        web_api_url,
         broker_url,
         result_backend,
         monkeypatch,
@@ -38,7 +74,12 @@ class TestCreateApp:
                 "task": "datalad_registry.tasks.url_chk_dispatcher",
                 "schedule": 60.0,
                 "options": {"expires": 60.0},
-            }
+            },
+            "usage-dashboard-sync": {
+                "task": "datalad_registry.tasks.usage_dashboard_sync",
+                "schedule": 60.0 * 60 * 24,
+                "options": {"expires": 60.0 * 60 * 24},
+            },
         }
 
         default_metadata_extractors = [
@@ -55,6 +96,7 @@ class TestCreateApp:
                 DATALAD_REGISTRY_OPERATION_MODE=op_mode,
                 DATALAD_REGISTRY_INSTANCE_PATH=instance_path,
                 DATALAD_REGISTRY_DATASET_CACHE=cache_path,
+                DATALAD_REGISTRY_WEB_API_URL=web_api_url,
                 CELERY_BROKER_URL=broker_url,
                 CELERY_RESULT_BACKEND=result_backend,
                 SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://usr:pd@db:5432/dbn",
@@ -84,6 +126,7 @@ class TestCreateApp:
         )
         assert flask_app.config["DATALAD_REGISTRY_INSTANCE_PATH"] == Path(instance_path)
         assert flask_app.config["DATALAD_REGISTRY_DATASET_CACHE"] == Path(cache_path)
+        assert str(flask_app.config["DATALAD_REGISTRY_WEB_API_URL"]) == web_api_url
         assert flask_app.config["DATALAD_REGISTRY_MIN_CHK_INTERVAL_PER_URL"] == 3600
         assert flask_app.config["DATALAD_REGISTRY_MAX_FAILED_CHKS_PER_URL"] == 10
         assert (

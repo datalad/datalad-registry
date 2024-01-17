@@ -4,70 +4,17 @@
 # Note: Currently, this script can only populate the datalad-registry instance with
 #       active datasets on GitHub listed in datalad-usage-dashboard.
 
-from enum import auto
 from typing import Optional
 
 import click
-from pydantic import BaseModel, HttpUrl, StrictBool, StrictInt, StrictStr
 import requests
 
-from datalad_registry.utils import StrEnum
-from datalad_registry_client.submit_urls import RegistrySubmitURLs
-
-DASHBOARD_COLLECTION_URL = (
-    "https://github.com/datalad/datalad-usage-dashboard/raw/master/datalad-repos.json"
+from datalad_registry.tasks.utils.usage_dashboard import (
+    DASHBOARD_COLLECTION_URL,
+    DashboardCollection,
+    Status,
 )
-
-
-class Status(StrEnum):
-    """
-    Enum for representing the status of repo
-    """
-
-    active = auto()
-    gone = auto()
-
-
-class Repo(BaseModel):
-    """
-    Pydantic model for representing a git repo found in datalad-usage-dashboard
-    """
-
-    name: StrictStr
-    url: HttpUrl
-    status: Status
-
-
-class GitHubRepo(Repo):
-    """
-    Pydantic model for representing GitHub repository information found in
-    datalad-usage-dashboard
-    """
-
-    id: Optional[StrictInt]
-    stars: StrictInt
-    dataset: StrictBool
-    run: StrictBool
-    container_run: StrictBool
-
-
-class OSFRepo(Repo):
-    """
-    Pydantic model for representing OSF repository information found in
-    datalad-usage-dashboard
-    """
-
-    id: StrictStr
-
-
-class DashboardCollection(BaseModel):
-    """
-    Pydantic model for representing a collection of git repos found in
-    datalad-usage-dashboard
-    """
-
-    github: list[GitHubRepo]
-    osf: list[OSFRepo]
+from datalad_registry_client.submit_urls import RegistrySubmitURLs
 
 
 @click.command()
@@ -99,7 +46,7 @@ def populate(start: Optional[int], stop: Optional[int]) -> None:
 
     # Build clone URLs for active GitHub datasets
     active_github_dataset_urls = list(
-        {ds.url + ".git": None for ds in active_github_datasets}
+        {ds.clone_url: None for ds in active_github_datasets}
     )
 
     # Select URLs of active GitHub datasets to submit

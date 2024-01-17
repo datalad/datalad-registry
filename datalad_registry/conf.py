@@ -2,7 +2,14 @@ from enum import auto
 from pathlib import Path
 from typing import Any, Literal, Union
 
-from pydantic import BaseSettings, NonNegativeInt, PositiveFloat, PostgresDsn, validator
+from pydantic import (
+    AnyHttpUrl,
+    BaseSettings,
+    NonNegativeInt,
+    PositiveFloat,
+    PostgresDsn,
+    validator,
+)
 
 from datalad_registry.utils.misc import StrEnum
 
@@ -24,11 +31,19 @@ class BaseConfig(OperationConfig):
     DATALAD_REGISTRY_INSTANCE_PATH: Path
     DATALAD_REGISTRY_DATASET_CACHE: Path
 
+    # URL for any service to reach the web service API of the DataLad-Registry instance
+    DATALAD_REGISTRY_WEB_API_URL: AnyHttpUrl
+
     # URL check dispatcher related configuration
     DATALAD_REGISTRY_MIN_CHK_INTERVAL_PER_URL: NonNegativeInt = 3600  # seconds
     DATALAD_REGISTRY_MAX_FAILED_CHKS_PER_URL: NonNegativeInt = 10
     DATALAD_REGISTRY_MAX_URL_CHKS_ISSUED_PER_DISPATCH_CYCLE: NonNegativeInt = 10
     DATALAD_REGISTRY_DISPATCH_CYCLE_LENGTH: PositiveFloat = 60.0  # seconds
+
+    # Configurations related to syncing with the usage dashboard
+    DATALAD_REGISTRY_USAGE_DASHBOARD_SYNC_CYCLE_LENGTH: PositiveFloat = (
+        60.0 * 60 * 24
+    )  # A day in seconds
 
     # Metadata extractors to use
     DATALAD_REGISTRY_METADATA_EXTRACTORS: list[str] = [
@@ -56,7 +71,14 @@ class BaseConfig(OperationConfig):
                     "task": "datalad_registry.tasks.url_chk_dispatcher",
                     "schedule": self.DATALAD_REGISTRY_DISPATCH_CYCLE_LENGTH,
                     "options": {"expires": self.DATALAD_REGISTRY_DISPATCH_CYCLE_LENGTH},
-                }
+                },
+                "usage-dashboard-sync": {
+                    "task": "datalad_registry.tasks.usage_dashboard_sync",
+                    "schedule": self.DATALAD_REGISTRY_USAGE_DASHBOARD_SYNC_CYCLE_LENGTH,
+                    "options": {
+                        "expires": self.DATALAD_REGISTRY_USAGE_DASHBOARD_SYNC_CYCLE_LENGTH
+                    },
+                },
             },
             task_ignore_result=True,
             worker_max_tasks_per_child=1000,
@@ -93,6 +115,13 @@ class TestingConfig(BaseConfig):
     # Restrict to operation mode appropriate for this type of configuration
     DATALAD_REGISTRY_OPERATION_MODE: Literal[OperationMode.TESTING]
 
+    # Web service is not available in testing mode.
+    # The following overrides unneeded fields from `BaseConfig` with default values
+    # to make them optional.
+    DATALAD_REGISTRY_WEB_API_URL: AnyHttpUrl = AnyHttpUrl(
+        url="http://dummy.url", scheme="http"
+    )
+
     TESTING: bool = True
 
 
@@ -107,10 +136,12 @@ class ReadOnlyConfig(BaseConfig):
     DATALAD_REGISTRY_OPERATION_MODE: Literal[OperationMode.READ_ONLY]
 
     # The Celery service is not available in read-only mode.
-    # The following are just dummy values to serve as defaults to satisfy
-    # the configuration requirements and make the corresponding fields optional.
+    # The following overrides unneeded fields from `BaseConfig` with default values
+    # to make them optional.
     DATALAD_REGISTRY_DATASET_CACHE: Path = Path("/dummy/path")
-
+    DATALAD_REGISTRY_WEB_API_URL: AnyHttpUrl = AnyHttpUrl(
+        url="http://dummy.url", scheme="http"
+    )
     CELERY_BROKER_URL: str = "dummy://"
     CELERY_RESULT_BACKEND: str = "dummy://"
 

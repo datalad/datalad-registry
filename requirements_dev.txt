@@ -12,3 +12,4 @@ mypy
 types-requests
 beautifulsoup4==4.12.2
 pytest-mock==3.11.1
+responses==0.24.1

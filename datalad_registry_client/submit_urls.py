@@ -9,11 +9,9 @@ from datalad.support.param import Parameter
 import requests
 from yarl import URL
 
-from . import DEFAULT_BASE_ENDPOINT
+from datalad_registry.blueprints.api import DATASET_URLS_PATH
 
-# The path of the dataset URLs resource on the DataLad Registry instance relative to
-# the base API endpoint of the instance.
-_DATASET_URLS_PATH = "dataset-urls"
+from . import DEFAULT_BASE_ENDPOINT
 
 lgr = logging.getLogger("datalad.registry.submit_urls")
 
@@ -50,7 +48,7 @@ class RegistrySubmitURLs(Interface):
                 "datalad_registry.base_endpoint", DEFAULT_BASE_ENDPOINT
             )
 
-        endpoint = URL(base_endpoint) / _DATASET_URLS_PATH
+        endpoint = URL(base_endpoint) / DATASET_URLS_PATH
         endpoint_str = str(endpoint)
 
         res_base = get_status_dict(
