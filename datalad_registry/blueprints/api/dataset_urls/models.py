@@ -197,7 +197,7 @@ class DatasetURLRespBaseModel(DatasetURLSubmitModel):
 
     id: int = Field(..., description="The ID of the dataset URL")
     ds_id: Optional[UUID] = Field(None, description="The ID, a UUID, of the dataset")
-    describe: Optional[str] = Field(
+    head_describe: Optional[str] = Field(
         None,
         alias="head_describe",
         description="The output of `git describe --tags --always` on the dataset",
