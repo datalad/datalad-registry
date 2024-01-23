@@ -199,7 +199,6 @@ class DatasetURLRespBaseModel(DatasetURLSubmitModel):
     ds_id: Optional[UUID] = Field(None, description="The ID, a UUID, of the dataset")
     head_describe: Optional[str] = Field(
         None,
-        alias="head_describe",
         description="The output of `git describe --tags --always` on the dataset",
     )
     annex_key_count: Optional[int] = Field(None, description="The number of annex keys")
