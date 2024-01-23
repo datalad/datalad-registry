@@ -208,7 +208,7 @@ class DatasetURLRespBaseModel(DatasetURLSubmitModel):
     annexed_files_in_wt_size: Optional[int] = Field(
         None, description="The size of annexed files in the working tree in bytes"
     )
-    last_update: Optional[datetime] = Field(
+    last_update_dt: Optional[datetime] = Field(
         None,
         alias="last_update_dt",
         description="The last time the local copy of the dataset was updated",
