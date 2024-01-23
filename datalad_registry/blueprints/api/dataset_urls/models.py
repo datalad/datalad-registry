@@ -241,6 +241,11 @@ class DatasetURLRespModel(DatasetURLRespBaseModel):
         None, alias="metadata_", description="The metadata of the dataset at the URL"
     )
 
+    class Config:
+        # Ensure the JSON schema of the model uses the field name
+        # instead of the alias to name a field
+        by_alias = False
+
 
 class DatasetURLPage(BaseModel):
     """
