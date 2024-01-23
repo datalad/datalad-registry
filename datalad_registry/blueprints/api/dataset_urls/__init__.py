@@ -45,7 +45,7 @@ _ORDER_KEY_TO_SQLA_ATTR = {
     OrderKey.annex_key_count: RepoUrl.annex_key_count,
     OrderKey.annexed_files_in_wt_count: RepoUrl.annexed_files_in_wt_count,
     OrderKey.annexed_files_in_wt_size: RepoUrl.annexed_files_in_wt_size,
-    OrderKey.last_update: RepoUrl.last_update_dt,
+    OrderKey.last_update_dt: RepoUrl.last_update_dt,
     OrderKey.git_objects_kb: RepoUrl.git_objects_kb,
 }
 

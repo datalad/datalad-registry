@@ -232,7 +232,7 @@ class TestDatasetURLs:
             {"order_by": "annex_key_count"},
             {"order_by": "annexed_files_in_wt_count"},
             {"order_by": "annexed_files_in_wt_size"},
-            {"order_by": "last_update"},
+            {"order_by": "last_update_dt"},
             {"order_by": "git_objects_kb"},
             {"order_dir": "asc"},
             {"order_dir": "desc"},
@@ -449,7 +449,7 @@ class TestDatasetURLs:
 
             assert len(pg_lk.query) == 4
             assert pg_lk.query["per_page"] == "2"
-            assert pg_lk.query["order_by"] == "last_update"
+            assert pg_lk.query["order_by"] == "last_update_dt"
             assert pg_lk.query["order_dir"] == "desc"
 
         assert len(ds_url_pg.dataset_urls) == 2
@@ -487,7 +487,7 @@ class TestDatasetURLs:
 
             assert len(pg_lk.query) == 4
             assert pg_lk.query["per_page"] == "2"
-            assert pg_lk.query["order_by"] == "last_update"
+            assert pg_lk.query["order_by"] == "last_update_dt"
             assert pg_lk.query["order_dir"] == "desc"
 
         assert len(ds_url_pg.dataset_urls) == 2

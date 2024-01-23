@@ -47,7 +47,7 @@ class OrderKey(StrEnum):
     annex_key_count = auto()
     annexed_files_in_wt_count = auto()
     annexed_files_in_wt_size = auto()
-    last_update = auto()
+    last_update_dt = auto()
     git_objects_kb = auto()
 
 
@@ -161,7 +161,7 @@ class QueryParams(BaseModel):
 
     # Ordering parameters
     order_by: OrderKey = Field(
-        OrderKey.last_update,
+        OrderKey.last_update_dt,
         description="The key to use to order the items in the query",
     )
     order_dir: OrderDir = Field(
@@ -196,12 +196,9 @@ class DatasetURLRespBaseModel(DatasetURLSubmitModel):
     """
 
     id: int = Field(..., description="The ID of the dataset URL")
-    ds_id: Optional[UUID] = Field(
-        None, alias="ds_id", description="The ID, a UUID, of the dataset"
-    )
-    describe: Optional[str] = Field(
+    ds_id: Optional[UUID] = Field(None, description="The ID, a UUID, of the dataset")
+    head_describe: Optional[str] = Field(
         None,
-        alias="head_describe",
         description="The output of `git describe --tags --always` on the dataset",
     )
     annex_key_count: Optional[int] = Field(None, description="The number of annex keys")
@@ -211,9 +208,8 @@ class DatasetURLRespBaseModel(DatasetURLSubmitModel):
     annexed_files_in_wt_size: Optional[int] = Field(
         None, description="The size of annexed files in the working tree in bytes"
     )
-    last_update: Optional[datetime] = Field(
+    last_update_dt: Optional[datetime] = Field(
         None,
-        alias="last_update_dt",
         description="The last time the local copy of the dataset was updated",
     )
     git_objects_kb: Optional[int] = Field(
