@@ -47,7 +47,7 @@ class OrderKey(StrEnum):
     annex_key_count = auto()
     annexed_files_in_wt_count = auto()
     annexed_files_in_wt_size = auto()
-    last_update = auto()
+    last_update_dt = auto()
     git_objects_kb = auto()
 
 
@@ -161,7 +161,7 @@ class QueryParams(BaseModel):
 
     # Ordering parameters
     order_by: OrderKey = Field(
-        OrderKey.last_update,
+        OrderKey.last_update_dt,
         description="The key to use to order the items in the query",
     )
     order_dir: OrderDir = Field(
