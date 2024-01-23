@@ -210,7 +210,6 @@ class DatasetURLRespBaseModel(DatasetURLSubmitModel):
     )
     last_update_dt: Optional[datetime] = Field(
         None,
-        alias="last_update_dt",
         description="The last time the local copy of the dataset was updated",
     )
     git_objects_kb: Optional[int] = Field(
