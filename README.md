@@ -10,7 +10,7 @@ DataLad registry -- work in progress
 
 #### To run tests
 
-On Debian systems install necessary for Python PostgreSQL libs dependencies:
+On Debian systems, install the necessary dependencies for Python PostgreSQL libs:
 
     apt-get install postgresql-common libpq-dev
 
