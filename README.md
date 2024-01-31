@@ -17,26 +17,35 @@ to launch a Datalad-Registry instance with little to no deviation from this guid
 
 #### To run tests
 
-On Debian systems, install the necessary dependencies for Python PostgreSQL libs:
+1. Setup
 
-    apt-get install postgresql-common libpq-dev
+    1. On Debian systems, install the necessary dependencies for Python PostgreSQL libs:
 
-Create a virtual env, activate it, and install Datalad-Registry for testing in it:
+       `apt-get install postgresql-common libpq-dev`
 
-    py=3; d=venvs/dev$py; python$py -m venv $d && source $d/bin/activate && python3 -m pip install -e .[tests]
+    2. Create a virtual env, activate it, and install Datalad-Registry for testing in
+       it:
 
-Install podman-compose for launching the needed components of DataLad-Registry for testing:
+       `py=3; d=venvs/dev$py; python$py -m venv $d && source $d/bin/activate && python3 -m pip install -e .[tests]`
 
-    pip install podman-compose
+    3. Install podman-compose for launching the needed components of DataLad-Registry
+       for testing:
 
-    docker-compose -f docker-compose.testing.yml --env-file template.env.testing up -d
+       `pip install podman-compose`
 
-Now can run the tests after loading environment variables from the temaplte.env.testing.
-Using the next shell within to avoid polluting current environment:
+    4. Launch the needed components of DataLad-Registry for testing:
 
-    ( set -a && . ./template.env.testing && set +a && python -m pytest -s -v  )
+       `podman-compose -f docker-compose.testing.yml --env-file template.env.testing up -d`
 
-In the future - above logic would migrate into the session-scoped pytest fixture, [issue #224](https://github.com/datalad/datalad-registry/issues/224).
+2. Test execution
+
+    1. Load environment variables from the `temaplte.env.testing` in a subshell and
+       launch the tests within this subshell (Note: using a subshell avoids polluting
+       the current shell with the environment variables from the `template.env.testing`
+       file)
+
+       `(set -a && . ./template.env.testing && set +a && python -m pytest -s -v)`
+
 
 #### To develop
 
