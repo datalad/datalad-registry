@@ -8,6 +8,13 @@ DataLad registry -- work in progress
 
 ### NEW Development setup
 
+#### Prerequisites
+
+  * [Podman](https://podman.io)
+
+Though we only test Datalad-Registry fully with Podman, you should be able to use Docker
+to launch a Datalad-Registry instance with little to no deviation from this guide.
+
 #### To run tests
 
 On Debian systems, install the necessary dependencies for Python PostgreSQL libs:
