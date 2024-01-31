@@ -21,7 +21,7 @@ On Debian systems, install the necessary dependencies for Python PostgreSQL libs
 
     apt-get install postgresql-common libpq-dev
 
-Create virtual env with e.g.,
+Create a virtual env, activate it, and install Datalad-Registry for testing in it:
 
     py=3; d=venvs/dev$py; python$py -m venv $d && source $d/bin/activate && python3 -m pip install -e .[tests]
 
