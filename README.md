@@ -25,7 +25,9 @@ Create a virtual env, activate it, and install Datalad-Registry for testing in i
 
     py=3; d=venvs/dev$py; python$py -m venv $d && source $d/bin/activate && python3 -m pip install -e .[tests]
 
-Start the docker instances of postgres, rabbitmq, and redis:
+Install podman-compose for launching the needed components of DataLad-Registry for testing:
+
+    pip install podman-compose
 
     docker-compose -f docker-compose.testing.yml --env-file template.env.testing up -d
 
