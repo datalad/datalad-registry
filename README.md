@@ -46,6 +46,19 @@ to launch a Datalad-Registry instance with little to no deviation from this guid
 
        `(set -a && . ./template.env.testing && set +a && python -m pytest -s -v)`
 
+3. Teardown
+
+   When the testing is done, you can bring down the components of Datalad-Registry
+   launched and deactivate the virtual environment activated:
+
+    1. Bring down the components of Datalad-Registry launched:
+
+       `podman-compose -f docker-compose.testing.yml --env-file template.env.testing down`
+
+    2. Deactivate the virtual environment activated:
+
+       `deactivate`
+
 
 #### To develop
 
