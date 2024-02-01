@@ -61,3 +61,26 @@ div#datalad-registry div.pager {
 div#datalad-registry div.pagination {
     padding-top: 0.5em;
 }
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted black;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    background-color: var(--datalad-grey);
+    color: #fff;
+    text-align: center;
+    border-radius: 3px;
+    padding: 5px 7px;
+    position: absolute;
+    z-index: 1;
+    bottom: 100%;
+    left: 0%;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+}
