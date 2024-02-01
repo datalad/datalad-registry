@@ -1,13 +1,41 @@
+:root {
+    --datalad-grey: #333;
+    --datalad-yellow: #ffa200;
+    --datalad-blue: #7FD5FF;
+}
+
+body {
+    margin-top: 2vh;
+    margin-left: 2%;
+    width: 96%;
+}
+
+a {
+    color: var(--datalad-yellow);
+    text-decoration: none;
+}
+
+a:hover {
+    color: #af7714;
+}
+
+#nav-logo {
+    margin-bottom: 2vh;
+}
+
+div#datalad-registry form.searchbar {
+    margin-bottom: 2vh;
+}
 
 div#datalad-registry table.list {
     border-collapse: collapse;
-    border: none;
     white-space: nowrap;
     width: 100%;
 }
 
 div#datalad-registry table.list th {
     text-align: left;
+    border-bottom: solid 1px #c8c8c8 ;
 }
 
 
