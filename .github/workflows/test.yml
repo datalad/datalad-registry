@@ -57,3 +57,5 @@ jobs:
       run: mypy datalad_registry datalad_registry_client
     - name: Upload coverage to codecov
       uses: codecov/codecov-action@v4
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
