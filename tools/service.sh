@@ -7,7 +7,7 @@ set -eu
 umask 077
 
 # Check if the path to the Datalad-Registry repo is provided
-if [ -z "$1" ]; then
+if [ -z "${1:-}" ]; then
     echo "Usage: $0 <directory-path of Datalad-Registry repo>"
     exit 1
 fi
