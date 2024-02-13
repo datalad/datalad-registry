@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script can be used by cron to auto restart Datalad-Registry service upon
+# This script can be used by cron to auto start Datalad-Registry service upon
 # the host's reboot.
 
 set -eu
