@@ -21,7 +21,7 @@ to launch a Datalad-Registry instance with little to no deviation from this guid
 
     1. On Debian systems, install the necessary dependencies for Python PostgreSQL libs:
 
-       `apt-get install postgresql-common libpq-dev`
+       `sudo apt-get install postgresql-common libpq-dev`
 
     2. Create a virtual env, activate it, and install Datalad-Registry for testing in
        it:
