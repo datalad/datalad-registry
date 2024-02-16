@@ -35,16 +35,16 @@ to launch a Datalad-Registry instance with little to no deviation from this guid
 
     4. Launch the needed components of DataLad-Registry for testing:
 
-       `podman-compose -f docker-compose.testing.yml --env-file template.env.testing up -d`
+       `podman-compose -f docker-compose.testing.yml --env-file env.testing up -d`
 
 2. Test execution
 
-    1. Load environment variables from the `temaplte.env.testing` in a subshell and
+    1. Load environment variables from the `env.testing` in a subshell and
        launch the tests within this subshell (Note: using a subshell avoids polluting
-       the current shell with the environment variables from the `template.env.testing`
+       the current shell with the environment variables from the `env.testing`
        file)
 
-       `(set -a && . ./template.env.testing && set +a && python -m pytest -s -v)`
+       `(set -a && . ./env.testing && set +a && python -m pytest -s -v)`
 
 3. Teardown
 
@@ -53,7 +53,7 @@ to launch a Datalad-Registry instance with little to no deviation from this guid
 
     1. Bring down the components of Datalad-Registry launched:
 
-       `podman-compose -f docker-compose.testing.yml --env-file template.env.testing down`
+       `podman-compose -f docker-compose.testing.yml --env-file env.testing down`
 
     2. Deactivate the virtual environment activated:
 
