@@ -46,8 +46,8 @@ Datalad-Registry:
 
 2. Test execution
 
-    1. Load environment variables from the `env.testing` in a subshell and
-       launch the tests within this subshell (Note: using a subshell avoids polluting
+    1. Load environment variables from `env.testing` in a subshell and
+       launch the tests within this subshell. (Note: using a subshell avoids polluting
        the current shell with the environment variables from the `env.testing`
        file)
 
