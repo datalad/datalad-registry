@@ -15,6 +15,9 @@ a Datalad-Registry instance using Docker with little to no deviation from this g
 
 #### Prerequisites
 
+The following dependencies are needed in a system in order to test and develop
+Datalad-Registry:
+
   * [git](https://git-scm.com/downloads)
   * [git-annex](https://git-annex.branchable.com/install/)
   * [Podman](https://podman.io/docs/installation)
