@@ -20,7 +20,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     echo "en_US.UTF-8 UTF-8" >>/etc/locale.gen && locale-gen && \
     DEBIAN_FRONTEND=noninteractive eatmydata apt-get install -y --no-install-recommends \
       build-essential \
-      datalad \
       git \
       git-annex \
       libpq-dev \
