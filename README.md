@@ -23,6 +23,10 @@ Datalad-Registry:
   * [Podman](https://podman.io/docs/installation)
   * [podman-compose](https://github.com/containers/podman-compose)
 
+    We strongly recommend installing `podman-compose` and other Python dependencies in
+    a [Python virtual environment](https://docs.python.org/3/library/venv.html) for this
+    project.
+
 #### To run tests
 
 1. Setup
