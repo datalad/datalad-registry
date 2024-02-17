@@ -21,6 +21,7 @@ Datalad-Registry:
   * [git](https://git-scm.com/downloads)
   * [git-annex](https://git-annex.branchable.com/install/)
   * [Podman](https://podman.io/docs/installation)
+  * [podman-compose](https://github.com/containers/podman-compose)
 
 #### To run tests
 
