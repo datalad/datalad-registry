@@ -40,12 +40,7 @@ Datalad-Registry:
 
        `py=3; d=venvs/dev$py; python$py -m venv $d && source $d/bin/activate && python3 -m pip install -e .[tests]`
 
-    3. Install podman-compose for launching the needed components of DataLad-Registry
-       for testing:
-
-       `pip install podman-compose`
-
-    4. Launch the needed components of DataLad-Registry for testing:
+    3. Launch the needed components of DataLad-Registry for testing:
 
        `podman-compose -f docker-compose.testing.yml --env-file env.testing up -d`
 
