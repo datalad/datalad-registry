@@ -62,11 +62,6 @@ Datalad-Registry:
 
        `podman-compose -f docker-compose.testing.yml --env-file env.testing down`
 
-    2. Deactivate the virtual environment activated:
-
-       `deactivate`
-
-
 #### To develop
 
 The template file `template.env.dev` provides all environment variables with some default values.
