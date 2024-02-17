@@ -35,10 +35,11 @@ Datalad-Registry:
 
        `sudo apt-get install libpq-dev python3-dev`
 
-    2. Create a virtual env, activate it, and install Datalad-Registry for testing in
-       it:
+    2. Install Datalad-Registry for testing in
+       the [Python virtual environment](https://docs.python.org/3/library/venv.html) for
+       this project (as mentioned in the Prerequisites section)
 
-       `py=3; d=venvs/dev$py; python$py -m venv $d && source $d/bin/activate && python3 -m pip install -e .[tests]`
+       `pip install -e .[tests]`
 
     3. Launch the needed components of DataLad-Registry for testing:
 
