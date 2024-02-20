@@ -66,6 +66,42 @@ Datalad-Registry:
 
 #### To develop
 
+1. Setup
+
+    1. On Debian systems, install the necessary dependencies for Python PostgreSQL libs:
+
+       `sudo apt-get install libpq-dev python3-dev`
+
+    2. Install Datalad-Registry for testing in
+       the [Python virtual environment](https://docs.python.org/3/library/venv.html) for
+       this project (as mentioned in the Prerequisites section):
+
+       `pip install -e .[tests]`
+
+    3. Launch the needed components of DataLad-Registry for testing from a subshell with
+       needed environment variables loaded from `env.testing`.
+       (Note: using a subshell avoids polluting the current shell with the environment
+       variables from `env.testing`):
+
+       `(set -a && . ./env.testing && set +a && podman-compose -f docker-compose.testing.yml up -d)`
+
+2. Test execution
+    1. Launch the tests from a subshell with the needed environment variables loaded
+       from `env.testing`:
+
+       `(set -a && . ./env.testing && set +a && python -m pytest -s -v)`
+
+3. Teardown
+
+   When the testing is done, you can bring down the components of Datalad-Registry
+   launched.
+
+    1. Bring down the components of Datalad-Registry launched from a subshell with
+       the needed environment variables loaded from `env.testing`:
+
+       `(set -a && . ./env.testing && set +a && podman-compose -f docker-compose.testing.yml down)`
+
+
 The template file `template.env.dev` provides all environment variables with some default values.
 Copy it to some file and modify secrets (passwords) from the default values, e.g.
 
