@@ -6,7 +6,7 @@ DataLad registry -- work in progress
 
 ---
 
-### NEW Development setup
+### Testing and Development Setup
 
 #### Preface
 
