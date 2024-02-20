@@ -5,13 +5,12 @@ DataLad registry -- work in progress
   * https://github.com/datalad/datalad/issues/947
 
 ---
-
-### Testing and Development Setup
-
-#### Preface
+### Preface
 
 We fully test Datalad-Registry with Podman. Nevertheless, you should be able to launch
 a Datalad-Registry instance using Docker with little to no deviation from this guide.
+
+### Testing and Development Setup
 
 #### Prerequisites
 
