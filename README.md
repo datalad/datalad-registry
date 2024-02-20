@@ -72,66 +72,66 @@ Datalad-Registry:
 
        `sudo apt-get install libpq-dev python3-dev`
 
-    2. Install Datalad-Registry for testing in
+    2. Install Datalad-Registry for development in
        the [Python virtual environment](https://docs.python.org/3/library/venv.html) for
        this project (as mentioned in the Prerequisites section):
 
-       `pip install -e .[tests]`
+       `pip install -e .[dev]`
 
-    3. Launch the needed components of DataLad-Registry for testing from a subshell with
-       needed environment variables loaded from `env.testing`.
+    3. Set values for needed environment variables by creating an `.env.dev` file
+
+       `template.env` is a template for creating the `.env.dev` file. It lists
+       all the needed environment variables with defaults. We will use it to create
+       the `.env.dev` file.
+
+        1. Create the `.env.dev` file by copying the `template.env` file to `.env.dev`:
+
+           `cp template.env .env.dev`
+
+        2. Modify the `.env.dev` file according to your needs by adjusting the values
+           for usernames, passwords, etc.
+
+       *note*: we git ignore all `.env` files
+
+    4. Launch the needed components of DataLad-Registry for development from a subshell
+       with needed environment variables loaded from `.env.dev`.
        (Note: using a subshell avoids polluting the current shell with the environment
-       variables from `env.testing`):
+       variables from `.env.dev`):
 
-       `(set -a && . ./env.testing && set +a && podman-compose -f docker-compose.testing.yml up -d)`
+       `(set -a && . ./.env.dev && set +a && podman-compose -f docker-compose.yml -f docker-compose.dev.override.yml up -d --build)`
 
-2. Test execution
-    1. Launch the tests from a subshell with the needed environment variables loaded
-       from `env.testing`:
+2. Development
 
-       `(set -a && . ./env.testing && set +a && python -m pytest -s -v)`
+   At this point, the proper development environment is set up. However, please
+   note the following characteristics of this development environment:
+
+    1. The current directory at the host is bind-mounted to the `/app` directory within
+       the web service container
+    2. The subdirectory `./instance` at the host is bind-mounted to the `/app/instance`
+       directory within the web service container to serve as the instance folder for
+       the Flask application run by the web service container.
+    3. The web service container runs the Flask application in debug mode and reacts to
+       changes in the current directory, the codebase, at the host machine.
+    4. All other component services of Datalad-Registry, as defined in
+       `docker-compose.yml`, do not react to changes in the codebase at
+       the host machine. (Note: This behavior is the result of a design choice.
+       The worker service, a Celery worker, for example, should not react to changes
+       in the codebase at the host machine for the tasks it executes may not always
+       be idempotent.)
+        1. To realize the changes in the codebase at the host machine in other component
+           services, you needed to bring down all the components of Datalad-Registry as
+           specified in the following Teardown section and relaunch them according to
+           the above Setup section.
 
 3. Teardown
 
-   When the testing is done, you can bring down the components of Datalad-Registry
+   When done with developing, you can bring down the components of Datalad-Registry
    launched.
 
     1. Bring down the components of Datalad-Registry launched from a subshell with
-       the needed environment variables loaded from `env.testing`:
+       the needed environment variables loaded from `.env.dev`:
 
-       `(set -a && . ./env.testing && set +a && podman-compose -f docker-compose.testing.yml down)`
-
-
-The template file `template.env.dev` provides all environment variables with some default values.
-Copy it to some file and modify secrets (passwords) from the default values, e.g.
-
-    cp template.env.dev .env.dev
-    sed -e 's,pass$,secret123t,g' -i .env.dev
-
-*note*: we git ignore all `.env` files.
-
-Now we have two ways to start the services in a development mode, server based and locally based.
-Both ways use the `docker-compose.dev.yml` file, and the local development mode also uses
-the `docker-compose.dev.local.override.yml` file to achieve a bind mount to the current
-directory at the host machine as `/app` within web service container.
-
-##### Server development mode
-
-where the web service will use the copy of the codebase shipped in the docker image of Datalad-registry and not react to the changes in the codebase at the host machine:
-
-    docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build
-
-The `instance` directory for the web service is in the directory allocated for the web service at the host machine as specified in the `.env.dev` file.
-
-##### Local development mode
-
-where the web service will use the codebase at the host machine, react to the changes in this codebase, and operate in debug mode:
-
-    docker compose -f docker-compose.dev.yml -f docker-compose.dev.local.override.yml --env-file .env.dev up -d --build
-
-The `instance` directory for the web service is in the current directory at the host machine, which is also the codebase in the host machine.
-
-*Note*: Other services will not react to the changes in the codebase at the host machine.
+       `(set -a && . ./.env.dev && set +a && podman-compose -f docker-compose.yml -f docker-compose.dev.override.yml down)`
 
 ### Read-Only Mode
 
