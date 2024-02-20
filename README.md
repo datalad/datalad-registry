@@ -73,7 +73,7 @@ Datalad-Registry:
 
        `pip install -e .[dev]`
 
-    3. Set values for needed environment variables by creating an `.env.dev` file
+    3. Set values for needed environment variables by creating a `.env.dev` file
 
        `template.env` is a template for creating the `.env.dev` file. It lists
        all the needed environment variables with defaults. We will use it to create
@@ -86,7 +86,7 @@ Datalad-Registry:
         2. Modify the `.env.dev` file according to your needs by adjusting the values
            for usernames, passwords, etc.
 
-       *note*: we git ignore all `.env` files
+       *note*: we git ignore all `.env` files.
 
     4. Launch the needed components of DataLad-Registry for development from a subshell
        with needed environment variables loaded from `.env.dev`.
@@ -101,7 +101,7 @@ Datalad-Registry:
    note the following characteristics of this development environment:
 
     1. The current directory at the host is bind-mounted to the `/app` directory within
-       the web service container
+       the web service container.
     2. The subdirectory `./instance` at the host is bind-mounted to the `/app/instance`
        directory within the web service container to serve as the instance folder for
        the Flask application run by the web service container.
