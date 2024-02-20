@@ -57,7 +57,7 @@ Datalad-Registry:
 3. Teardown
 
    When the testing is done, you can bring down the components of Datalad-Registry
-   launched and deactivate the virtual environment activated.
+   launched.
 
     1. Bring down the components of Datalad-Registry launched:
 
