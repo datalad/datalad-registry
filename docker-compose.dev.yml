@@ -5,7 +5,7 @@ services:
       ## Old docker-compose asked for context but this was still insufficient
       ## since it could then "link" the built image here to be used for the worker
       # context: .
-    image: datalad-registry:dev
+    image: datalad-registry
     depends_on:
       broker:
         condition: service_healthy
@@ -33,7 +33,7 @@ services:
       - ${WEB_PATH_AT_HOST}/instance:/app/instance
 
   worker:
-    image: datalad-registry:dev
+    image: datalad-registry
     depends_on:
       broker:
         condition: service_healthy
@@ -55,7 +55,7 @@ services:
       start_period: 3m
 
   scheduler:
-    image: datalad-registry:dev
+    image: datalad-registry
     depends_on:
       broker:
         condition: service_healthy
@@ -76,7 +76,7 @@ services:
 
   # Monitor for Celery service
   monitor:
-    image: datalad-registry:dev
+    image: datalad-registry
     depends_on:
       broker:
         condition: service_healthy
