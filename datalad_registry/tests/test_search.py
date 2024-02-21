@@ -5,9 +5,17 @@ from datalad_registry.models import RepoUrl, URLMetadata, db
 from ..search import parser
 
 
-def test_search_errors():
+@pytest.mark.parametrize(
+    "query",
+    [
+        "unknown_field:example",
+        # r'(haxby or halchenko) AND metadata:BIDSmetadata[bids_dataset,metalad_core]:'
+        # r'"BIDSVersion\": \"v"',
+    ],
+)
+def test_search_errors(query):
     with pytest.raises(ValueError):
-        parser.parse("unknown_field:example")
+        parser.parse(query)
 
 
 @pytest.fixture

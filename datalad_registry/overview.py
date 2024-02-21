@@ -43,6 +43,7 @@ def overview():  # No type hints due to mypy#7187.
             filter_query = parser.parse(filter)
         except Exception as e:
             filter_error = str(e)
+            # filter = None
         else:
             r = r.filter(filter_query)
 

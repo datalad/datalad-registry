@@ -40,23 +40,74 @@
 <div id="datalad-registry">
   <div class="content">
     <form action="{{ url_for('.overview') }}" formmethod="get">
-      <input type='search' name='filter'
+      <input id='search' type='search' name='filter'
           {%- if url_filter %} value="{{ url_filter|escape }}"
           {%- endif -%}
              placeholder='Filter query'
       />
       <input type="hidden" name="sort" value="{{ sort_by }}"/>
       <input type='submit' value='Filter URLs'/>
-      {% if url_filter -%}
-        <a href="{{ url_for('.overview', sort=sort_by) }}"> remove filter</a>
-      {%- endif %}
       {% if url_filter_error -%}
         <p></p><span class="error">ERROR: {{ url_filter_error }}</span></p>
       {%- endif %}
-      <!-- probably should just be a modal window with the help/demos -->
-      <a href="/overview/bringmehelptodo.html">Filter query syntax</a>
-
     </form>
+    <button id="showQuerySyntax">Show filter query syntax</button>
+    {% if url_filter -%}
+        <a href="{{ url_for('.overview', sort=sort_by) }}"> remove filter</a>
+    {%- endif %}
+
+    <div id="QuerySyntaxModal" class="modal">
+
+    <!-- Modal content -->
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="close">&times;</span>
+          <h2>Filter Query Syntax</h2>
+        </div>
+        <div class="modal-body">
+          <p>It is WiP and could change. Meanwhile it allows for</p>
+          <ul>
+            <li>Simple singular <span class="content">WORD</span> (e.g., <span class="query">haxby</span>)
+              or a <span class="content">"QUOTED STRING"</span> (e.g., <span class="query">"James Haxby"</span>):
+              <ul>
+                <li>search is case-insensitive ATM so <span class="query">haxby</span> is identical to <span
+                        class="query">Haxby</span>;
+                </li>
+                <li>search is within the content, and not for entire words,
+                  so searching for <span class="query">ax</span> would find not only <span class="content">Haxby</span>
+                  but also <span class="content">tax</span> etc.
+                </li>
+              </ul>
+            </li>
+            <li>By default we search across following fields: "url", "ds_id", "head", "head_describe", "branches",
+              "tags", "metadata".
+              To restrict to search only within a given field, specify it followed by <span class="token">:</span> and
+              the search term, e.g.
+              <span class="query">url:github</span> or <span class="query">head:1.0</span> or <span class="query">metadata:"James Haxby"</span>.
+            </li>
+            <li>Use of <span class="token">AND</span>, <span class="token">OR</span>, <span class="token">NOT</span> for
+              logical operations:
+              <ul>
+                <li>absent logical grouping implies <span class="token">AND</span>.
+                  So searching for <span class="query">James Haxby</span> is identical to search
+                  <span class="query">James AND Haxby</span>
+                  and
+                  <span class="query">Haxby AND James</span>.
+                </li>
+                <li>It is impossible to mix <span class="token">AND</span> and <span class="token">OR</span> in the same
+                  statement.
+                </li>
+              </ul>
+            <li>Use <span class="token">(</span> and <span class="token">)</span> to group statements, e.g.
+              <span class="query">(url:github.com OR url:gin.g-node) AND Haxby</span>.
+            </li>
+            <li>You can restrict search to specific metadata extractors by specifying one or more of them,
+              e.g. <span class="query">metadata[bids_dataset,metalad_core]:"BIDSVersion\": \"v"</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
 
     <table class="list">
       <tr>
@@ -121,5 +172,34 @@
     </div>
   </div>
 </div>
+
+<script>
+// Get the modal
+var modal = document.getElementById("QuerySyntaxModal");
+
+// Get the button that opens the modal
+var btn = document.getElementById("showQuerySyntax");
+
+// Get the <span> element that closes the modal
+var span = document.getElementsByClassName("close")[0];
+
+// When the user clicks the button, open the modal
+btn.onclick = function() {
+  modal.style.display = "block";
+}
+
+// When the user clicks on <span> (x), close the modal
+span.onclick = function() {
+  modal.style.display = "none";
+}
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+  if (event.target == modal) {
+    modal.style.display = "none";
+  }
+}
+</script>
+
 </body>
 </html>
