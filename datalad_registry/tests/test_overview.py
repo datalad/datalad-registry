@@ -259,7 +259,7 @@ class TestOverView:
         }
 
         assert metadata_map == {
-            "https://www.example.com": {"metalad_core", "metalad_studyminimet"},
+            "https://www.example.com": {"metalad_core", "metalad_studyminimeta"},
             "http://www.datalad.org": set(),
             "https://handbook.datalad.org": {"metalad_core"},
             "https://www.dandiarchive.org": set(),

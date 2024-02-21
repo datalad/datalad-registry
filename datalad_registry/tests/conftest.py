@@ -348,7 +348,7 @@ def populate_with_url_metadata(
         URLMetadata(
             dataset_describe="1234",
             dataset_version="1.0.0",
-            extractor_name="metalad_studyminimet",
+            extractor_name="metalad_studyminimeta",
             extractor_version="0.1.0",
             extraction_parameter=dict(a=1, b=2),
             extracted_metadata=dict(c=3, d=4),
