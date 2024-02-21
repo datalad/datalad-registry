@@ -1,5 +1,5 @@
 from functools import partial
-from lark import Lark, Token, Transformer, v_args
+from lark import Lark, Token, Transformer, Tree, v_args
 from sqlalchemy import Text, or_, and_, not_
 
 from .models import RepoUrl, URLMetadata
@@ -45,7 +45,7 @@ grammar = fr"""
 ?search: orand_exp
 ?orand_exp: not_exp
         | orand_exp ("OR" not_exp)+ -> or_search
-        | orand_exp ("AND" not_exp)+ -> and_search
+        | orand_exp (("AND"|) not_exp)+ -> and_search
 ?not_exp: primary
         | "NOT" primary -> not_expr
 
@@ -109,23 +109,28 @@ class SearchQueryTransformer(Transformer):
         return not_(arg)
 
     ## ?secondary: (field_select | unknown_field_error) ":" op? (quoted_string | WORD) -> field_matched
-    def __field_select(self, metadata_field_l, metadata_extractors_l):
+    def get_field_select_search(self, metadata_field_l, metadata_extractors_l, value):
         assert metadata_field_l.data.value == 'metadata_field'
-        assert metadata_extractors_l.data.value == 'metadata_extractors'
-
-        extractors = list(map(self._get_str_value,
-                              metadata_extractors_l.children))
+        if isinstance(metadata_extractors_l, Token):
+            extractors = [metadata_extractors_l.value]
+        else:  # was more than one
+            assert isinstance(metadata_extractors_l, Tree)
+            assert metadata_extractors_l.data.value == 'metadata_extractors'
+            extractors = list(map(self._get_str_value,
+                                  metadata_extractors_l.children))
         if not extractors:
             raise ValueError(f"No extractors were specified in {metadata_extractors_l}")
-        elif len(extractors) == 1:
-            raise NotImplementedError(f"Single extractor {extractors} is not implemented")
+        # elif len(extractors) == 1:
+        #     raise NotImplementedError(f"Single extractor {extractors} is not implemented")
         else:
             # ??? it seems we do not have search target value here, so we are to
             # return the function to search with but we can't since here we already
             # need to know ilike vs exact match
             return RepoUrl.metadata_.any(
-                or_(
-                    URLMetadata.extractor_name == extractor,
+                and_(
+                    or_(
+                        *(URLMetadata.extractor_name == _ for _ in extractors)
+                    ),
                     # search the entire JSON column as text
                     URLMetadata.extracted_metadata.cast(Text).icontains(
                         value, autoescape=True
@@ -147,12 +152,17 @@ class SearchQueryTransformer(Transformer):
         else:
             raise ValueError(f"Unexpected number of args: {len(args)} in {args}")
 
-        assert field_l.data.value == 'field'
-        assert len(field_l.children) == 1  # TODO: handle multiple??
-        field = field_l.children[0].value
+        if field_l.data == 'field_select':
+            search = partial(self.get_field_select_search, *field_l.children)
+        elif field_l.data.value == 'field':
+            assert len(field_l.children) == 1  # TODO: handle multiple??
+            field = field_l.children[0].value
+            search = known_fields[field]
+        else:
+            raise ValueError(f"Unknown field type: {field_l}")
 
         if op == "?":
-            return known_fields[field](self._get_str_value(value_l))
+            return search(self._get_str_value(value_l))
         else:
             raise NotImplementedError(f"Operation {op} is not implemented")
 
