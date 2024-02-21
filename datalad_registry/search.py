@@ -4,7 +4,7 @@
 from functools import partial
 
 from lark import Lark, Token, Transformer, Tree, v_args
-from sqlalchemy import Text, and_, not_, or_
+from sqlalchemy import CollectionAggregate, ColumnElement, Text, and_, not_, or_
 
 from .models import RepoUrl, URLMetadata
 
@@ -14,7 +14,7 @@ from .models import RepoUrl, URLMetadata
 escape = "\\"
 
 
-def _escape_for_ilike(value):
+def _escape_for_ilike(value: str) -> str:
     escaped_value = (
         value.replace(escape, escape + escape)
         .replace("%", escape + "%")
@@ -29,7 +29,7 @@ def _escape_for_ilike(value):
 known_fields_RepoUrl_1to1 = ["url", "ds_id", "head", "head_describe", "tags"]
 
 
-def get_ilike_search(model, field, value):
+def get_ilike_search(model, field: str, value: str):
     return getattr(model, field).ilike(_escape_for_ilike(value), escape=escape)
 
 
@@ -53,8 +53,8 @@ def get_branches_ilike_search(value):
 known_fields = {
     _: partial(get_ilike_search, RepoUrl, _) for _ in known_fields_RepoUrl_1to1
 }
-known_fields["metadata"] = get_metadata_ilike_search
-known_fields["branches"] = get_branches_ilike_search
+known_fields["metadata"] = get_metadata_ilike_search  # type: ignore
+known_fields["branches"] = get_branches_ilike_search  # type: ignore
 
 # TODO: add "metadata_extractor"?
 known_fields_str = "|".join(f'"{_}"' for _ in known_fields)
@@ -133,26 +133,28 @@ class SearchQueryTransformer(Transformer):
         super().__init__(*args, **kwargs)
         # Additional initialization here if needed
 
-    def or_search(self, *args):
+    def or_search(self, *args) -> ColumnElement[bool]:
         # args will be a list of the arguments to the OR operation
         return or_(*args)
 
-    def and_search(self, *args):
+    def and_search(self, *args) -> ColumnElement[bool]:
         # args will be a list of the arguments to the AND operation
         return and_(*args)
 
-    def not_expr(self, arg):
+    def not_expr(self, arg) -> ColumnElement[bool]:
         # args will be a single-element list containing the NOT argument
         return not_(arg)
 
-    def get_field_select_search(self, metadata_field_l, metadata_extractors_l, value):
+    def get_field_select_search(
+        self, metadata_field_l, metadata_extractors_l, value
+    ) -> CollectionAggregate[bool]:
         assert metadata_field_l.data.value == "metadata_field"
         if isinstance(metadata_extractors_l, Token):
             extractors = [metadata_extractors_l.value]
         else:  # was more than one
             assert isinstance(metadata_extractors_l, Tree)
-            assert metadata_extractors_l.data.value == "metadata_extractors"
-            extractors = list(map(self._get_str_value, metadata_extractors_l.children))
+            assert metadata_extractors_l.data.value == "metadata_extractors"  # type: ignore
+            extractors = list(map(self._get_str_value, metadata_extractors_l.children))  # type: ignore
         if not extractors:
             raise ValueError(f"No extractors were specified in {metadata_extractors_l}")
         # TODO: might want to provide a dedicated simpler one
@@ -200,7 +202,7 @@ class SearchQueryTransformer(Transformer):
         else:
             raise NotImplementedError(f"Operation {op} is not implemented")
 
-    def _get_str_value(self, arg: Token):
+    def _get_str_value(self, arg: Token) -> str:
         assert isinstance(arg, Token)
         value = arg.value
         if arg.type == "WORD":
@@ -210,7 +212,7 @@ class SearchQueryTransformer(Transformer):
         else:
             raise TypeError(arg.type)
 
-    def _get_str_search(self, arg: Token):
+    def _get_str_search(self, arg: Token) -> ColumnElement[bool]:
         value = self._get_str_value(arg)
         return or_(*[f(value) for f in known_fields.values()])
 
