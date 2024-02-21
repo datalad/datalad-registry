@@ -85,7 +85,7 @@ services:
       FLOWER_BROKER_API: "${FLOWER_BROKER_API}"
       FLOWER_PERSISTENT: "True"
       FLOWER_DB: "/data/flower"
-      FLOWER_STATE_SAVE_INTERVAL: "1000"  # In milliseconds
+      FLOWER_STATE_SAVE_INTERVAL: "60000"  # 1 minute (in milliseconds)
       FLOWER_NATURAL_TIME: "True"
       FLOWER_BASIC_AUTH: "$FLOWER_BASIC_AUTH"
     ports:
