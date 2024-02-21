@@ -213,7 +213,7 @@ To set up Datalad-Registry to run in read-only mode involves the following steps
             ```
       3. Stop the node by running the following command.
          ```bash
-         (set -a && . ./.env.read-only && set +a && podman-compose -f docker-compose.read-only.yml up down)
+         (set -a && . ./.env.read-only && set +a && podman-compose -f docker-compose.read-only.yml down)
          ```
       4. Restore the `docker-compose.read-only.yml` file to its original state by
          commenting out the line `command: ["tail", "-f", "/dev/null"]`.
