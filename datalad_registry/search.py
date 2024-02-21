@@ -16,7 +16,7 @@ def _escape_for_ilike(value):
 # ATM most are  1:1 mapping to DB schema.
 # List explicitly so we could reuse in grammar and error messages etc
 # without duplication
-known_fields_RepoUrl_1to1 = ["url", "ds_id", "head", "head_describe", "branches", "tags"]
+known_fields_RepoUrl_1to1 = ["url", "ds_id", "head", "head_describe", "tags"]
 def get_ilike_search(model, field, value):
     return getattr(model, field).ilike(_escape_for_ilike(value), escape=escape)
 
@@ -28,6 +28,8 @@ def get_metadata_ilike_search(value):
             URLMetadata.extracted_metadata.cast(Text).ilike(escaped_value, escape=escape),
         )
     )
+def get_branches_ilike_search(value):
+    return RepoUrl.branches.cast(Text).ilike(_escape_for_ilike(value), escape=escape)
 
 # mapping to schema of fields
 known_fields = {
@@ -35,6 +37,8 @@ known_fields = {
     for _ in known_fields_RepoUrl_1to1
 }
 known_fields["metadata"] = get_metadata_ilike_search
+known_fields["branches"] = get_branches_ilike_search
+
 # TODO: add "metadata_extractor"?
 known_fields_str = "|".join(f'"{_}"' for _ in known_fields)
 
