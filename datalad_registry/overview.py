@@ -4,9 +4,10 @@
 import logging
 
 from flask import Blueprint, render_template, request
-from sqlalchemy import Text, nullslast, or_
+from sqlalchemy import nullslast
 
-from datalad_registry.models import RepoUrl, URLMetadata, db
+from datalad_registry.models import RepoUrl, db
+from datalad_registry.search import parser
 
 lgr = logging.getLogger(__name__)
 bp = Blueprint("overview", __name__, url_prefix="/overview")
@@ -35,36 +36,15 @@ def overview():  # No type hints due to mypy#7187.
 
     # Apply filter if provided
     filter = request.args.get("filter", None, type=str)
+    filter_error = None
     if filter:
         lgr.debug("Filter URLs by '%s'", filter)
-
-        escape = "\\"
-        escaped_filter = (
-            filter.replace(escape, escape + escape)
-            .replace("%", escape + "%")
-            .replace("_", escape + "_")
-        )
-        pattern = f"%{escaped_filter}%"
-
-        r = r.filter(
-            or_(
-                RepoUrl.url.ilike(pattern, escape=escape),
-                RepoUrl.ds_id.ilike(pattern, escape=escape),
-                RepoUrl.head.ilike(pattern, escape=escape),
-                RepoUrl.head_describe.ilike(pattern, escape=escape),
-                RepoUrl.branches.cast(Text).ilike(pattern, escape=escape),
-                RepoUrl.tags.ilike(pattern, escape=escape),
-                RepoUrl.metadata_.any(
-                    or_(
-                        URLMetadata.extractor_name.ilike(pattern, escape=escape),
-                        # search the entire JSON column as text
-                        URLMetadata.extracted_metadata.cast(Text).ilike(
-                            pattern, escape=escape
-                        ),
-                    )
-                ),
-            )
-        )
+        try:
+            filter_query = parser.parse(filter)
+        except Exception as e:
+            filter_error = str(e)
+        else:
+            r = r.filter(filter_query)
 
     # Sort
     r = r.group_by(RepoUrl)
@@ -83,4 +63,5 @@ def overview():  # No type hints due to mypy#7187.
         pagination=pagination,
         sort_by=sort_by,
         url_filter=filter,
+        url_filter_error=filter_error,
     )

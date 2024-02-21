@@ -43,12 +43,19 @@
       <input type='search' name='filter'
           {%- if url_filter %} value="{{ url_filter|escape }}"
           {%- endif -%}
+             placeholder='Filter query'
       />
       <input type="hidden" name="sort" value="{{ sort_by }}"/>
       <input type='submit' value='Filter URLs'/>
       {% if url_filter -%}
         <a href="{{ url_for('.overview', sort=sort_by) }}"> remove filter</a>
       {%- endif %}
+      {% if url_filter_error -%}
+        <p></p><span class="error">ERROR: {{ url_filter_error }}</span></p>
+      {%- endif %}
+      <!-- probably should just be a modal window with the help/demos -->
+      <a href="/overview/bringmehelptodo.html">Filter query syntax</a>
+
     </form>
 
     <table class="list">
