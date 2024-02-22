@@ -1,5 +1,7 @@
 [![codecov](https://codecov.io/gh/datalad/datalad-registry/branch/master/graph/badge.svg?token=CY783CBF77)](https://codecov.io/gh/datalad/datalad-registry)
 
+Datalad-Registry is now live at [registry.datalad.org](http://registry.datalad.org/).
+
 ---
 ### Preface
 
