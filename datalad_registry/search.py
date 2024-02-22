@@ -24,7 +24,7 @@ def _escape_for_ilike(value: str) -> str:
 
 
 # ATM most of our search targets are  1:1 mapping to DB schema.
-# List explicitly so we could reuse in grammar and error messages etc
+# List explicitly so we could reuse in grammar and error messages etc.
 # without duplication
 known_fields_RepoUrl_1to1 = ["url", "ds_id", "head", "head_describe", "tags"]
 

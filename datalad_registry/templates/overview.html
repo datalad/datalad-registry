@@ -65,44 +65,44 @@
           <h2>Filter Query Syntax</h2>
         </div>
         <div class="modal-body">
-          <p>It is WiP and could change. Meanwhile it allows for</p>
+          <p>This syntax is a WiP and could change at any time.  Currently, it allows for:</p>
           <ul>
             <li>Simple singular <span class="content">WORD</span> (e.g., <span class="query">haxby</span>)
-              or a <span class="content">"QUOTED STRING"</span> (e.g., <span class="query">"James Haxby"</span>):
+              or a <span class="content">"QUOTED STRING"</span> (e.g., <span class="query">"James Haxby"</span>)
               <ul>
-                <li>search is case-insensitive ATM so <span class="query">haxby</span> is identical to <span
-                        class="query">Haxby</span>;
+                <li>Searching is case-insensitive at the moment, so <span class="query">haxby</span> is identical to <span
+                        class="query">Haxby</span>.
                 </li>
-                <li>search is within the content, and not for entire words,
-                  so searching for <span class="query">ax</span> would find not only <span class="content">Haxby</span>
-                  but also <span class="content">tax</span> etc.
+                <li>Searching is performed within content rather than for entire words,
+                  and so searching for <span class="query">ax</span> would find <span class="content">Haxby</span>,
+                  <span class="content">tax</span>, etc.
                 </li>
               </ul>
             </li>
-            <li>By default we search across following fields: "url", "ds_id", "head", "head_describe", "branches",
+            <li>By default, the following fields are searched: "url", "ds_id", "head", "head_describe", "branches",
               "tags", "metadata".
-              To restrict to search only within a given field, specify it followed by <span class="token">:</span> and
-              the search term, e.g.
+              To restrict the search to a specific field, specify the field name followed by <span class="token">:</span> and
+              the search term, e.g.,
               <span class="query">url:github</span> or <span class="query">head:1.0</span> or <span class="query">metadata:"James Haxby"</span>.
             </li>
-            <li>Use of <span class="token">AND</span>, <span class="token">OR</span>, <span class="token">NOT</span> for
-              logical operations:
+            <li><span class="token">AND</span>, <span class="token">OR</span>, and <span class="token">NOT</span> can be used for
+              logical operations.
               <ul>
-                <li>absent logical grouping implies <span class="token">AND</span>.
-                  So searching for <span class="query">James Haxby</span> is identical to search
+                <li>The default logical operator is <span class="token">AND</span>, and so
+                 searching for <span class="query">James Haxby</span> is identical to searching for
                   <span class="query">James AND Haxby</span>
-                  and
+                  or
                   <span class="query">Haxby AND James</span>.
                 </li>
-                <li>It is impossible to mix <span class="token">AND</span> and <span class="token">OR</span> in the same
+                <li><span class="token">AND</span> and <span class="token">OR</span> may not be mixed in the same
                   statement.
                 </li>
               </ul>
-            <li>Use <span class="token">(</span> and <span class="token">)</span> to group statements, e.g.
+            <li>Use <span class="token">(</span> and <span class="token">)</span> to group statements, e.g.,
               <span class="query">(url:github.com OR url:gin.g-node) AND Haxby</span>.
             </li>
-            <li>You can restrict search to specific metadata extractors by specifying one or more of them,
-              e.g. <span class="query">metadata[bids_dataset,metalad_core]:"BIDSVersion\": \"v"</span></li>
+            <li>You can restrict a search to specific metadata extractors by specifying one or more of them,
+              e.g., <span class="query">metadata[bids_dataset,metalad_core]:"BIDSVersion\": \"v"</span></li>
           </ul>
         </div>
       </div>
