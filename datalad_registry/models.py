@@ -98,9 +98,9 @@ class URLMetadata(db.Model):  # type: ignore
     # Extractor and extraction parameters
     extractor_name = db.Column(db.String(100), nullable=False)
     extractor_version = db.Column(db.String(60), nullable=False)
-    extraction_parameter = db.Column(db.JSON, nullable=False)
+    extraction_parameter = db.Column(JSONB, nullable=False)
 
-    extracted_metadata = db.Column(db.JSON, nullable=False)
+    extracted_metadata = db.Column(JSONB, nullable=False)
 
     # The ID of the associated RepoUrl
     url_id = db.Column(db.Integer, db.ForeignKey("repo_url.id"), nullable=False)
