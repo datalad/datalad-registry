@@ -74,6 +74,16 @@ def populate_with_url_metadata_for_search(
         ("example AND handbook", []),
         ("datalad OR handbook", [2, 3]),
         ("datalad AND handbook", [3]),
+        ("datalad", [2, 3]),
+        ("handbook", [3]),
+        ("NOT url:handbook", [1, 2, 4]),
+        ("NOT metadata:handbook", [1, 2, 3, 4]),
+        ("datalad AND NOT url:handbook", [2]),
+        ("datalad AND (NOT url:handbook)", [2]),
+        ("datalad AND NOT metadata:handbook", [2, 3]),
+        # we get empty result ATM which fails the test. TODO - figure it out/fix!
+        ("NOT handbook", [1, 2, 4]),
+        ("datalad AND (NOT handbook)", [2]),
         ("handbook datalad", [3]),  # should be identical result to above AND
         ("handbook url:datalad", [3]),
         ("handbook ds_id:datalad", []),

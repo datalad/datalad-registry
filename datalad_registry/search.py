@@ -2,11 +2,14 @@
 """
 
 from functools import partial
+import logging
 
 from lark import Lark, Token, Transformer, Tree, v_args
 from sqlalchemy import CollectionAggregate, ColumnElement, Text, and_, not_, or_
 
 from .models import RepoUrl, URLMetadata
+
+lgr = logging.getLogger(__name__)
 
 #
 # Constructs for the case-insensitive search via ilike
@@ -135,14 +138,17 @@ class SearchQueryTransformer(Transformer):
 
     def or_search(self, *args) -> ColumnElement[bool]:
         # args will be a list of the arguments to the OR operation
+        lgr.debug("OR search: %s", args)
         return or_(*args)
 
     def and_search(self, *args) -> ColumnElement[bool]:
         # args will be a list of the arguments to the AND operation
+        lgr.debug("AND search: %s", args)
         return and_(*args)
 
     def not_expr(self, arg) -> ColumnElement[bool]:
         # args will be a single-element list containing the NOT argument
+        lgr.debug("AND search: %s", arg)
         return not_(arg)
 
     def get_field_select_search(
