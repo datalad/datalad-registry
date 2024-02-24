@@ -160,7 +160,9 @@ class SearchQueryTransformer(Transformer):
         else:  # was more than one
             assert isinstance(metadata_extractors_l, Tree)
             assert metadata_extractors_l.data.value == "metadata_extractors"  # type: ignore
-            extractors = list(map(self._get_str_value, metadata_extractors_l.children))  # type: ignore
+            extractors = list(
+                map(self._get_str_value, metadata_extractors_l.children)  # type: ignore
+            )
         if not extractors:
             raise ValueError(f"No extractors were specified in {metadata_extractors_l}")
         # TODO: might want to provide a dedicated simpler one
