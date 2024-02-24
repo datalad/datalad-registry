@@ -24,7 +24,7 @@ services:
       - ${WEB_PATH_AT_HOST}/instance:/app/instance
 
   read-only-db:
-    image: docker.io/postgres:latest
+    image: docker.io/postgres:15
     environment:
       POSTGRES_DB: "${POSTGRES_DB}"
       POSTGRES_USER: "${POSTGRES_USER}"
