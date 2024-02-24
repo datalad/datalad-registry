@@ -53,7 +53,7 @@ def get_branches_ilike_search(value):
 known_fields = {
     _: partial(get_ilike_search, RepoUrl, _) for _ in known_fields_RepoUrl_1to1
 }
-known_fields["metadata"] = get_metadata_ilike_search  # type: ignore
+
 known_fields["branches"] = get_branches_ilike_search  # type: ignore
 
 # TODO: add "metadata_extractor"?
@@ -216,7 +216,13 @@ class SearchQueryTransformer(Transformer):
 
     def _get_str_search(self, arg: Token) -> ColumnElement[bool]:
         value = self._get_str_value(arg)
-        return or_(*[f(value) for f in known_fields.values()])
+        return or_(
+            *(
+                and_(getattr(RepoUrl, field).is_not(None), ilike_query_gen(value))
+                for field, ilike_query_gen in known_fields.items()
+            ),
+            get_metadata_ilike_search(value),
+        )
 
     search_word = _get_str_search
     search_string = _get_str_search
