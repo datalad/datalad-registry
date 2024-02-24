@@ -30,7 +30,11 @@ known_fields_RepoUrl_1to1 = ["url", "ds_id", "head", "head_describe", "tags"]
 
 
 def get_ilike_search(model, field: str, value: str):
-    return getattr(model, field).ilike(_escape_for_ilike(value), escape=escape)
+    model_field = getattr(model, field)
+    return and_(
+        model_field.is_not(None),
+        model_field.ilike(_escape_for_ilike(value), escape=escape),
+    )
 
 
 def get_metadata_ilike_search(value):
@@ -46,7 +50,10 @@ def get_metadata_ilike_search(value):
 
 
 def get_branches_ilike_search(value):
-    return RepoUrl.branches.cast(Text).ilike(_escape_for_ilike(value), escape=escape)
+    return and_(
+        RepoUrl.branches.is_not(None),
+        RepoUrl.branches.cast(Text).ilike(_escape_for_ilike(value), escape=escape),
+    )
 
 
 # mapping to schema of fields
@@ -55,6 +62,7 @@ known_fields = {
 }
 
 known_fields["branches"] = get_branches_ilike_search  # type: ignore
+known_fields["metadata"] = get_metadata_ilike_search  # type: ignore
 
 # TODO: add "metadata_extractor"?
 known_fields_str = "|".join(f'"{_}"' for _ in known_fields)
@@ -216,13 +224,7 @@ class SearchQueryTransformer(Transformer):
 
     def _get_str_search(self, arg: Token) -> ColumnElement[bool]:
         value = self._get_str_value(arg)
-        return or_(
-            *(
-                and_(getattr(RepoUrl, field).is_not(None), ilike_query_gen(value))
-                for field, ilike_query_gen in known_fields.items()
-            ),
-            get_metadata_ilike_search(value),
-        )
+        return or_(*[f(value) for f in known_fields.values()])
 
     search_word = _get_str_search
     search_string = _get_str_search
