@@ -86,6 +86,7 @@ def populate_with_url_metadata_for_search(
         ("datalad AND (NOT handbook)", [2]),
         ("handbook datalad", [3]),  # should be identical result to above AND
         ("handbook url:datalad", [3]),
+        ("handbook url:?datalad", [3]),  # identical to above
         ("handbook ds_id:datalad", []),
         ("handbook OR ds_id:datalad", [3]),
         ("url:handbook OR ds_id:datalad", [3]),
