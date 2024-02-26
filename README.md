@@ -43,7 +43,7 @@ Datalad-Registry:
        (Note: using a subshell avoids polluting the current shell with the environment
        variables from `env.testing`):
 
-       `(set -a && . ./env.testing && set +a && podman-compose -f docker-compose.testing.yml up -d)`
+       `(set -a && . ./env.testing && set +a && podman-compose -f docker-compose.test.yml up -d)`
 
 2. Test execution
     1. Launch the tests from a subshell with the needed environment variables loaded
@@ -59,7 +59,7 @@ Datalad-Registry:
     1. Bring down the components of Datalad-Registry launched from a subshell with
        the needed environment variables loaded from `env.testing`:
 
-       `(set -a && . ./env.testing && set +a && podman-compose -f docker-compose.testing.yml down)`
+       `(set -a && . ./env.testing && set +a && podman-compose -f docker-compose.test.yml down)`
 
 #### To develop
 
