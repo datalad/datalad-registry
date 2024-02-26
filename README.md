@@ -39,17 +39,17 @@ Datalad-Registry:
        `pip install -e .[tests]`
 
     3. Launch the needed components of DataLad-Registry for testing from a subshell with
-       needed environment variables loaded from `env.testing`.
+       needed environment variables loaded from `env.test`.
        (Note: using a subshell avoids polluting the current shell with the environment
-       variables from `env.testing`):
+       variables from `env.test`):
 
-       `(set -a && . ./env.testing && set +a && podman-compose -f docker-compose.test.yml up -d)`
+       `(set -a && . ./env.test && set +a && podman-compose -f docker-compose.test.yml up -d)`
 
 2. Test execution
     1. Launch the tests from a subshell with the needed environment variables loaded
-       from `env.testing`:
+       from `env.test`:
 
-       `(set -a && . ./env.testing && set +a && python -m pytest -s -v)`
+       `(set -a && . ./env.test && set +a && python -m pytest -s -v)`
 
 3. Teardown
 
@@ -57,9 +57,9 @@ Datalad-Registry:
    launched.
 
     1. Bring down the components of Datalad-Registry launched from a subshell with
-       the needed environment variables loaded from `env.testing`:
+       the needed environment variables loaded from `env.test`:
 
-       `(set -a && . ./env.testing && set +a && podman-compose -f docker-compose.test.yml down)`
+       `(set -a && . ./env.test && set +a && podman-compose -f docker-compose.test.yml down)`
 
 #### To develop
 
