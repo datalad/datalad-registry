@@ -214,7 +214,7 @@ class SearchQueryTransformer(Transformer):
             # ":" is identical to ":?
             field_l, value_l = args
             op = "?"
-        else:
+        else:  # pragma: no cover
             raise AssertionError(f"Unexpected number of args: {len(args)} in {args}")
 
         if field_l.data == "field_select":
@@ -223,7 +223,7 @@ class SearchQueryTransformer(Transformer):
             assert len(field_l.children) == 1  # TODO: handle multiple??
             field = field_l.children[0].value
             search = known_fields[field]
-        else:
+        else:  # pragma: no cover
             raise AssertionError(f"Unknown field type: {field_l}")
 
         if op == "?":
@@ -238,7 +238,7 @@ class SearchQueryTransformer(Transformer):
             return value
         elif arg.type == "ESCAPED_STRING":
             return value[1:-1].replace(r"\"", '"')
-        else:
+        else:  # pragma: no cover
             raise TypeError(arg.type)
 
     def _get_str_search(self, arg: Token) -> ColumnElement[bool]:
