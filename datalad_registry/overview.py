@@ -7,7 +7,7 @@ from flask import Blueprint, render_template, request
 from sqlalchemy import nullslast
 
 from datalad_registry.models import RepoUrl, db
-from datalad_registry.search import parser
+from datalad_registry.search import parse_query
 
 lgr = logging.getLogger(__name__)
 bp = Blueprint("overview", __name__, url_prefix="/overview")
@@ -35,15 +35,14 @@ def overview():  # No type hints due to mypy#7187.
     r = db.session.query(RepoUrl)
 
     # Apply filter if provided
-    filter = request.args.get("filter", None, type=str)
+    query = request.args.get("filter", None, type=str)
     filter_error = None
-    if filter:
-        lgr.debug("Filter URLs by '%s'", filter)
+    if query:
+        lgr.debug("Filter URLs by '%s'", query)
         try:
-            filter_query = parser.parse(filter)
+            filter_query = parse_query(query)
         except Exception as e:
             filter_error = str(e)
-            # filter = None
         else:
             r = r.filter(filter_query)
 
@@ -63,6 +62,6 @@ def overview():  # No type hints due to mypy#7187.
         "overview.html",
         pagination=pagination,
         sort_by=sort_by,
-        url_filter=filter,
+        url_filter=query,
         url_filter_error=filter_error,
     )

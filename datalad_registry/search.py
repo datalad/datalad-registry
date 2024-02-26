@@ -4,7 +4,7 @@
 from functools import partial
 import logging
 
-from lark import Lark, Token, Transformer, Tree, v_args
+from lark import GrammarError, Lark, Token, Transformer, Tree, v_args
 from sqlalchemy import CollectionAggregate, ColumnElement, Text, and_, not_, or_
 
 from .models import RepoUrl, URLMetadata
@@ -80,7 +80,8 @@ grammar = rf"""
 ?search: orand_exp
 ?orand_exp: not_exp
         | orand_exp ("OR" not_exp)+ -> or_search
-        | orand_exp (("AND"|) not_exp)+ -> and_search
+        | orand_exp ("AND" not_exp)+ -> and_search
+        | orand_exp not_exp+ -> and_search
 ?not_exp: primary
         | "NOT" primary -> not_expr
 
@@ -136,6 +137,16 @@ def _dump_grammar():
 # _dump_grammar()
 
 
+class GrammarValueError(ValueError, GrammarError):
+    """Indicates that an unknown field was specified in the search query.
+
+    Making a dedicated exception subclassing GrammarError since that is
+    the class which lark re-raises, and otherwise would wrap into VisitError
+    """
+
+    pass
+
+
 @v_args(inline=True)  # Affects the signatures of the methods
 class SearchQueryTransformer(Transformer):
     """Convert the parsed search query into SQLAlchemy expressions."""
@@ -172,7 +183,9 @@ class SearchQueryTransformer(Transformer):
                 map(self._get_str_value, metadata_extractors_l.children)  # type: ignore
             )
         if not extractors:
-            raise ValueError(f"No extractors were specified in {metadata_extractors_l}")
+            raise GrammarValueError(
+                f"No extractors were specified in {metadata_extractors_l}"
+            )
         # TODO: might want to provide a dedicated simpler one
         # elif len(extractors) == 1:
         #     raise NotImplementedError(f"Single extractor {extractors}")
@@ -202,7 +215,7 @@ class SearchQueryTransformer(Transformer):
             field_l, value_l = args
             op = "?"
         else:
-            raise ValueError(f"Unexpected number of args: {len(args)} in {args}")
+            raise AssertionError(f"Unexpected number of args: {len(args)} in {args}")
 
         if field_l.data == "field_select":
             search = partial(self.get_field_select_search, *field_l.children)
@@ -211,7 +224,7 @@ class SearchQueryTransformer(Transformer):
             field = field_l.children[0].value
             search = known_fields[field]
         else:
-            raise ValueError(f"Unknown field type: {field_l}")
+            raise AssertionError(f"Unknown field type: {field_l}")
 
         if op == "?":
             return search(self._get_str_value(value_l))
@@ -237,12 +250,30 @@ class SearchQueryTransformer(Transformer):
 
     def unknown_field_error(self, arg):
         # Handle unknown fields
-        raise ValueError(
+        raise GrammarValueError(
             f"Unknown field: '{arg}'. Known are: {', '.join(known_fields)}"
         )
 
 
+def parse_query(query: str) -> ColumnElement[bool]:
+    """Parse the search query and return the SQLAlchemy expression.
+
+    :param query: The search query string
+
+    :return: The SQLAlchemy expression representing the search query
+
+    A workaround necessary for using "earley" parser.
+    We have to use "earley" parser to support ':op' comparison operations.
+    Operates using the global parser and transformer objects.
+    """
+    # Parse the input to get a tree
+    parse_tree = parser.parse(query)
+    return transformer.transform(parse_tree)
+
+
 # Assuming `grammar` is your grammar definition string
-parser = Lark(grammar, parser="lalr", transformer=SearchQueryTransformer())
+parser = Lark(grammar, parser="earley")
+transformer = SearchQueryTransformer()
+
 # Example:
-# r = session.query(RepoUrl).filter(parser.parse("url:example OR ds_id:handbook"))
+# r = session.query(RepoUrl).filter(parser_query("url:example OR ds_id:handbook"))

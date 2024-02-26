@@ -2,7 +2,7 @@ import pytest
 
 from datalad_registry.models import RepoUrl, URLMetadata, db
 
-from ..search import parser
+from ..search import parse_query
 
 
 @pytest.mark.parametrize(
@@ -15,7 +15,7 @@ from ..search import parser
 )
 def test_search_errors(query):
     with pytest.raises(ValueError):
-        parser.parse(query)
+        parse_query(query)
 
 
 @pytest.fixture
@@ -72,6 +72,7 @@ def populate_with_url_metadata_for_search(
         # case insensitive
         ("Example OR handBook", [1, 3]),
         ("example AND handbook", []),
+        ("example handbook", []),  # implicit AND
         ("datalad OR handbook", [2, 3]),
         ("datalad AND handbook", [3]),
         ("datalad", [2, 3]),
@@ -80,6 +81,7 @@ def populate_with_url_metadata_for_search(
         ("NOT metadata:handbook", [1, 2, 3, 4]),
         ("datalad AND NOT url:handbook", [2]),
         ("datalad AND (NOT url:handbook)", [2]),
+        ("datalad (NOT url:handbook)", [2]),  # implicit AND
         ("datalad AND NOT metadata:handbook", [2, 3]),
         # we get empty result ATM which fails the test. TODO - figure it out/fix!
         ("NOT handbook", [1, 2, 4]),
@@ -92,8 +94,16 @@ def populate_with_url_metadata_for_search(
         ("url:handbook OR ds_id:datalad", [3]),
         ("url:handbook OR ds_id:844c", [1, 2, 3]),
         ("(url:handbook OR metadata[metalad_core]:meta1value) AND ds_id:844c", [2, 3]),
+        (
+            "(url:?handbook OR metadata[metalad_core]:?meta1value) AND ds_id:?844c",
+            [2, 3],
+        ),
         ("(url:handbook OR metadata[metalad_core]:meta3value) AND ds_id:844C", [1, 3]),
         ("(url:handbook OR metadata[metalad_core]:value) AND ds_id:844c", [1, 2, 3]),
+        (
+            "(url:handbook OR metadata[metalad_core]:value) ds_id:844c",
+            [1, 2, 3],
+        ),  # implicit AND
         ("meta2value", [2]),
         ('metadata:"value"', [1, 2]),
         ('metadata[metalad_studyminimeta]:"value"', []),
@@ -112,7 +122,7 @@ def populate_with_url_metadata_for_search(
     ],
 )
 def test_search_complex_smoke(flask_app, query, expected):
-    r = parser.parse(query)
+    r = parse_query(query)
     # print(f"QUERY {query}: {r}")
     with flask_app.app_context():
         result = db.session.query(RepoUrl).filter(r)
