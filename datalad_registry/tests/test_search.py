@@ -1,3 +1,4 @@
+from lark.exceptions import VisitError
 import pytest
 
 from datalad_registry.models import RepoUrl, URLMetadata, db
@@ -6,16 +7,21 @@ from ..search import parse_query
 
 
 @pytest.mark.parametrize(
-    "query",
+    "query, exc, err",
     [
-        "unknown_field:example",
+        ("unknown_field:example", ValueError, None),
+        # Lark masks exceptions. We did not provide dedicated ones for all
+        # of them, but let's test that error message as expected
+        ("ds_id:=example", VisitError, "Operation = is not implemented"),
         # r'(haxby or halchenko) AND metadata:BIDSmetadata[bids_dataset,metalad_core]:'
         # r'"BIDSVersion\": \"v"',
     ],
 )
-def test_search_errors(query):
-    with pytest.raises(ValueError):
+def test_search_errors(query, exc, err):
+    with pytest.raises(exc) as ce:
         parse_query(query)
+    if err:
+        assert err in str(ce.value)
 
 
 @pytest.fixture
