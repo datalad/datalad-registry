@@ -32,6 +32,7 @@
 <head>
   <title>DataLad Registry: Overview</title>
   <link rel="stylesheet" href="/static/main.css"/>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 </head>
 <body>
 <div id="nav-logo">
@@ -199,6 +200,41 @@ window.onclick = function(event) {
     modal.style.display = "none";
   }
 }
+
+function span_copy() {
+  // Find all span elements with the class 'query'
+  const spans = document.querySelectorAll('.query');
+
+  spans.forEach(span => {
+    // Create a copy button
+    const button = document.createElement('button');
+    button.innerHTML = '<sup>📋</sup>'; // Set your icon HTML here
+    button.onclick = function() {
+      // Copy span text to clipboard
+      const text = span.innerText;
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      // might want to notify the user that the text was copied
+      // alert("Copied: " + text);
+    };
+    // Style the button as needed
+    button.style.margin = '0px';
+    button.style.border = '0px';
+    button.style.padding = '0px';
+    button.style.background = 'transparent';
+
+    // Append the button next to the span
+    span.parentNode.insertBefore(button, span.nextSibling);
+  });
+}
+
+// Call this function when the document is fully loaded
+document.addEventListener('DOMContentLoaded', span_copy);
+
 </script>
 
 </body>
