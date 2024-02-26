@@ -4,7 +4,7 @@
   {%- else -%}
     {%- set new_sort = default -%}
   {%- endif -%}
-  href="{{ url_for('.overview', filter=url_filter, sort='{}'.format(new_sort)) }}"
+  href="{{ url_for('.overview', query=search_query, sort='{}'.format(new_sort)) }}"
 {%- endmacro -%}
 
 {% macro render_pagination_widget(pagination, endpoint) %}
@@ -16,7 +16,7 @@
     {% for page in pagination.iter_pages() %}
       {% if page %}
         {% if page != pagination.page %}
-          <a href="{{ url_for(endpoint, page=page, per_page=pagination.per_page, sort=sort_by, filter=url_filter) }}">{{ page }}</a>
+          <a href="{{ url_for(endpoint, page=page, per_page=pagination.per_page, sort=sort_by, query=search_query) }}">{{ page }}</a>
         {% else %}
           <strong>{{ page }}</strong>
         {% endif %}
@@ -40,21 +40,25 @@
 <div id="datalad-registry">
   <div class="content">
     <form action="{{ url_for('.overview') }}" formmethod="get">
-      <input id='search' type='search' name='filter'
-          {%- if url_filter %} value="{{ url_filter|escape }}"
+      <input id='search' type='search' name='query'
+          {%- if search_query %} value="{{ search_query|escape }}"
           {%- endif -%}
-             placeholder='Filter query'
+             placeholder='Search query'
       />
       <input type="hidden" name="sort" value="{{ sort_by }}"/>
-      <input type='submit' value='Filter URLs'/>
-      {% if url_filter_error -%}
-        <p></p><span class="error">ERROR: {{ url_filter_error }}</span></p>
+      <input type='submit' value='Search'/>
+      {% if search_error -%}
+        <p></p><span class="error">ERROR: {{ search_error }}</span></p>
       {%- endif %}
     </form>
-    <button id="showQuerySyntax">Show filter query syntax</button>
-    {% if url_filter -%}
-        <a href="{{ url_for('.overview', sort=sort_by) }}"> remove filter</a>
+    {% if search_query -%}
+        <!-- Clear search query via Button for a unified UI -->
+        <form action="{{ url_for('.overview') }}" formmethod="get">
+        <input type="hidden" name="sort" value="{{ sort_by }}"/>
+        <input type='submit' value='Clear'/>
+        </form>
     {%- endif %}
+    <button id="showQuerySyntax">Show search query syntax</button>
 
     <div id="QuerySyntaxModal" class="modal">
 
@@ -62,7 +66,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <span class="close">&times;</span>
-          <h2>Filter Query Syntax</h2>
+          <h2>Search query syntax</h2>
         </div>
         <div class="modal-body">
           <p>This syntax is a WiP and could change at any time.  Currently, it allows for:</p>
@@ -145,7 +149,7 @@
           <td><a href="{{ i.url }}">{{ i.url }}</a></td>
           <td class="mono">
 			{% if i.ds_id is not none %}
-			<a href="{{ url_for('.overview', filter=i.ds_id) }}">{{ i.ds_id }}</a>
+			<a href="{{ url_for('.overview', query='ds_id:' + i.ds_id) }}">{{ i.ds_id }}</a>
 			{% endif %}
 		  </td>
           <td class="mono">

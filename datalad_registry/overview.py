@@ -34,17 +34,19 @@ def overview():  # No type hints due to mypy#7187.
 
     r = db.session.query(RepoUrl)
 
-    # Apply filter if provided
-    query = request.args.get("filter", None, type=str)
-    filter_error = None
+    # Search using query if provided.
+    # ATM it is just a 'filter' on URL records, later might be more complex
+    # as we would add search to individual files.
+    query = request.args.get("query", None, type=str)
+    search_error = None
     if query:
-        lgr.debug("Filter URLs by '%s'", query)
+        lgr.debug("Search by '%s'", query)
         try:
-            filter_query = parse_query(query)
+            filter = parse_query(query)
         except Exception as e:
-            filter_error = str(e)
+            search_error = str(e)
         else:
-            r = r.filter(filter_query)
+            r = r.filter(filter)
 
     # Sort
     r = r.group_by(RepoUrl)
@@ -62,6 +64,6 @@ def overview():  # No type hints due to mypy#7187.
         "overview.html",
         pagination=pagination,
         sort_by=sort_by,
-        url_filter=query,
-        url_filter_error=filter_error,
+        search_query=query,
+        search_error=search_error,
     )
