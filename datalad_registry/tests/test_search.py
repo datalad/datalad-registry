@@ -14,7 +14,7 @@ from ..search import parse_query
         # of them, but let's test that error message as expected
         ("ds_id:=example", VisitError, "Operation = is not implemented"),
         # r'(haxby or halchenko) AND metadata:BIDSmetadata[bids_dataset,metalad_core]:'
-        # r'"BIDSVersion\": \"v"',
+        # r'"BIDSVersion\":\"v"',
     ],
 )
 def test_search_errors(query, exc, err):
