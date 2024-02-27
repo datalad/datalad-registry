@@ -40,6 +40,7 @@ div#datalad-registry table.list {
     border-collapse: collapse;
     white-space: nowrap;
     width: 100%;
+    margin-top: 1em;
 }
 
 div#datalad-registry table.list th {
