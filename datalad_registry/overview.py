@@ -42,11 +42,11 @@ def overview():  # No type hints due to mypy#7187.
     if query:
         lgr.debug("Search by '%s'", query)
         try:
-            filter = parse_query(query)
+            criteria = parse_query(query)
         except Exception as e:
             search_error = str(e)
         else:
-            select_stmt = select_stmt.filter(filter)
+            select_stmt = select_stmt.filter(criteria)
 
     # Sort
     select_stmt = select_stmt.group_by(RepoUrl)
