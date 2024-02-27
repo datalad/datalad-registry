@@ -1,5 +1,6 @@
 from lark.exceptions import VisitError
 import pytest
+from sqlalchemy import select
 
 from datalad_registry.models import RepoUrl, URLMetadata, db
 
@@ -133,7 +134,7 @@ def test_search_cases(flask_app, query, expected):
     r = parse_query(query)
     # print(f"QUERY {query}: {r}")
     with flask_app.app_context():
-        result = db.session.query(RepoUrl).filter(r)
-        hits = [_.id for _ in result.all()]
+        result = db.session.execute(select(RepoUrl).filter(r))
+        hits = [_.id for _ in result.scalars().all()]
         # print(expected, hits)
         assert hits == expected
