@@ -166,7 +166,7 @@ class TestOverView:
         Test for the filtering of dataset URLs in the overview page
         """
 
-        resp = flask_client.get("/overview/", query_string={"filter": filter_by})
+        resp = flask_client.get("/overview/", query_string={"query": filter_by})
 
         soup = BeautifulSoup(resp.text, "html.parser")
 
