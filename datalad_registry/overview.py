@@ -4,7 +4,7 @@
 import logging
 
 from flask import Blueprint, render_template, request
-from sqlalchemy import nullslast
+from sqlalchemy import nullslast, select
 
 from datalad_registry.models import RepoUrl, db
 from datalad_registry.search import parse_query
@@ -32,7 +32,7 @@ _SORT_ATTRS = {
 def overview():  # No type hints due to mypy#7187.
     default_sort_scheme = "update-desc"
 
-    r = db.session.query(RepoUrl)
+    select_stmt = select(RepoUrl)
 
     # Search using query if provided.
     # ATM it is just a 'filter' on URL records, later might be more complex
@@ -46,19 +46,21 @@ def overview():  # No type hints due to mypy#7187.
         except Exception as e:
             search_error = str(e)
         else:
-            r = r.filter(filter)
+            select_stmt = select_stmt.filter(filter)
 
     # Sort
-    r = r.group_by(RepoUrl)
+    select_stmt = select_stmt.group_by(RepoUrl)
     sort_by = request.args.get("sort", default_sort_scheme, type=str)
     if sort_by not in _SORT_ATTRS:
         lgr.debug("Ignoring unknown sort parameter: %s", sort_by)
         sort_by = default_sort_scheme
     col, sort_method = _SORT_ATTRS[sort_by]
-    r = r.order_by(nullslast(getattr(getattr(RepoUrl, col), sort_method)()))
+    select_stmt = select_stmt.order_by(
+        nullslast(getattr(getattr(RepoUrl, col), sort_method)())
+    )
 
     # Paginate
-    pagination = r.paginate()
+    pagination = db.paginate(select_stmt)
 
     return render_template(
         "overview.html",
