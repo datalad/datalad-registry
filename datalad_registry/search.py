@@ -243,7 +243,7 @@ class SearchQueryTransformer(Transformer):
 
     def _get_str_search(self, arg: Token) -> ColumnElement[bool]:
         value = self._get_str_value(arg)
-        return or_(*[f(value) for f in known_fields.values()])
+        return or_(*(f(value) for f in known_fields.values()))
 
     search_word = _get_str_search
     search_string = _get_str_search
