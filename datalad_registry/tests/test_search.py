@@ -129,7 +129,7 @@ def populate_with_url_metadata_for_search(
         #  (metadata[bids_dataset][Authors][-1]:haxby ...)
     ],
 )
-def test_search_complex_smoke(flask_app, query, expected):
+def test_search_cases(flask_app, query, expected):
     r = parse_query(query)
     # print(f"QUERY {query}: {r}")
     with flask_app.app_context():
