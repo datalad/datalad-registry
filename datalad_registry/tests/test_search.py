@@ -1,3 +1,6 @@
+# This test module contains fixtures and tests for the search functionality
+# enabled by the datalad_registry/search.py module.
+
 from lark.exceptions import VisitError
 import pytest
 from sqlalchemy import select
@@ -5,24 +8,6 @@ from sqlalchemy import select
 from datalad_registry.models import RepoUrl, URLMetadata, db
 
 from ..search import parse_query
-
-
-@pytest.mark.parametrize(
-    "query, exc, err",
-    [
-        ("unknown_field:example", ValueError, None),
-        # Lark masks exceptions. We did not provide dedicated ones for all
-        # of them, but let's test that error message as expected
-        ("ds_id:=example", VisitError, "Operation = is not implemented"),
-        # r'(haxby or halchenko) AND metadata:BIDSmetadata[bids_dataset,metalad_core]:'
-        # r'"BIDSVersion\": \"v"',
-    ],
-)
-def test_search_errors(query, exc, err):
-    with pytest.raises(exc) as ce:
-        parse_query(query)
-    if err:
-        assert err in str(ce.value)
 
 
 @pytest.fixture
@@ -69,6 +54,28 @@ def populate_with_url_metadata_for_search(
         db.session.commit()
 
 
+@pytest.mark.parametrize(
+    "query, exc, err",
+    [
+        ("unknown_field:example", ValueError, None),
+        # Lark masks exceptions. We did not provide dedicated ones for all
+        # of them, but let's test that error message as expected
+        ("ds_id:=example", VisitError, "Operation = is not implemented"),
+        # r'(haxby or halchenko) AND '
+        # r'metadata:BIDSmetadata[bids_dataset,metalad_core]:'
+        # r'"BIDSVersion\": \"v"',
+    ],
+)
+def test_with_invalid_query(query, exc, err):
+    """
+    Test the search functionality in handling invalid queries
+    """
+    with pytest.raises(exc) as ce:
+        parse_query(query)
+    if err:
+        assert err in str(ce.value)
+
+
 @pytest.mark.usefixtures("populate_with_url_metadata_for_search")
 @pytest.mark.parametrize(
     "query, expected",
@@ -100,13 +107,22 @@ def populate_with_url_metadata_for_search(
         ("handbook OR ds_id:datalad", [3]),
         ("url:handbook OR ds_id:datalad", [3]),
         ("url:handbook OR ds_id:844c", [1, 2, 3]),
-        ("(url:handbook OR metadata[metalad_core]:meta1value) AND ds_id:844c", [2, 3]),
+        (
+            "(url:handbook OR metadata[metalad_core]:meta1value) AND ds_id:844c",
+            [2, 3],
+        ),
         (
             "(url:?handbook OR metadata[metalad_core]:?meta1value) AND ds_id:?844c",
             [2, 3],
         ),
-        ("(url:handbook OR metadata[metalad_core]:meta3value) AND ds_id:844C", [1, 3]),
-        ("(url:handbook OR metadata[metalad_core]:value) AND ds_id:844c", [1, 2, 3]),
+        (
+            "(url:handbook OR metadata[metalad_core]:meta3value) AND ds_id:844C",
+            [1, 3],
+        ),
+        (
+            "(url:handbook OR metadata[metalad_core]:value) AND ds_id:844c",
+            [1, 2, 3],
+        ),
         (
             "(url:handbook OR metadata[metalad_core]:value) ds_id:844c",
             [1, 2, 3],
@@ -123,14 +139,19 @@ def populate_with_url_metadata_for_search(
         ('metadata[metalad_core,metalad_studyminimeta,unknown]:"value"', [1, 2]),
         # Prototypical query for which we do not have full support yet, e.g.
         # regex matching :~
-        #  (r"""((jim AND NOT haxby AND "important\" paper") OR ds_id:~"^000[3-9]..$"
-        #   OR url:"example.com") AND metadata:non AND metadata[ex1,ex2]:"specific data"
+        #  (r"""((jim AND NOT haxby AND "important\" paper") OR
+        #   ds_id:~"^000[3-9]..$"
+        #   OR url:"example.com") AND metadata:non
+        #   AND metadata[ex1,ex2]:"specific data"
         #   AND metadata[extractor2]:data""", []),
         # Find datasets with the last
         #  (metadata[bids_dataset][Authors][-1]:haxby ...)
     ],
 )
-def test_search_cases(flask_app, query, expected):
+def test_with_valid_query(flask_app, query, expected):
+    """
+    Test the search functionality in handling valid queries
+    """
     r = parse_query(query)
     # print(f"QUERY {query}: {r}")
     with flask_app.app_context():
