@@ -44,7 +44,7 @@ jobs:
       run: |
         env_file="env.test"
 
-        # Load needed env variables from file
+        # Load needed env variables from file to the environment
         set -a
         source "$env_file"
         set +a
@@ -59,6 +59,8 @@ jobs:
             fi
             # Extract variable name (part before the first '=')
             variable_name=$(echo "$trimmed_line" | cut -d '=' -f 1)
+
+            # Set the needed env vars in the GitHub Actions workflow
             echo "$variable_name=${!variable_name}" >> "$GITHUB_ENV"
         done < "$env_file"
     - name: Start services with Docker Compose
