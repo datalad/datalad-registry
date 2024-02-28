@@ -145,7 +145,7 @@ class TestOverView:
 
     @pytest.mark.usefixtures("populate_with_dataset_urls")
     @pytest.mark.parametrize(
-        "filter_by, expected_results",
+        "search_query, expected_results",
         [
             (
                 None,
@@ -157,22 +157,49 @@ class TestOverView:
                 ],
             ),
             ("exa", ["https://www.example.com"]),
+            # we support advanced search language now
+            (
+                "example OR handbook",
+                ["https://www.example.com", "https://handbook.datalad.org"],
+            ),
+            ("datalad AND handbook", ["https://handbook.datalad.org"]),
         ],
     )
-    def test_filter(
-        self, filter_by: Optional[str], expected_results: list[str], flask_client
+    def test_search_query(
+        self, search_query: Optional[str], expected_results: list[str], flask_client
     ):
         """
         Test for the filtering of dataset URLs in the overview page
         """
 
-        resp = flask_client.get("/overview/", query_string={"query": filter_by})
+        resp = flask_client.get("/overview/", query_string={"query": search_query})
 
         soup = BeautifulSoup(resp.text, "html.parser")
 
         url_list = [row.td.a.string for row in soup.body.table.find_all("tr")[1:]]
 
         assert url_list == expected_results
+
+    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.parametrize(
+        "search_query",
+        [
+            "unknown_field:example",
+        ],
+    )
+    def test_search_query_error(self, search_query: Optional[str], flask_client):
+        """
+        Test for the filtering of dataset URLs in the overview page
+        """
+
+        resp = flask_client.get("/overview/", query_string={"query": search_query})
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        assert (error_span := soup.find("span", class_="error"))
+        assert error_span.text.startswith(
+            "ERROR: Unknown field: 'unknown_field'. Known are:"
+        )
 
     def test_pagination(self, populate_with_dataset_urls, flask_client):
         """
