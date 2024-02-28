@@ -52,6 +52,10 @@ def populate_with_url_metadata_for_search(
 
 
 class TestSearch:
+    """
+    Tests for the search functionality
+    """
+
     @pytest.mark.parametrize(
         "query, exc, err",
         [
@@ -65,6 +69,9 @@ class TestSearch:
         ],
     )
     def test_with_invalid_query(self, query, exc, err):
+        """
+        Test the search functionality in handling invalid queries
+        """
         with pytest.raises(exc) as ce:
             parse_query(query)
         if err:
@@ -143,6 +150,9 @@ class TestSearch:
         ],
     )
     def test_with_valid_query(self, flask_app, query, expected):
+        """
+        Test the search functionality in handling valid queries
+        """
         r = parse_query(query)
         # print(f"QUERY {query}: {r}")
         with flask_app.app_context():
