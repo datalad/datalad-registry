@@ -165,11 +165,11 @@ class TestOverView:
             ("datalad AND handbook", ["https://handbook.datalad.org"]),
         ],
     )
-    def test_search_query(
+    def test_search_with_valid_query(
         self, search_query: Optional[str], expected_results: list[str], flask_client
     ):
         """
-        Test for the filtering of dataset URLs in the overview page
+        Test searching with a valid query
         """
 
         resp = flask_client.get("/overview/", query_string={"query": search_query})
@@ -187,9 +187,9 @@ class TestOverView:
             "unknown_field:example",
         ],
     )
-    def test_search_query_error(self, search_query: Optional[str], flask_client):
+    def test_search_with_invalid_query(self, search_query: Optional[str], flask_client):
         """
-        Test for the filtering of dataset URLs in the overview page
+        Test searching with an invalid query
         """
 
         resp = flask_client.get("/overview/", query_string={"query": search_query})
