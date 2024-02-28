@@ -64,7 +64,7 @@ class TestSearch:
             # r'"BIDSVersion\": \"v"',
         ],
     )
-    def test_search_errors(self, query, exc, err):
+    def test_with_invalid_query(self, query, exc, err):
         with pytest.raises(exc) as ce:
             parse_query(query)
         if err:
@@ -142,7 +142,7 @@ class TestSearch:
             #  (metadata[bids_dataset][Authors][-1]:haxby ...)
         ],
     )
-    def test_search_cases(self, flask_app, query, expected):
+    def test_with_valid_query(self, flask_app, query, expected):
         r = parse_query(query)
         # print(f"QUERY {query}: {r}")
         with flask_app.app_context():
