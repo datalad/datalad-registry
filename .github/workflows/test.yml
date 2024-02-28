@@ -39,7 +39,7 @@ jobs:
         pip install .[tests]
     - name: Remove build artifacts
       run: rm -rf build dist
-    - name: Append environment variables to GITHUB_ENV
+    - name: Load env vars from env.test to GitHub Actions workflow
       shell: bash
       run: |
         env_file="env.test"
