@@ -1,3 +1,6 @@
+# This test module contains fixtures and tests for the search functionality
+# enabled by the datalad_registry/search.py module.
+
 from lark.exceptions import VisitError
 import pytest
 from sqlalchemy import select
