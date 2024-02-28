@@ -111,6 +111,8 @@ def populate_with_url_metadata_for_search(
             [1, 2, 3],
         ),  # implicit AND
         ("meta2value", [2]),
+        # search within a JSON record. Space between key and value would matter
+        (r'metadata:"meta1\": \"meta1value\""', [2]),
         ('metadata:"value"', [1, 2]),
         ('metadata[metalad_studyminimeta]:"value"', []),
         # ATM only exact match for extractor
