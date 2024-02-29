@@ -39,33 +39,30 @@ jobs:
         pip install .[tests]
     - name: Remove build artifacts
       run: rm -rf build dist
-    - name: Load env vars from env.test to GitHub Actions workflow as is
+    - name: Load env vars from env.test to GitHub Actions workflow
       shell: bash
-      run: cat env.test >> "$GITHUB_ENV"
-#    - name: Load env vars from env.test to GitHub Actions workflow
-#      shell: bash
-#      run: |
-#        env_file="env.test"
-#
-#        # Load needed env variables from file to the environment
-#        set -a
-#        source "$env_file"
-#        set +a
-#
-#        # Read each line in the file
-#        while IFS= read -r line || [[ -n "$line" ]]; do
-#            # Trim leading and trailing whitespace
-#            trimmed_line=$(echo "$line" | xargs)
-#            # Skip empty lines and lines starting with '#'
-#            if [[ -z "$trimmed_line" || "$trimmed_line" =~ ^# ]]; then
-#                continue
-#            fi
-#            # Extract variable name (part before the first '=')
-#            variable_name=$(echo "$trimmed_line" | cut -d '=' -f 1)
-#
-#            # Set the needed env vars in the GitHub Actions workflow
-#            echo "$variable_name=${!variable_name}" >> "$GITHUB_ENV"
-#        done < "$env_file"
+      run: |
+        env_file="env.test"
+
+        # Load needed env variables from file to the environment
+        set -a
+        source "$env_file"
+        set +a
+
+        # Read each line in the file
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            # Trim leading and trailing whitespace
+            trimmed_line=$(echo "$line" | xargs)
+            # Skip empty lines and lines starting with '#'
+            if [[ -z "$trimmed_line" || "$trimmed_line" =~ ^# ]]; then
+                continue
+            fi
+            # Extract variable name (part before the first '=')
+            variable_name=$(echo "$trimmed_line" | cut -d '=' -f 1)
+
+            # Set the needed env vars in the GitHub Actions workflow
+            echo "$variable_name=${!variable_name}" >> "$GITHUB_ENV"
+        done < "$env_file"
     - name: Start services with Docker Compose
       run: docker compose -f docker-compose.test.yml up -d
     - name: Run tests with Coverage
