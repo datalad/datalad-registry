@@ -6,16 +6,6 @@ on:
       - master
   pull_request:
 
-env:
-  RABBITMQ_DEFAULT_USER: tester
-  RABBITMQ_DEFAULT_PASS: testpass
-  POSTGRES_DB: pgdb
-  POSTGRES_USER: tester
-  POSTGRES_PASSWORD: testpass
-  CELERY_BROKER_URL: "amqp://tester:testpass@localhost:5672"
-  CELERY_RESULT_BACKEND: "redis://localhost:6379"
-  SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://tester:testpass@localhost:5432/pgdb"
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -45,12 +35,16 @@ jobs:
         pip install wheel
         pip install mypy types-requests types-PyYAML
         pip install .[tests]
+    - name: Remove build artifacts
+      run: rm -rf build dist
+    - name: Load env vars from env.test to GitHub Actions workflow
+      run: dotenv -f env.test list >> "$GITHUB_ENV"
     - name: Start services with Docker Compose
-      run: docker compose -f docker-compose.testing.yml up -d --build
+      run: docker compose -f docker-compose.test.yml up -d
     - name: Run tests with Coverage
-      run: pytest --cov=. --cov-report=xml
+      run: python -m pytest -s -v --cov=. --cov-report=xml
     - name: Stop services provided by Docker Compose
-      run: docker compose -f docker-compose.testing.yml down
+      run: docker compose -f docker-compose.test.yml down
     - name: mypy check
       run: mypy datalad_registry datalad_registry_client
     - name: Upload coverage to codecov
