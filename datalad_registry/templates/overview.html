@@ -39,7 +39,7 @@
 </div>
 <div id="datalad-registry">
   <div class="content">
-    <form action="{{ url_for('.overview') }}" formmethod="get">
+    <form action="{{ url_for('.overview') }}" method="get">
       <input id='search' type='search' name='query'
           {%- if search_query %} value="{{ search_query|escape }}"
           {%- endif -%}
@@ -53,7 +53,7 @@
     </form>
     {% if search_query -%}
         <!-- Clear search query via Button for a unified UI -->
-        <form action="{{ url_for('.overview') }}" formmethod="get">
+        <form action="{{ url_for('.overview') }}" method="get">
         <input type="hidden" name="sort" value="{{ sort_by }}"/>
         <input type='submit' value='Clear'/>
         </form>
