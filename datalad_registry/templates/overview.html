@@ -4,7 +4,7 @@
   {%- else -%}
     {%- set new_sort = default -%}
   {%- endif -%}
-  href="{{ url_for('.overview', filter=url_filter, sort='{}'.format(new_sort)) }}"
+  href="{{ url_for('.overview', query=search_query, sort='{}'.format(new_sort)) }}"
 {%- endmacro -%}
 
 {% macro render_pagination_widget(pagination, endpoint) %}
@@ -16,7 +16,7 @@
     {% for page in pagination.iter_pages() %}
       {% if page %}
         {% if page != pagination.page %}
-          <a href="{{ url_for(endpoint, page=page, per_page=pagination.per_page, sort=sort_by, filter=url_filter) }}">{{ page }}</a>
+          <a href="{{ url_for(endpoint, page=page, per_page=pagination.per_page, sort=sort_by, query=search_query) }}">{{ page }}</a>
         {% else %}
           <strong>{{ page }}</strong>
         {% endif %}
@@ -40,16 +40,81 @@
 <div id="datalad-registry">
   <div class="content">
     <form action="{{ url_for('.overview') }}" formmethod="get">
-      <input type='search' name='filter'
-          {%- if url_filter %} value="{{ url_filter|escape }}"
+      <input id='search' type='search' name='query'
+          {%- if search_query %} value="{{ search_query|escape }}"
           {%- endif -%}
+             placeholder='Search query'
       />
       <input type="hidden" name="sort" value="{{ sort_by }}"/>
-      <input type='submit' value='Filter URLs'/>
-      {% if url_filter -%}
-        <a href="{{ url_for('.overview', sort=sort_by) }}"> remove filter</a>
+      <input type='submit' value='Search'/>
+      {% if search_error -%}
+        <p></p><span class="error">ERROR: {{ search_error }}</span></p>
       {%- endif %}
     </form>
+    {% if search_query -%}
+        <!-- Clear search query via Button for a unified UI -->
+        <form action="{{ url_for('.overview') }}" formmethod="get">
+        <input type="hidden" name="sort" value="{{ sort_by }}"/>
+        <input type='submit' value='Clear'/>
+        </form>
+    {%- endif %}
+    <button id="showQuerySyntax">Show search query syntax</button>
+
+    <div id="QuerySyntaxModal" class="modal">
+
+    <!-- Modal content -->
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="close">&times;</span>
+          <h2>Search query syntax</h2>
+        </div>
+        <div class="modal-body">
+          <p>This syntax is a WiP and could change at any time.  Currently, it allows for:</p>
+          <ul>
+            <li>Simple singular <span class="content">WORD</span> (e.g., <span class="query">haxby</span>)
+              or a <span class="content">"QUOTED STRING"</span> (e.g., <span class="query">"James Haxby"</span>)
+              <ul>
+                <li>Searching is case-insensitive at the moment, so <span class="query">haxby</span> is identical to <span
+                        class="query">Haxby</span>.
+                </li>
+                <li>Searching is performed within content rather than for entire words,
+                  and so searching for <span class="query">ax</span> would find <span class="content">Haxby</span>,
+                  <span class="content">tax</span>, etc.
+                </li>
+              </ul>
+            </li>
+            <li>By default, the following fields are searched: "url", "ds_id", "head", "head_describe", "branches",
+              "tags", "metadata".
+              To restrict the search to a specific field, specify the field name followed by <span class="token">:</span> and
+              the search term, e.g.,
+              <span class="query">url:github</span> or <span class="query">head:1.0</span> or <span class="query">metadata:"James Haxby"</span>.
+            </li>
+            <li><span class="token">AND</span>, <span class="token">OR</span>, and <span class="token">NOT</span> can be used for
+              logical operations.
+              <ul>
+                <li>The default logical operator is <span class="token">AND</span>, and so
+                 searching for <span class="query">James Haxby</span> is identical to searching for
+                  <span class="query">James AND Haxby</span>
+                  or
+                  <span class="query">Haxby AND James</span>.
+                </li>
+                <li><span class="token">AND</span> and <span class="token">OR</span> may not be mixed in the same
+                  statement.
+                </li>
+              </ul>
+            <li>Use <span class="token">(</span> and <span class="token">)</span> to group statements, e.g.,
+              <span class="query">(url:github.com OR url:gin.g-node) AND (Haxby (James OR Jim))</span>.
+            </li>
+            <li>You can restrict a search to specific metadata extractors by specifying one or more of them,
+              e.g., <span class="query">metadata[bids_dataset,metalad_core]:"BIDSVersion\": \"v"</span>
+              where the backslash is an escape character,
+              and the letter <span class="query">v</span> is a stand-in for an actual version string.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
 
     <table class="list">
       <tr>
@@ -87,7 +152,7 @@
           <td><a href="{{ i.url }}">{{ i.url }}</a></td>
           <td class="mono">
 			{% if i.ds_id is not none %}
-			<a href="{{ url_for('.overview', filter=i.ds_id) }}">{{ i.ds_id }}</a>
+			<a href="{{ url_for('.overview', query='ds_id:' + i.ds_id) }}">{{ i.ds_id }}</a>
 			{% endif %}
 		  </td>
           <td class="mono">
@@ -114,5 +179,69 @@
     </div>
   </div>
 </div>
+
+<script>
+// Get the modal
+var modal = document.getElementById("QuerySyntaxModal");
+
+// Get the button that opens the modal
+var btn = document.getElementById("showQuerySyntax");
+
+// Get the <span> element that closes the modal
+var span = document.getElementsByClassName("close")[0];
+
+// When the user clicks the button, open the modal
+btn.onclick = function() {
+  modal.style.display = "block";
+}
+
+// When the user clicks on <span> (x), close the modal
+span.onclick = function() {
+  modal.style.display = "none";
+}
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+  if (event.target == modal) {
+    modal.style.display = "none";
+  }
+}
+
+function span_copy() {
+  // Find all span elements with the class 'query'
+  const spans = document.querySelectorAll('.query');
+
+  spans.forEach(span => {
+    // Create a copy button
+    const button = document.createElement('button');
+    button.innerHTML = '<sup>📋</sup>'; // Set your icon HTML here
+    button.onclick = function() {
+      // Copy span text to clipboard
+      const text = span.innerText;
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      // might want to notify the user that the text was copied
+      // alert("Copied: " + text);
+    };
+    // Style the button as needed
+    button.style.margin = '0px';
+    button.style.border = '0px';
+    button.style.padding = '0px';
+    button.style.background = 'transparent';
+
+    // Append the button next to the span
+    span.parentNode.insertBefore(button, span.nextSibling);
+  });
+}
+
+// Call this function when the document is fully loaded
+document.addEventListener('DOMContentLoaded', span_copy);
+
+</script>
+
 </body>
 </html>

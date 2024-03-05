@@ -15,7 +15,7 @@ repos:
       - id: black
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.11.4
+    rev: 5.13.2
     hooks:
       - id: isort
 
@@ -27,6 +27,14 @@ repos:
           - flake8-bugbear
           - flake8-builtins
           - flake8-unused-arguments
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+    - id: codespell
+      additional_dependencies:
+      - tomli
+
 
 default_language_version:
     python: python3.11
