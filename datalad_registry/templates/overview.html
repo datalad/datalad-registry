@@ -48,7 +48,7 @@
       <input type="hidden" name="sort" value="{{ sort_by }}"/>
       <input type='submit' value='Search'/>
       {% if search_error -%}
-        <p></p><span class="error">ERROR: {{ search_error }}</span></p>
+        <p><span class="error">ERROR: {{ search_error }}</span></p>
       {%- endif %}
     </form>
     {% if search_query -%}
