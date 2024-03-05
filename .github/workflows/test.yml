@@ -10,44 +10,44 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - name: Configure environment
-      run: |
-        git config --global user.name dl-registry
-        git config --global user.email dl-registry@example.com
-    - name: Install git-annex
-      shell: bash
-      run: |
-        bash <(wget -q -O- http://neuro.debian.net/_files/neurodebian-travis.sh)
-        sudo apt-get update -qq
-        sudo apt-get install eatmydata
-        sudo eatmydata apt-get install git-annex-standalone
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.9'
-    - name: Install dependencies
-      run: |
-        pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install wheel
-        pip install mypy types-requests types-PyYAML
-        pip install .[tests]
-    - name: Remove build artifacts
-      run: rm -rf build dist
-    - name: Load env vars from env.test to GitHub Actions workflow
-      run: dotenv -f env.test list >> "$GITHUB_ENV"
-    - name: Start services with Docker Compose
-      run: docker compose -f docker-compose.test.yml up -d
-    - name: Run tests with Coverage
-      run: python -m pytest -s -v --cov=. --cov-report=xml
-    - name: Stop services provided by Docker Compose
-      run: docker compose -f docker-compose.test.yml down
-    - name: mypy check
-      run: mypy datalad_registry datalad_registry_client
-    - name: Upload coverage to codecov
-      uses: codecov/codecov-action@v4
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Configure environment
+        run: |
+          git config --global user.name dl-registry
+          git config --global user.email dl-registry@example.com
+      - name: Install git-annex
+        shell: bash
+        run: |
+          bash <(wget -q -O- http://neuro.debian.net/_files/neurodebian-travis.sh)
+          sudo apt-get update -qq
+          sudo apt-get install eatmydata
+          sudo eatmydata apt-get install git-annex-standalone
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install wheel
+          pip install mypy types-requests types-PyYAML
+          pip install .[tests]
+      - name: Remove build artifacts
+        run: rm -rf build dist
+      - name: Load env vars from env.test to GitHub Actions workflow
+        run: dotenv -f env.test list >> "$GITHUB_ENV"
+      - name: Start services with Docker Compose
+        run: docker compose -f docker-compose.test.yml up -d
+      - name: Run tests with Coverage
+        run: python -m pytest -s -v --cov=. --cov-report=xml
+      - name: Stop services provided by Docker Compose
+        run: docker compose -f docker-compose.test.yml down
+      - name: mypy check
+        run: mypy datalad_registry datalad_registry_client
+      - name: Upload coverage to codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
