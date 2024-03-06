@@ -15,5 +15,3 @@ fi
 cd "$1"
 
 (set -a && . ./.env.dev.typhon && set +a && podman-compose -f docker-compose.yml up -d --build)
-
-disown
