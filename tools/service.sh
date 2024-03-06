@@ -14,5 +14,6 @@ fi
 
 cd "$1"
 
-podman-compose -f docker-compose.dev.yml --env-file .env.dev.typhon up -d --build
+(set -a && . ./.env.dev.typhon && set +a && podman-compose -f docker-compose.yml up -d --build)
+
 disown
