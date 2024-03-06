@@ -1,66 +1,134 @@
 [![codecov](https://codecov.io/gh/datalad/datalad-registry/branch/master/graph/badge.svg?token=CY783CBF77)](https://codecov.io/gh/datalad/datalad-registry)
 
-DataLad registry -- work in progress
-
-  * https://github.com/datalad/datalad/issues/947
+Datalad-Registry is now live at [registry.datalad.org](http://registry.datalad.org/).
 
 ---
+### Preface
 
-### NEW Development setup
+We fully test Datalad-Registry with Podman. Nevertheless, you should be able to launch
+a Datalad-Registry instance using Docker with little to no deviation from this guide.
+
+### Testing and Development Setup
+
+#### Prerequisites
+
+The following dependencies are needed in a system in order to test and develop
+Datalad-Registry:
+
+  * [git](https://git-scm.com/downloads)
+  * [git-annex](https://git-annex.branchable.com/install/)
+  * [Podman](https://podman.io/docs/installation)
+  * [podman-compose](https://github.com/containers/podman-compose)
+
+    We strongly recommend installing `podman-compose` and other Python dependencies in
+    a [Python virtual environment](https://docs.python.org/3/library/venv.html) for this
+    project.
 
 #### To run tests
 
-On Debian systems install necessary for Python PostgreSQL libs dependencies:
+1. Setup
 
-    apt-get install postgresql-common libpq-dev
+    1. On Debian systems, install the necessary dependencies for Python PostgreSQL libs:
 
-Create virtual env with e.g.,
+       `sudo apt-get install libpq-dev python3-dev`
 
-    py=3; d=venvs/dev$py; python$py -m venv $d && source $d/bin/activate && python3 -m pip install -e .[tests]
+    2. Install Datalad-Registry for testing in
+       the [Python virtual environment](https://docs.python.org/3/library/venv.html) for
+       this project (as mentioned in the Prerequisites section):
 
-Start the docker instances of postgres, rabbitmq, and redis:
+       `pip install -e .[tests]`
 
-    docker-compose -f docker-compose.testing.yml --env-file template.env.testing up -d
+    3. Launch the needed components of DataLad-Registry for testing from a subshell with
+       needed environment variables loaded from `env.test`.
+       (Note: using a subshell avoids polluting the current shell with the environment
+       variables from `env.test`):
 
-Now can run the tests after loading environment variables from the temaplte.env.testing.
-Using the next shell within to avoid polluting current environment:
+       `(set -a && . ./env.test && set +a && podman-compose -f docker-compose.test.yml up -d)`
 
-    ( set -a && . ./template.env.testing && set +a && python -m pytest -s -v  )
+2. Test execution
+    1. Launch the tests from a subshell with the needed environment variables loaded
+       from `env.test`:
 
-In the future - above logic would migrate into the session-scoped pytest fixture, [issue #224](https://github.com/datalad/datalad-registry/issues/224).
+       `(set -a && . ./env.test && set +a && python -m pytest -s -v)`
+
+3. Teardown
+
+   When the testing is done, you can bring down the components of Datalad-Registry
+   launched.
+
+    1. Bring down the components of Datalad-Registry launched from a subshell with
+       the needed environment variables loaded from `env.test`:
+
+       `(set -a && . ./env.test && set +a && podman-compose -f docker-compose.test.yml down)`
 
 #### To develop
 
-The template file `template.env.dev` provides all environment variables with some default values.
-Copy it to some file and modify secrets (passwords) from the default values, e.g.
+1. Setup
 
-    cp template.env.dev .env.dev
-    sed -e 's,pass$,secret123t,g' -i .env.dev
+    1. On Debian systems, install the necessary dependencies for Python PostgreSQL libs:
 
-*note*: we git ignore all `.env` files.
+       `sudo apt-get install libpq-dev python3-dev`
 
-Now we have two ways to start the services in a development mode, server based and locally based.
-Both ways use the `docker-compose.dev.yml` file, and the local development mode also uses
-the `docker-compose.dev.local.override.yml` file to achieve a bind mount to the current
-directory at the host machine as `/app` within web service container.
+    2. Install Datalad-Registry for development in
+       the [Python virtual environment](https://docs.python.org/3/library/venv.html) for
+       this project (as mentioned in the Prerequisites section):
 
-##### Server development mode
+       `pip install -e .[dev]`
 
-where the web service will use the copy of the codebase shipped in the docker image of Datalad-registry and not react to the changes in the codebase at the host machine:
+    3. Set values for needed environment variables by creating a `.env.dev` file
 
-    docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build
+       `template.env` is a template for creating the `.env.dev` file. It lists
+       all the needed environment variables with defaults. We will use it to create
+       the `.env.dev` file.
 
-The `instance` directory for the web service is in the directory allocated for the web service at the host machine as specified in the `.env.dev` file.
+        1. Create the `.env.dev` file by copying the `template.env` file to `.env.dev`:
 
-##### Local development mode
+           `cp template.env .env.dev`
 
-where the web service will use the codebase at the host machine, react to the changes in this codebase, and operate in debug mode:
+        2. Modify the `.env.dev` file according to your needs by adjusting the values
+           for usernames, passwords, etc.
 
-    docker compose -f docker-compose.dev.yml -f docker-compose.dev.local.override.yml --env-file .env.dev up -d --build
+       *note*: we git ignore all `.env` files.
 
-The `instance` directory for the web service is in the current directory at the host machine, which is also the codebase in the host machine.
+    4. Launch the needed components of DataLad-Registry for development from a subshell
+       with needed environment variables loaded from `.env.dev`.
+       (Note: using a subshell avoids polluting the current shell with the environment
+       variables from `.env.dev`):
 
-*Note*: Other services will not react to the changes in the codebase at the host machine.
+       `(set -a && . ./.env.dev && set +a && podman-compose -f docker-compose.yml -f docker-compose.dev.override.yml up -d --build)`
+
+2. Development
+
+   At this point, the proper development environment is set up. However, please
+   note the following characteristics of this development environment:
+
+    1. The current directory at the host is bind-mounted to the `/app` directory within
+       the web service container.
+    2. The subdirectory `./instance` at the host is bind-mounted to the `/app/instance`
+       directory within the web service container to serve as the instance folder for
+       the Flask application run by the web service container.
+    3. The web service container runs the Flask application in debug mode and reacts to
+       changes in the current directory, the codebase, at the host machine.
+    4. All other component services of Datalad-Registry, as defined in
+       `docker-compose.yml`, do not react to changes in the codebase at
+       the host machine. (Note: This behavior is the result of a design choice.
+       The worker service, a Celery worker, for example, should not react to changes
+       in the codebase at the host machine for the tasks it executes may not always
+       be idempotent.)
+        1. To realize the changes in the codebase at the host machine in other component
+           services, you needed to bring down all the components of Datalad-Registry as
+           specified in the following Teardown section and relaunch them according to
+           the above Setup section.
+
+3. Teardown
+
+   When done with developing, you can bring down the components of Datalad-Registry
+   launched.
+
+    1. Bring down the components of Datalad-Registry launched from a subshell with
+       the needed environment variables loaded from `.env.dev`:
+
+       `(set -a && . ./.env.dev && set +a && podman-compose -f docker-compose.yml -f docker-compose.dev.override.yml down)`
 
 ### Read-Only Mode
 
@@ -147,7 +215,7 @@ To set up Datalad-Registry to run in read-only mode involves the following steps
             ```
       3. Stop the node by running the following command.
          ```bash
-         (set -a && . ./.env.read-only && set +a && podman-compose -f docker-compose.read-only.yml up down)
+         (set -a && . ./.env.read-only && set +a && podman-compose -f docker-compose.read-only.yml down)
          ```
       4. Restore the `docker-compose.read-only.yml` file to its original state by
          commenting out the line `command: ["tail", "-f", "/dev/null"]`.
@@ -158,82 +226,3 @@ just run the following command.
 ```bash
 (set -a && . ./.env.read-only && set +a && podman-compose -f docker-compose.read-only.yml up -d --build)
 ```
-
-
-### OLD Development setup
-
-Here are steps for setting up a development environment either 1)
-using a virtual environment for everything but the Celery broker, or 2)
-using containers for both the Flask and Celery components.  Note that
-these steps are not required to execute the pytest-based test suite.
-
-#### Virtual environment with container for Celery broker ("develop mode")
-
-After setting up the virtual environment for the project, run `./up develop`
-from the top level of the repository in order to run the Flask process in the
-foreground.  To run it in the background instead, run `./up --bg develop`.
-
-Alternatively, one can run `./up-tests develop`, which runs `./up --bg develop`
-with a temporary directory as the instance path and also waits for the Flask
-process to start receiving connections before finishing.
-
-To bring down the Docker containers started by `up`, run `./down`.  If
-`up-tests` was run, the background Flask and Celery processes can be brought
-down as well by instead running `./down develop`.
-
-#### Containers for Flask app, Celery broker, and Celery worker
-
-To run all of the Flask, Celery, etc. processes inside Docker containers, run
-just `./up` from the top level of the repository.  To bring down the Docker
-containers, run `./down`.
-
-#### Sample request
-
-The request below should work after completing either of the setups above.
-
-```console
-$ curl http://127.0.1:5000/v1/datasets/6eeadb86-84be-11e6-b24c-002590f97d84/urls
-{
-  "ds_id": "6eeadb86-84be-11e6-b24c-002590f97d84",
-  "urls": []
-}
-```
-
-#### Environment Variables
-
-The server instance can be configured via the following environment variables
-when running the `up` or `up-tests` scripts:
-
-- `DATALAD_REGISTRY_PASSWORD` — *(required)* the password to use for the
-  PostgreSQL database and RabbitMQ instance.
-
-- `DATALAD_REGISTRY_INSTANCE_PATH` — The directory in which to store the
-  server's data; defaults to `$PWD/instance`.  When running Flask inside a
-  Docker container, this is the path on the host where the data will be
-  mounted.
-
-- `DATALAD_REGISTRY_DB_INSTANCE_PATH` — The directory at which to mount the
-  contents of the PostgreSQL database; defaults to
-  `$DATALAD_REGISTRY_INSTANCE_PATH/db`.
-
-- `DATALAD_REGISTRY_DATASET_CACHE` — The directory in which to cache DataLad
-  repositories; defaults to `$DATALAD_REGISTRY_INSTANCE_PATH/cache`.  This only
-  has an effect in develop mode.
-
-- `DATALAD_REGISTRY_LOG_LEVEL` — Logging level for the Flask and Celery
-  processes; defaults to `DEBUG`.  This only has an effect in develop mode.
-
-
-### Running tests
-
-Tests are run with pytest, which can be invoked by running `tox`.  By default,
-the tests will create & use a Dockerized PostgreSQL instance with a random
-password which is destroyed when the tests finish.  To keep the PostgreSQL
-container around after the tests finish, set the
-`DATALAD_REGISTRY_PERSIST_DOCKER_COMPOSE` environment variable to a value other
-than `0`.
-
-To use the PostgreSQL container brought up by `./up` instead, pass the
-`--devserver` option to pytest (When using tox, this can be done by running
-`tox -- --devserver`) and ensure that the `DATALAD_REGISTRY_PASSWORD`
-environment variable is set to the proper value.

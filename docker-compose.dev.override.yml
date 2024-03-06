@@ -1,4 +1,4 @@
-# This file is for overriding docker-compose.dev.yml for local development.
+# This file is for overriding docker-compose.yml for development purposes.
 # Particularly, it enables debug mode for the web service and mounts
 # the current directory at the host to the `/app` directory in the container.
 
