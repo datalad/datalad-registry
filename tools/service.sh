@@ -11,6 +11,7 @@ cd "$(dirname "$0")" && cd ..
 
 # Load environment variables from .env.typhon
 set -a
+# shellcheck disable=SC1091
 source ./.env.typhon
 set +a
 
