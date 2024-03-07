@@ -14,4 +14,4 @@ set -a
 source ./.env.typhon
 set +a
 
-podman-compose -f docker-compose.yml up -d --build
+podman-compose -f docker-compose.yml up -d
