@@ -14,4 +14,5 @@ set -a
 source ./.env.typhon
 set +a
 
+# Start the Datalad-Registry with podman-compose
 podman-compose -f docker-compose.yml up -d
