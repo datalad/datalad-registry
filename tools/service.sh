@@ -7,7 +7,7 @@ set -eu
 umask 077
 
 # Set working directory to the root of the Datalad-Registry repository
-cd $(dirname $0) && cd ..
+cd "$(dirname "$0")" && cd ..
 
 # Load environment variables from .env.typhon
 set -a
