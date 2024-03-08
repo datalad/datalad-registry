@@ -12,6 +12,7 @@ from sqlalchemy import ColumnElement, and_
 from sqlalchemy.exc import IntegrityError
 
 from datalad_registry.models import RepoUrl, db
+from datalad_registry.search import parse_query
 from datalad_registry.tasks import (
     extract_ds_meta,
     log_error,
@@ -183,6 +184,18 @@ def dataset_urls(query: QueryParams):
     Get all dataset URLs that satisfy the constraints imposed by the query parameters.
     """
 
+    def append_search_constraint() -> None:
+        """
+        Append the search filter constraint corresponding to the search query parameter
+        to the list of filter constraints.
+        """
+        search_string = query.search
+
+        if search_string is not None:
+            # Todo: handle error from parse_query appropriately
+            search_constraint = parse_query(search_string)
+            constraints.append(search_constraint)
+
     def append_column_constraint(
         db_model_column, op, qry, qry_spec_transform=(lambda x: x)
     ) -> None:
@@ -215,6 +228,8 @@ def dataset_urls(query: QueryParams):
     # ==== Gathering constraints from query parameters ====
 
     constraints: list[ColumnElement] = []
+
+    append_search_constraint()
 
     append_column_constraint_arg_lst = [
         (RepoUrl.url, operator.eq, query.url, str),
