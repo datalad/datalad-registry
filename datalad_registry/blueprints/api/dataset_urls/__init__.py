@@ -183,18 +183,20 @@ def dataset_urls(query: QueryParams):
     Get all dataset URLs that satisfy the constraints imposed by the query parameters.
     """
 
-    def append_constraint(
+    def append_column_constraint(
         db_model_column, op, qry, qry_spec_transform=(lambda x: x)
     ) -> None:
         """
         Append a filter constraint corresponding to a given query parameter value
+        meant for constraining the value of a column of a SQLAlchemy model
         to the list of filter constraints.
 
-        :param db_model_column: The SQLAlchemy model column to build the constraint with
+        :param db_model_column: The SQLAlchemy model column of which its value to be
+                                constrained
         :param op: The operator to build the constraint with
         :param qry: The query parameter value
         :param qry_spec_transform: The transformation to apply to the query parameter
-                                   value in to build the constraint. Defaults to the
+                                   value to build the constraint. Defaults to the
                                    identity function.
         """
         if qry is not None:
@@ -214,7 +216,7 @@ def dataset_urls(query: QueryParams):
 
     constraints: list[ColumnElement] = []
 
-    append_constrain_arg_lst = [
+    append_column_constraint_arg_lst = [
         (RepoUrl.url, operator.eq, query.url, str),
         (RepoUrl.ds_id, operator.eq, query.ds_id, str),
         (RepoUrl.annex_key_count, operator.ge, query.min_annex_key_count),
@@ -247,8 +249,8 @@ def dataset_urls(query: QueryParams):
         (RepoUrl.cache_path, operator.eq, query.cache_path, cache_path_trans),
     ]
 
-    for args in append_constrain_arg_lst:
-        append_constraint(*args)
+    for args in append_column_constraint_arg_lst:
+        append_column_constraint(*args)
 
     # ==== Gathering constraints from query parameters ends ====
 
