@@ -8,9 +8,8 @@ from celery import group
 from flask import current_app, url_for
 from flask_openapi3 import APIBlueprint, Tag
 from psycopg2.errors import UniqueViolation
-from sqlalchemy import and_
+from sqlalchemy import ColumnElement, and_
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.sql.elements import BinaryExpression
 
 from datalad_registry.models import RepoUrl, db
 from datalad_registry.tasks import (
@@ -213,7 +212,7 @@ def dataset_urls(query: QueryParams):
 
     # ==== Gathering constraints from query parameters ====
 
-    constraints: list[BinaryExpression] = []
+    constraints: list[ColumnElement] = []
 
     append_constrain_arg_lst = [
         (RepoUrl.url, operator.eq, query.url, str),
