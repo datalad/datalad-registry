@@ -5,8 +5,9 @@ import operator
 from pathlib import Path
 
 from celery import group
-from flask import current_app, url_for
+from flask import abort, current_app, url_for
 from flask_openapi3 import APIBlueprint, Tag
+from lark.exceptions import GrammarError
 from psycopg2.errors import UniqueViolation
 from sqlalchemy import ColumnElement, and_
 from sqlalchemy.exc import IntegrityError
@@ -178,7 +179,7 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
         return json_resp_from_str(resp_model, status=202)
 
 
-@bp.get("", responses={"200": DatasetURLPage})
+@bp.get("", responses={"200": DatasetURLPage, "400": HTTPExceptionResp})
 def dataset_urls(query: QueryParams):
     """
     Get all dataset URLs that satisfy the constraints imposed by the query parameters.
@@ -192,9 +193,18 @@ def dataset_urls(query: QueryParams):
         search_string = query.search
 
         if search_string is not None:
-            # Todo: handle error from parse_query appropriately
-            search_constraint = parse_query(search_string)
-            constraints.append(search_constraint)
+            try:
+                search_constraint = parse_query(search_string)
+            except GrammarError as e:
+                # The search string doesn't conform to the defined grammar/syntax in
+                # `search.py`
+                # Raise an error to generate a bad request response
+                abort(
+                    400,
+                    description=f"Grammar (syntax) error in the search string: {e}",
+                )
+            else:
+                constraints.append(search_constraint)
 
     def append_column_constraint(
         db_model_column, op, qry, qry_spec_transform=(lambda x: x)
