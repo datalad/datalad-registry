@@ -19,6 +19,9 @@ from datalad_registry.utils import StrEnum
 
 from ..url_metadata.models import URLMetadataModel, URLMetadataRef
 
+DEFAULT_PAGE = 1  # Default page query param value
+DEFAULT_PER_PAGE = 20  # Default per_page query param value
+
 
 def path_url_must_be_absolute(url):
     """
@@ -157,14 +160,15 @@ class QueryParams(BaseModel):
 
     # Pagination parameters
     page: PositiveInt = Field(
-        1,
+        DEFAULT_PAGE,
         description="The current page (used to calculate the offset "
-        "of the pagination). Defaults to 1.",
+        f"of the pagination). Defaults to {DEFAULT_PAGE}.",
     )
     per_page: PositiveInt = Field(
-        20,
+        DEFAULT_PER_PAGE,
         description="The maximum number of items on a page "
-        "(used to calculate the offset and limit of the pagination). Defaults to 20.",
+        "(used to calculate the offset and limit of the pagination). "
+        f"Defaults to {DEFAULT_PER_PAGE}.",
     )
 
     # Ordering parameters

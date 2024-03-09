@@ -297,7 +297,7 @@ def dataset_urls(query: QueryParams):
     )
     orm_ds_urls = pagination.items
     cur_pg_num = pagination.page
-    last_pg_num = pagination.pages
+    total_pages = pagination.pages  # Total number of pages
 
     if query.return_metadata is None:
         # === No metadata should be returned ===
@@ -347,7 +347,7 @@ def dataset_urls(query: QueryParams):
         if pagination.has_next
         else None,
         first_pg=url_for(ep, **base_qry, page=1),
-        last_pg=url_for(ep, **base_qry, page=last_pg_num),
+        last_pg=url_for(ep, **base_qry, page=1 if total_pages == 0 else total_pages),
         dataset_urls=ds_urls,
     )
 
