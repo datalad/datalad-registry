@@ -1,6 +1,6 @@
 name: Linters
 
-on: [push, pull_request]
+on: [ push, pull_request ]
 
 jobs:
   lint:
@@ -8,7 +8,7 @@ jobs:
     steps:
       - name: Set up environment
         uses: actions/checkout@v4
-        with:  # no need for the history
+        with: # no need for the history
           fetch-depth: 1
 
       - name: Set up Python

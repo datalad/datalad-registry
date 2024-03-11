@@ -1,6 +1,6 @@
 name: Shellcheck on scripts
 
-on: [push, pull_request]
+on: [ push, pull_request ]
 
 jobs:
   test:
@@ -8,12 +8,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Set up system
-      shell: bash
-      run: |
-        sudo apt-get update -qq
-        sudo apt-get install shellcheck
-    - uses: actions/checkout@v4
-    - name: Run shellcheck
-      run: |
-        git grep -l -E '#!/bin/(bash|sh)' | xargs shellcheck
+      - name: Set up system
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install shellcheck
+      - uses: actions/checkout@v4
+      - name: Run shellcheck
+        run: |
+          git grep -l -E '#!/bin/(bash|sh)' | xargs shellcheck

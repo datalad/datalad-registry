@@ -6,6 +6,7 @@ from yarl import URL as YURL
 
 from datalad_registry.blueprints.api.dataset_urls import DatasetURLRespModel
 from datalad_registry.blueprints.api.dataset_urls.models import (
+    DEFAULT_PAGE,
     DatasetURLPage,
     MetadataReturnOption,
 )
@@ -356,11 +357,21 @@ class TestDatasetURLs:
         ],
     )
     def test_filter(self, flask_client, query_params, expected_output):
+        expected_out_count = len(expected_output)
+
         resp = flask_client.get("/api/v2/dataset-urls", query_string=query_params)
         assert resp.status_code == 200
 
         ds_url_page = DatasetURLPage.parse_raw(resp.text)
 
+        assert ds_url_page.total == expected_out_count
+        assert ds_url_page.cur_pg_num == DEFAULT_PAGE
+        assert ds_url_page.prev_pg is None
+        assert ds_url_page.next_pg is None
+        assert YURL(ds_url_page.first_pg).query["page"] == "1"
+        assert YURL(ds_url_page.last_pg).query["page"] == "1"
+
+        # Check the collection of dataset URLs
         assert {i.url for i in ds_url_page.dataset_urls} == expected_output
 
     @pytest.mark.usefixtures("populate_with_url_metadata")
