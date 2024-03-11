@@ -354,6 +354,28 @@ class TestDatasetURLs:
                 {"cache_path": "a/b/c"},
                 {"https://www.dandiarchive.org"},
             ),
+            # === filtered by search ===
+            (
+                {"search": "Handbook"},
+                {"https://handbook.datalad.org"},
+            ),
+            (
+                {"search": "ds_id:be3132291d7b"},
+                {"https://www.example.com"},
+            ),
+            (
+                {"search": "ds_id:be3132291d7c OR dandiarchive"},
+                {"http://www.datalad.org", "https://www.dandiarchive.org"},
+            ),
+            # === filtered by search and other query params ===
+            (
+                {"search": "ds_id:2a0b7b7b", "min_annex_key_count": "39"},
+                {"http://www.datalad.org", "https://handbook.datalad.org"},
+            ),
+            (
+                {"search": "url:.org", "max_annexed_files_in_wt_size": 401},
+                {"http://www.datalad.org"},
+            ),
         ],
     )
     def test_filter(self, flask_client, query_params, expected_output):
