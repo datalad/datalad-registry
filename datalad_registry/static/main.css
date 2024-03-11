@@ -184,3 +184,15 @@ div#datalad-registry div.pagination {
 .modal span.query {
     color: green;
 }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  white-space: nowrap; /* Added to ensure long text doesn't flow out of the box. */
+}
