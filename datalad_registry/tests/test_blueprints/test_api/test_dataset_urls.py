@@ -396,6 +396,23 @@ class TestDatasetURLs:
         # Check the collection of dataset URLs
         assert {i.url for i in ds_url_page.dataset_urls} == expected_output
 
+    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.parametrize(
+        "query_params",
+        [
+            {"search": "unknown_field:example"},
+            {"search": "url:example OR no_body:knows"},
+            {"url": "https://www.example.com", "search": "never:encountered"},
+        ],
+    )
+    def test_filter_with_invalid_search_query_param(self, query_params, flask_client):
+        """
+        Test filtering with a search query parameter with invalid grammar/syntax
+        """
+        resp = flask_client.get("/api/v2/dataset-urls", query_string=query_params)
+        assert resp.status_code == 400
+        assert "Grammar" in resp.json["description"]
+
     @pytest.mark.usefixtures("populate_with_url_metadata")
     @pytest.mark.parametrize(
         "metadata_ret_opt",
