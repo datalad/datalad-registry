@@ -219,14 +219,15 @@ function span_copy() {
     button.onclick = function() {
       // Copy span text to clipboard
       const text = span.innerText;
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-      // might want to notify the user that the text was copied
-      // alert("Copied: " + text);
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          // Notify the user that the text was copied successfully
+          console.log('Text "%s" copied to clipboard', text);
+        })
+        .catch(err => {
+          // Handle any errors
+          console.error('Failed to copy text:', text, 'Error:', err);
+        });
     };
     // Style the button as needed
     button.style.margin = '0px';
