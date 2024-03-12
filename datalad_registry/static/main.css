@@ -92,7 +92,7 @@ div#datalad-registry div.pagination {
     position: absolute;
     z-index: 1;
     bottom: 100%;
-    left: 0%;
+    left: 0;
 }
 
 .tooltip:hover .tooltiptext {
