@@ -4,6 +4,10 @@
 
 services:
   web:
+    environment: &env
+      # To prevent syncing with the usage dashboard in development
+      # Set sync cycle to 100 years (in seconds)
+      DATALAD_REGISTRY_USAGE_DASHBOARD_SYNC_CYCLE_LENGTH: "3153600000.0"
     command: [
       "/sbin/my_init", "--",
       "bash", "-c",
@@ -13,8 +17,14 @@ services:
       - ./:/app
       - ./instance:/app/instance
 
+  worker:
+    environment:
+      <<: *env
+
   scheduler:
     environment:
-      # To prevent syncing with the usage dashboard in development
-      # Set sync cycle to 100 years (in seconds)
-      DATALAD_REGISTRY_USAGE_DASHBOARD_SYNC_CYCLE_LENGTH: "3153600000.0"
+      <<: *env
+
+  monitor:
+    environment:
+      <<: *env
