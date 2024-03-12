@@ -78,6 +78,14 @@ class QueryParams(BaseModel):
     the dataset_urls endpoint
     """
 
+    search: Optional[str] = Field(
+        None,
+        description="A search string used to perform a search identical to the one "
+        "offered by the Web UI. Please consult the Web UI for the expected "
+        "syntax of this search string by clicking on "
+        'the "Show Search Query Syntax" button.',
+    )
+
     url: Optional[Union[FileUrl, AnyUrl, Path]] = Field(None, description="The URL")
 
     ds_id: Optional[UUID] = Field(None, description="The ID, a UUID, of the dataset")

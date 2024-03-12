@@ -5,14 +5,15 @@ import operator
 from pathlib import Path
 
 from celery import group
-from flask import current_app, url_for
+from flask import abort, current_app, url_for
 from flask_openapi3 import APIBlueprint, Tag
+from lark.exceptions import GrammarError
 from psycopg2.errors import UniqueViolation
-from sqlalchemy import and_
+from sqlalchemy import ColumnElement, and_
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.sql.elements import BinaryExpression
 
 from datalad_registry.models import RepoUrl, db
+from datalad_registry.search import parse_query
 from datalad_registry.tasks import (
     extract_ds_meta,
     log_error,
@@ -178,24 +179,47 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
         return json_resp_from_str(resp_model, status=202)
 
 
-@bp.get("", responses={"200": DatasetURLPage})
+@bp.get("", responses={"200": DatasetURLPage, "400": HTTPExceptionResp})
 def dataset_urls(query: QueryParams):
     """
     Get all dataset URLs that satisfy the constraints imposed by the query parameters.
     """
 
-    def append_constraint(
+    def append_search_constraint() -> None:
+        """
+        Append the search filter constraint corresponding to the search query parameter
+        to the list of filter constraints.
+        """
+        search_string = query.search
+
+        if search_string is not None:
+            try:
+                search_constraint = parse_query(search_string)
+            except GrammarError as e:
+                # The search string doesn't conform to the defined grammar/syntax in
+                # `search.py`
+                # Raise an error to generate a bad request response
+                abort(
+                    400,
+                    description=f"Grammar (syntax) error in the search string: {e}",
+                )
+            else:
+                constraints.append(search_constraint)
+
+    def append_column_constraint(
         db_model_column, op, qry, qry_spec_transform=(lambda x: x)
     ) -> None:
         """
         Append a filter constraint corresponding to a given query parameter value
+        meant for constraining the value of a column of a SQLAlchemy model
         to the list of filter constraints.
 
-        :param db_model_column: The SQLAlchemy model column to build the constraint with
+        :param db_model_column: The SQLAlchemy model column of which its value to be
+                                constrained
         :param op: The operator to build the constraint with
         :param qry: The query parameter value
         :param qry_spec_transform: The transformation to apply to the query parameter
-                                   value in to build the constraint. Defaults to the
+                                   value to build the constraint. Defaults to the
                                    identity function.
         """
         if qry is not None:
@@ -213,9 +237,11 @@ def dataset_urls(query: QueryParams):
 
     # ==== Gathering constraints from query parameters ====
 
-    constraints: list[BinaryExpression] = []
+    constraints: list[ColumnElement] = []
 
-    append_constrain_arg_lst = [
+    append_search_constraint()
+
+    append_column_constraint_arg_lst = [
         (RepoUrl.url, operator.eq, query.url, str),
         (RepoUrl.ds_id, operator.eq, query.ds_id, str),
         (RepoUrl.annex_key_count, operator.ge, query.min_annex_key_count),
@@ -248,8 +274,8 @@ def dataset_urls(query: QueryParams):
         (RepoUrl.cache_path, operator.eq, query.cache_path, cache_path_trans),
     ]
 
-    for args in append_constrain_arg_lst:
-        append_constraint(*args)
+    for args in append_column_constraint_arg_lst:
+        append_column_constraint(*args)
 
     # ==== Gathering constraints from query parameters ends ====
 

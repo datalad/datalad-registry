@@ -354,6 +354,28 @@ class TestDatasetURLs:
                 {"cache_path": "a/b/c"},
                 {"https://www.dandiarchive.org"},
             ),
+            # === filtered by search ===
+            (
+                {"search": "Handbook"},
+                {"https://handbook.datalad.org"},
+            ),
+            (
+                {"search": "ds_id:be3132291d7b"},
+                {"https://www.example.com"},
+            ),
+            (
+                {"search": "ds_id:be3132291d7c OR dandiarchive"},
+                {"http://www.datalad.org", "https://www.dandiarchive.org"},
+            ),
+            # === filtered by search and other query params ===
+            (
+                {"search": "ds_id:2a0b7b7b", "min_annex_key_count": "39"},
+                {"http://www.datalad.org", "https://handbook.datalad.org"},
+            ),
+            (
+                {"search": "url:.org", "max_annexed_files_in_wt_size": 401},
+                {"http://www.datalad.org"},
+            ),
         ],
     )
     def test_filter(self, flask_client, query_params, expected_output):
@@ -373,6 +395,23 @@ class TestDatasetURLs:
 
         # Check the collection of dataset URLs
         assert {i.url for i in ds_url_page.dataset_urls} == expected_output
+
+    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.parametrize(
+        "query_params",
+        [
+            {"search": "unknown_field:example"},
+            {"search": "url:example OR no_body:knows"},
+            {"url": "https://www.example.com", "search": "never:encountered"},
+        ],
+    )
+    def test_filter_with_invalid_search_query_param(self, query_params, flask_client):
+        """
+        Test filtering with a search query parameter with invalid grammar/syntax
+        """
+        resp = flask_client.get("/api/v2/dataset-urls", query_string=query_params)
+        assert resp.status_code == 400
+        assert "Grammar" in resp.json["description"]
 
     @pytest.mark.usefixtures("populate_with_url_metadata")
     @pytest.mark.parametrize(
