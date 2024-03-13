@@ -3,7 +3,7 @@ click==8.1.7
 datalad==0.19.6
 datalad-metalad==0.4.22
 flask-openapi3==2.5.5
-Flask-SQLAlchemy==3.0.5
+Flask-SQLAlchemy==3.1.1
 SQLAlchemy==2.0.17
 psycopg2==2.9.6
 pydantic==1.10.11
