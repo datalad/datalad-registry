@@ -9,7 +9,7 @@ psycopg2==2.9.9
 pydantic==1.10.14
 python-dotenv[cli]==1.0.1
 Flask-Migrate==4.0.7
-yarl==1.9.2
+yarl==1.9.4
 datalad-catalog==1.1.1
 datalad_neuroimaging==0.3.4
 flower==2.0.1
