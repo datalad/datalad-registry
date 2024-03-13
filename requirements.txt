@@ -5,7 +5,7 @@ datalad-metalad==0.4.22
 flask-openapi3==2.5.5
 Flask-SQLAlchemy==3.1.1
 SQLAlchemy==2.0.28
-psycopg2==2.9.6
+psycopg2==2.9.9
 pydantic==1.10.11
 python-dotenv[cli]==1.0.1
 Flask-Migrate==4.0.4
