@@ -8,7 +8,7 @@ SQLAlchemy==2.0.28
 psycopg2==2.9.9
 pydantic==1.10.14
 python-dotenv[cli]==1.0.1
-Flask-Migrate==4.0.4
+Flask-Migrate==4.0.7
 yarl==1.9.2
 datalad-catalog==1.1.1
 datalad_neuroimaging==0.3.4
