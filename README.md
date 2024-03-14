@@ -36,7 +36,7 @@ Datalad-Registry:
        the [Python virtual environment](https://docs.python.org/3/library/venv.html) for
        this project (as mentioned in the Prerequisites section):
 
-       `pip install -e .[tests]`
+       `pip install -e .[test]`
 
     3. Launch the needed components of DataLad-Registry for testing from a subshell with
        needed environment variables loaded from `env.test`.
