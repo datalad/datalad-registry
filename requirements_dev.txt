@@ -1,5 +1,6 @@
 -r requirements.txt
 
+codespell==2.2.6
 coverage==7.4.3
 pytest==8.1.1
 pytest-cov==4.1.0
