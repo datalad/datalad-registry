@@ -10,6 +10,6 @@ flake8==7.0.0
 isort==5.13.2
 mypy==1.9.0
 types-requests
-beautifulsoup4==4.12.2
+beautifulsoup4==4.12.3
 pytest-mock==3.11.1
 responses==0.24.1
