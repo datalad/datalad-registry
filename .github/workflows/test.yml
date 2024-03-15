@@ -34,7 +34,7 @@ jobs:
           pip install -r requirements.txt
           pip install wheel
           pip install mypy types-requests types-PyYAML
-          pip install .[tests]
+          pip install .[test]
       - name: Remove build artifacts
         run: rm -rf build dist
       - name: Load env vars from env.test to GitHub Actions workflow
