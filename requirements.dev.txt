@@ -1,11 +1,11 @@
 -r requirements.test.txt
 
-codespell==2.2.6
-tox==3.28.0
-types-PyYAML
-types-requests
 black[d]==24.2.0
-pre-commit==3.6.2
+codespell==2.2.6
 flake8==7.0.0
 isort==5.13.2
 mypy==1.9.0
+pre-commit==3.6.2
+tox==3.28.0
+types-PyYAML
+types-requests
