@@ -12,17 +12,17 @@ a Datalad-Registry instance using Docker with little to no deviation from this g
 
 #### Prerequisites
 
-The following dependencies are needed in a system in order to test and develop
-Datalad-Registry:
+* The following dependencies are needed in a system in order to test and develop
+  Datalad-Registry:
 
-  * [git](https://git-scm.com/downloads)
-  * [git-annex](https://git-annex.branchable.com/install/)
-  * [Podman](https://podman.io/docs/installation)
-  * [podman-compose](https://github.com/containers/podman-compose)
+    * [git](https://git-scm.com/downloads)
+    * [git-annex](https://git-annex.branchable.com/install/)
+    * [Podman](https://podman.io/docs/installation)
+    * [podman-compose](https://github.com/containers/podman-compose)
 
-    We strongly recommend installing `podman-compose` and other Python dependencies in
-    a [Python virtual environment](https://docs.python.org/3/library/venv.html) for this
-    project.
+      We strongly recommend installing `podman-compose` and other Python dependencies in
+      a [Python virtual environment](https://docs.python.org/3/library/venv.html) for
+      this project.
 
 #### To run tests
 
