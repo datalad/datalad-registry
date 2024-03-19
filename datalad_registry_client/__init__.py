@@ -1,4 +1,4 @@
-import sys
+from importlib.metadata import version
 
 # The default base API endpoint of the DataLad Registry instance
 # that the client interacts with.
@@ -21,10 +21,5 @@ command_suite = (
         ),
     ],
 )
-
-if sys.version_info[:2] < (3, 8):
-    from importlib_metadata import version
-else:
-    from importlib.metadata import version
 
 __version__ = version("datalad-registry")

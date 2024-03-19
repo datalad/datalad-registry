@@ -1,5 +1,5 @@
+from importlib.metadata import version
 from pathlib import Path
-import sys
 
 from celery import Celery, Task
 from flask import Flask, request
@@ -11,11 +11,6 @@ from . import overview, root
 from .conf import OperationMode, compile_config_from_env
 from .models import db, init_db_command, migrate
 from .utils.pydantic_json import pydantic_dumps, pydantic_loads
-
-if sys.version_info[:2] < (3, 8):
-    from importlib_metadata import version
-else:
-    from importlib.metadata import version
 
 __version__ = version("datalad-registry")
 
