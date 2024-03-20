@@ -11,7 +11,7 @@ from datalad.interface.results import get_status_dict
 from datalad.support.constraints import EnsureChoice
 from datalad.support.param import Parameter
 
-lgr = logging.getLogger("datalad.helloworld.hello_cmd")
+lgr = logging.getLogger("datalad.registry.search")
 
 
 # decoration auto-generates standard help
