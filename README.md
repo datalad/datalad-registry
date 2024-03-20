@@ -12,17 +12,32 @@ a Datalad-Registry instance using Docker with little to no deviation from this g
 
 #### Prerequisites
 
-The following dependencies are needed in a system in order to test and develop
-Datalad-Registry:
+* The following dependencies are needed in a system in order to test and develop
+  Datalad-Registry:
 
-  * [git](https://git-scm.com/downloads)
-  * [git-annex](https://git-annex.branchable.com/install/)
-  * [Podman](https://podman.io/docs/installation)
-  * [podman-compose](https://github.com/containers/podman-compose)
+    * [git](https://git-scm.com/downloads)
+    * [git-annex](https://git-annex.branchable.com/install/)
+    * [Podman](https://podman.io/docs/installation)
+    * [podman-compose](https://github.com/containers/podman-compose)
 
-    We strongly recommend installing `podman-compose` and other Python dependencies in
-    a [Python virtual environment](https://docs.python.org/3/library/venv.html) for this
-    project.
+      We strongly recommend installing `podman-compose` and other Python dependencies in
+      a [Python virtual environment](https://docs.python.org/3/library/venv.html) for
+      this project.
+
+* We use [versioningit](https://github.com/jwodder/versioningit) to determine the
+  version of the built package of Datalad-Registry based on the tags in the Git
+  repository from which the package is built. To ensure the Datalad-Registry package can
+  be built successfully and has the correct version, please make sure your clone
+  of [the Datalad-Registry repository](https://github.com/datalad/datalad-registry) have
+  all [the tags from the originating repository](https://github.com/datalad/datalad-registry/tags).
+  (If you are building the package from an immediate clone
+  of [the Datalad-Registry repository](https://github.com/datalad/datalad-registry),
+  most likely the clone already have all the tags needed. If you are building the
+  package from a clone of a fork
+  of [the Datalad-Registry repository](https://github.com/datalad/datalad-registry), you
+  may need to
+  add [the Datalad-Registry repository](https://github.com/datalad/datalad-registry) as
+  a remote to your clone and fetch all the tags from it.)
 
 #### To run tests
 
