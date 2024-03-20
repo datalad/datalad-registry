@@ -31,12 +31,12 @@ a Datalad-Registry instance using Docker with little to no deviation from this g
   of [the Datalad-Registry repository](https://github.com/datalad/datalad-registry) have
   all [the tags from the originating repository](https://github.com/datalad/datalad-registry/tags).
   (If you are building the package from an immediate clone
-  of [the Datalad-Registry repository](https://github.com/datalad/datalad-registry),
+  of the Datalad-Registry repository,
   most likely the clone already have all the tags needed. If you are building the
   package from a clone of a fork
-  of [the Datalad-Registry repository](https://github.com/datalad/datalad-registry), you
+  of the Datalad-Registry repository, you
   may need to
-  add [the Datalad-Registry repository](https://github.com/datalad/datalad-registry) as
+  add the Datalad-Registry repository as
   a remote to your clone and fetch all the tags from it.)
 
 #### To run tests
