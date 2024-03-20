@@ -24,20 +24,14 @@ a Datalad-Registry instance using Docker with little to no deviation from this g
       a [Python virtual environment](https://docs.python.org/3/library/venv.html) for
       this project.
 
-* We use [versioningit](https://github.com/jwodder/versioningit) to determine the
-  version of the built package of Datalad-Registry based on the tags in the Git
-  repository from which the package is built. To ensure the Datalad-Registry package can
-  be built successfully and has the correct version, please make sure your clone
-  of [the Datalad-Registry repository](https://github.com/datalad/datalad-registry) have
-  all [the tags from the originating repository](https://github.com/datalad/datalad-registry/tags).
-  (If you are building the package from an immediate clone
-  of [the Datalad-Registry repository](https://github.com/datalad/datalad-registry),
-  most likely the clone already have all the tags needed. If you are building the
-  package from a clone of a fork
-  of [the Datalad-Registry repository](https://github.com/datalad/datalad-registry), you
-  may need to
-  add [the Datalad-Registry repository](https://github.com/datalad/datalad-registry) as
-  a remote to your clone and fetch all the tags from it.)
+* Datalad-Registry's package version is determined by
+  [versioningit](https://github.com/jwodder/versioningit) using Git tags in the
+  repo the package is built from. Please ensure your clone
+  of [the original Datalad-Registry repo](https://github.com/datalad/datalad-registry)
+  includes all the [tags](https://github.com/datalad/datalad-registry/tags) for a
+  successful build. (Direct clones of the original likely have all those tags.
+  For clones of a fork of the original, you may need to add the original as a remote
+  and fetch all the tags from it.)
 
 #### To run tests
 
