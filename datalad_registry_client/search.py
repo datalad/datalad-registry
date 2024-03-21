@@ -72,3 +72,9 @@ class RegistrySearch(Interface):
             # messages)
             message=msg,
         )
+
+    @staticmethod
+    def custom_result_renderer(res, **_kwargs):
+        from datalad.ui import ui
+
+        ui.message(res["message"])
