@@ -3,8 +3,9 @@
 __docformat__ = "restructuredtext"
 
 import logging
-from os.path import abspath, curdir
+from typing import Optional
 
+from datalad import cfg
 from datalad.distribution.dataset import datasetmethod
 from datalad.interface.base import Interface, build_doc, eval_results
 from datalad.interface.results import get_status_dict
@@ -58,35 +59,35 @@ class RegistrySearch(Interface):
     @eval_results
     # signature must match parameter list above
     # additional generic arguments are added by decorators
-    def __call__(language="en"):
-        if language == "en":
-            msg = "Hello!"
-        elif language == "de":
-            msg = "Tachchen!"
-        else:
-            msg = ("unknown language: '%s'", language)
+    def __call__(search_str: str, base_endpoint: Optional[str] = None):
+        # Set `base_endpoint` to the default if it is not provided.
+        if base_endpoint is None:
+            base_endpoint = cfg.get(
+                "datalad_registry.base_endpoint", DEFAULT_BASE_ENDPOINT
+            )
 
         # commands should be implemented as generators and should
         # report any results by yielding status dictionaries
         yield get_status_dict(
             # an action label must be defined, the command name make a good
             # default
-            action="demo",
-            # most results will be about something associated with a dataset
-            # (component), reported paths MUST be absolute
-            path=abspath(curdir),
+            action="registry-search",
             # status labels are used to identify how a result will be reported
             # and can be used for filtering
-            status="ok" if language in ("en", "de") else "error",
+            status="ok",
             # arbitrary result message, can be a str or tuple. in the latter
             # case string expansion with arguments is delayed until the
             # message actually needs to be rendered (analog to exception
             # messages)
-            message=msg,
+            message=(
+                "search_str: '%s'; base_endpoint: '%s'",
+                search_str,
+                base_endpoint,
+            ),
         )
 
     @staticmethod
     def custom_result_renderer(res, **_kwargs):
         from datalad.ui import ui
 
-        ui.message(res["message"])
+        ui.message(res["message"][0] % res["message"][1:])
