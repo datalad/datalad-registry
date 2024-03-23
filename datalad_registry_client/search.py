@@ -6,7 +6,6 @@ import logging
 from typing import Optional
 
 from datalad import cfg
-from datalad.distribution.dataset import datasetmethod
 from datalad.interface.base import Interface, build_doc, eval_results
 from datalad.interface.results import get_status_dict
 from datalad.support.constraints import EnsureNone, EnsureStr
@@ -53,8 +52,6 @@ class RegistrySearch(Interface):
     )
 
     @staticmethod
-    # decorator binds the command to the Dataset class as a method
-    @datasetmethod(name="registry_search")
     # generic handling of command results (logging, rendering, filtering, ...)
     @eval_results
     # signature must match parameter list above
