@@ -64,6 +64,7 @@ def populate_with_url_metadata_for_search(
         # r'(haxby or halchenko) AND '
         # r'metadata:BIDSmetadata[bids_dataset,metalad_core]:'
         # r'"BIDSVersion\": \"v"',
+        ("", ValueError, "Query string cannot be empty"),
     ],
 )
 def test_with_invalid_query(query, exc, err):
