@@ -258,14 +258,19 @@ class SearchQueryTransformer(Transformer):
 def parse_query(query: str) -> ColumnElement[bool]:
     """Parse the search query and return the SQLAlchemy expression.
 
-    :param query: The search query string
+    :param query: The search query string (must not be empty)
 
     :return: The SQLAlchemy expression representing the search query
+
+    :raises ValueError: If `query` is an empty string
 
     A workaround necessary for using "earley" parser.
     We have to use "earley" parser to support ':op' comparison operations.
     Operates using the global parser and transformer objects.
     """
+    if query == "":
+        raise ValueError("Query string cannot be empty")
+
     # Parse the input to get a tree
     parse_tree = parser.parse(query)
     return transformer.transform(parse_tree)
