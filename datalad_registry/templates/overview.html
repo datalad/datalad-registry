@@ -41,7 +41,7 @@
   <div class="content">
     <form action="{{ url_for('.overview') }}" method="get">
       <label for='search' class="sr-only">Search</label>
-      <input id='search' type='search' name='query'
+      <input id='search' type='search' name='query' required pattern=".*\S.*"
           {%- if search_query %} value="{{ search_query|escape }}"
           {%- endif -%}
              placeholder='Search query'

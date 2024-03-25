@@ -39,7 +39,7 @@ def overview():  # No type hints due to mypy#7187.
     # as we would add search to individual files.
     query = request.args.get("query", None, type=str)
     search_error = None
-    if query:
+    if query is not None:
         lgr.debug("Search by '%s'", query)
         try:
             criteria = parse_query(query)
