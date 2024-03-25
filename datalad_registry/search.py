@@ -263,6 +263,7 @@ def parse_query(query: str) -> ColumnElement[bool]:
     :return: The SQLAlchemy expression representing the search query
 
     :raises ValueError: If `query` is an empty string
+    :raises ValueError: If `query` contains only whitespace
 
     A workaround necessary for using "earley" parser.
     We have to use "earley" parser to support ':op' comparison operations.
@@ -270,6 +271,9 @@ def parse_query(query: str) -> ColumnElement[bool]:
     """
     if query == "":
         raise ValueError("Query string cannot be empty")
+
+    if query.isspace():
+        raise ValueError("Query string cannot contain only whitespace")
 
     # Parse the input to get a tree
     parse_tree = parser.parse(query)

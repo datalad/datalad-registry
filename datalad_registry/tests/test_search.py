@@ -65,6 +65,8 @@ def populate_with_url_metadata_for_search(
         # r'metadata:BIDSmetadata[bids_dataset,metalad_core]:'
         # r'"BIDSVersion\": \"v"',
         ("", ValueError, "Query string cannot be empty"),
+        (" ", ValueError, "Query string cannot contain only whitespace"),
+        ("  \t \n", ValueError, "Query string cannot contain only whitespace"),
     ],
 )
 def test_with_invalid_query(query, exc, err):
