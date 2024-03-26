@@ -201,6 +201,15 @@ class TestDatasetURLs:
             {"per_page": "b"},
             {"order_by": "abc"},
             {"order_dir": "def"},
+            {"search": ""},
+            {"search": "    "},
+            {"search": "   \t \n"},
+            {"search": "\n"},
+            {"search": "\t  "},
+            {"max_annex_key_count": 2, "search": ""},
+            {"max_annex_key_count": 2, "search": "    "},
+            {"max_annex_key_count": 2, "search": "  \t  "},
+            {"max_annex_key_count": 2, "search": "  \t  \n  "},
         ],
     )
     def test_invalid_query_params(self, flask_client, query_params):
@@ -237,6 +246,9 @@ class TestDatasetURLs:
             {"order_by": "git_objects_kb"},
             {"order_dir": "asc"},
             {"order_dir": "desc"},
+            {"min_annexed_files_in_wt_size": 33, "search": "   a b c "},
+            {"min_annexed_files_in_wt_size": 33, "search": "   a \t b \n c "},
+            {"min_annexed_files_in_wt_size": 33, "search": "a"},
         ],
     )
     def test_valid_query_params(self, flask_client, query_params):
@@ -412,6 +424,26 @@ class TestDatasetURLs:
         resp = flask_client.get("/api/v2/dataset-urls", query_string=query_params)
         assert resp.status_code == 400
         assert "Grammar" in resp.json["description"]
+
+    def test_filter_with_invalid_search_query_param_with_mock(
+        self, monkeypatch, flask_client
+    ):
+        """
+        Test handling of the situation where the search query parameter given to the
+        endpoint causes a `lark.exceptions.UnexpectedInput` to be raised.
+        """
+        from lark.exceptions import UnexpectedInput
+
+        from datalad_registry.blueprints.api import dataset_urls
+
+        def mock_parse_query(_query):
+            raise UnexpectedInput("Mock UnexpectedInput")
+
+        monkeypatch.setattr(dataset_urls, "parse_query", mock_parse_query)
+
+        resp = flask_client.get("/api/v2/dataset-urls", query_string={"search": "foo"})
+        assert resp.status_code == 400
+        assert resp.json["description"] == "Invalid search string: Mock UnexpectedInput"
 
     @pytest.mark.usefixtures("populate_with_url_metadata")
     @pytest.mark.parametrize(
