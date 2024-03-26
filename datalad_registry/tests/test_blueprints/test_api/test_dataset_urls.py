@@ -425,6 +425,26 @@ class TestDatasetURLs:
         assert resp.status_code == 400
         assert "Grammar" in resp.json["description"]
 
+    def test_filter_with_invalid_search_query_param_with_mock(
+        self, monkeypatch, flask_client
+    ):
+        """
+        Test handling of the situation where the search query parameter given to the
+        endpoint causes a `lark.exceptions.UnexpectedInput` to be raised.
+        """
+        from lark.exceptions import UnexpectedInput
+
+        from datalad_registry.blueprints.api import dataset_urls
+
+        def mock_parse_query(_query):
+            raise UnexpectedInput("Mock UnexpectedInput")
+
+        monkeypatch.setattr(dataset_urls, "parse_query", mock_parse_query)
+
+        resp = flask_client.get("/api/v2/dataset-urls", query_string={"search": "foo"})
+        assert resp.status_code == 400
+        assert resp.json["description"] == "Invalid search string: Mock UnexpectedInput"
+
     @pytest.mark.usefixtures("populate_with_url_metadata")
     @pytest.mark.parametrize(
         "metadata_ret_opt",

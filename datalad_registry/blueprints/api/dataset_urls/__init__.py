@@ -7,7 +7,7 @@ from pathlib import Path
 from celery import group
 from flask import abort, current_app, url_for
 from flask_openapi3 import APIBlueprint, Tag
-from lark.exceptions import GrammarError
+from lark.exceptions import GrammarError, UnexpectedInput
 from psycopg2.errors import UniqueViolation
 from sqlalchemy import ColumnElement, and_
 from sqlalchemy.exc import IntegrityError
@@ -203,6 +203,9 @@ def dataset_urls(query: QueryParams):
                     400,
                     description=f"Grammar (syntax) error in the search string: {e}",
                 )
+            except UnexpectedInput as e:
+                # Invalid search string due to non-grammatical errors
+                abort(400, description=f"Invalid search string: {e}")
             else:
                 constraints.append(search_constraint)
 
@@ -340,12 +343,16 @@ def dataset_urls(query: QueryParams):
     page = DatasetURLPage(
         total=pagination.total,
         cur_pg_num=cur_pg_num,
-        prev_pg=url_for(ep, **base_qry, page=pagination.prev_num)
-        if pagination.has_prev
-        else None,
-        next_pg=url_for(ep, **base_qry, page=pagination.next_num)
-        if pagination.has_next
-        else None,
+        prev_pg=(
+            url_for(ep, **base_qry, page=pagination.prev_num)
+            if pagination.has_prev
+            else None
+        ),
+        next_pg=(
+            url_for(ep, **base_qry, page=pagination.next_num)
+            if pagination.has_next
+            else None
+        ),
         first_pg=url_for(ep, **base_qry, page=1),
         last_pg=url_for(ep, **base_qry, page=1 if total_pages == 0 else total_pages),
         dataset_urls=ds_urls,
