@@ -5,7 +5,6 @@ __docformat__ = "restructuredtext"
 import logging
 from typing import Optional
 
-from datalad import cfg
 from datalad.interface.base import Interface, build_doc, eval_results
 from datalad.interface.results import get_status_dict
 from datalad.support.constraints import EnsureNone, EnsureStr
@@ -13,11 +12,10 @@ from datalad.support.param import Parameter
 import requests
 from yarl import URL
 
-from . import DEFAULT_BASE_ENDPOINT
+from datalad_registry.blueprints.api import DATASET_URLS_PATH
 
-# The path of the dataset URLs resource on the DataLad Registry instance relative to
-# the base API endpoint of the instance.
-_DATASET_URLS_PATH = "dataset-urls"
+from . import DEFAULT_BASE_ENDPOINT
+from .utils import get_base_endpoint
 
 lgr = logging.getLogger("datalad.registry.get_urls")
 
@@ -66,13 +64,11 @@ class RegistryGetURLs(Interface):
     def __call__(cache_path: Optional[str] = None, base_endpoint: Optional[str] = None):
         from datalad_registry.blueprints.api.dataset_urls.models import DatasetURLPage
 
-        # Set `base_endpoint` to the default if it is not provided.
+        # Set `base_endpoint` based on configuration if it is not provided.
         if base_endpoint is None:
-            base_endpoint = cfg.get(
-                "datalad_registry.base_endpoint", DEFAULT_BASE_ENDPOINT
-            )
+            base_endpoint = get_base_endpoint()
 
-        endpoint = URL(base_endpoint) / _DATASET_URLS_PATH
+        endpoint = URL(base_endpoint) / DATASET_URLS_PATH
 
         target_url = (
             endpoint.with_query(cache_path=cache_path)
