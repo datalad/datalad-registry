@@ -84,6 +84,7 @@ class QueryParams(BaseModel):
         "offered by the Web UI. Please consult the Web UI for the expected "
         "syntax of this search string by clicking on "
         'the "Show Search Query Syntax" button.',
+        regex=r".*\S.*",
     )
 
     url: Optional[Union[FileUrl, AnyUrl, Path]] = Field(None, description="The URL")

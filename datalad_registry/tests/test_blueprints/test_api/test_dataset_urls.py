@@ -201,6 +201,15 @@ class TestDatasetURLs:
             {"per_page": "b"},
             {"order_by": "abc"},
             {"order_dir": "def"},
+            {"search": ""},
+            {"search": "    "},
+            {"search": "   \t \n"},
+            {"search": "\n"},
+            {"search": "\t  "},
+            {"max_annex_key_count": 2, "search": ""},
+            {"max_annex_key_count": 2, "search": "    "},
+            {"max_annex_key_count": 2, "search": "  \t  "},
+            {"max_annex_key_count": 2, "search": "  \t  \n  "},
         ],
     )
     def test_invalid_query_params(self, flask_client, query_params):
@@ -237,6 +246,9 @@ class TestDatasetURLs:
             {"order_by": "git_objects_kb"},
             {"order_dir": "asc"},
             {"order_dir": "desc"},
+            {"min_annexed_files_in_wt_size": 33, "search": "   a b c "},
+            {"min_annexed_files_in_wt_size": 33, "search": "   a \t b \n c "},
+            {"min_annexed_files_in_wt_size": 33, "search": "a"},
         ],
     )
     def test_valid_query_params(self, flask_client, query_params):
