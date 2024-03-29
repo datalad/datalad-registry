@@ -182,12 +182,19 @@ class TestOverView:
 
     @pytest.mark.usefixtures("populate_with_dataset_urls")
     @pytest.mark.parametrize(
-        "search_query",
+        "search_query, err_msg_prefix",
         [
-            "unknown_field:example",
+            ("unknown_field:example", "Unknown field: 'unknown_field'. Known are:"),
+            ("", "Query string cannot be empty"),
+            ("  \t \n", "Query string cannot contain only whitespace"),
+            (" ", "Query string cannot contain only whitespace"),
+            ("     ", "Query string cannot contain only whitespace"),
+            ("  \t \n \t   ", "Query string cannot contain only whitespace"),
         ],
     )
-    def test_search_with_invalid_query(self, search_query: Optional[str], flask_client):
+    def test_search_with_invalid_query(
+        self, search_query: str, err_msg_prefix: str, flask_client
+    ):
         """
         Test searching with an invalid query
         """
@@ -197,9 +204,7 @@ class TestOverView:
         soup = BeautifulSoup(resp.text, "html.parser")
 
         assert (error_span := soup.find("span", class_="error"))
-        assert error_span.text.startswith(
-            "ERROR: Unknown field: 'unknown_field'. Known are:"
-        )
+        assert error_span.text.startswith(f"ERROR: {err_msg_prefix}")
 
     def test_pagination(self, populate_with_dataset_urls, flask_client):
         """
