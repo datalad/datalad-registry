@@ -9,6 +9,7 @@ from pydantic import (
     BaseModel,
     Field,
     FileUrl,
+    NonNegativeInt,
     PositiveInt,
     StrictInt,
     StrictStr,
@@ -256,8 +257,52 @@ class DatasetURLRespModel(DatasetURLRespBaseModel):
         by_alias = False
 
 
-class CollectionStats(BaseModel):
+class _AnnexDsCollectionStats(BaseModel):
+    """
+    Model with the base components of annex dataset collection statistics
+    """
+
+    ds_count: NonNegativeInt = Field(description="The number of datasets")
+    size_of_annexed_files: NonNegativeInt = Field(
+        description="The size of annexed files"
+    )
+    annexed_file_count: NonNegativeInt = Field(
+        description="The number of annexed files"
+    )
+
+
+class AnnexDsCollectionStats(BaseModel):
+    """
+    Model for annex dataset collection statistics
+    """
+
+    unique_ds_stats: _AnnexDsCollectionStats = Field(
+        description="Statistics for unique datasets"
+    )
+    stats: _AnnexDsCollectionStats = Field(description="Statistics for all datasets")
+
+
+class NonAnnexDsStats(BaseModel):
     pass
+
+
+class StatsSummary(BaseModel):
+    unique_ds_count: NonNegativeInt = Field(description="The number of unique datasets")
+    ds_count: NonNegativeInt = Field(description="The number of datasets")
+
+
+class CollectionStats(BaseModel):
+    datalad_ds_stats: AnnexDsCollectionStats = Field(
+        description="Statistics for DataLad datasets"
+    )
+    pure_annex_ds_stats: AnnexDsCollectionStats = Field(
+        description="Statistics for pure annex datasets"
+    )
+    non_annex_ds_stats: NonAnnexDsStats = Field(
+        description="Statistics for non-annex datasets"
+    )
+
+    summary: StatsSummary = Field(description="Summary statistics")
 
 
 class DatasetURLPage(BaseModel):
