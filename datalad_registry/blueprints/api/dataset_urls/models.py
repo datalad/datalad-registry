@@ -256,6 +256,10 @@ class DatasetURLRespModel(DatasetURLRespBaseModel):
         by_alias = False
 
 
+class CollectionStats(BaseModel):
+    pass
+
+
 class DatasetURLPage(BaseModel):
     """
     Model for representing a page of dataset URLs in response communication
@@ -274,4 +278,9 @@ class DatasetURLPage(BaseModel):
 
     dataset_urls: list[DatasetURLRespModel] = Field(
         description="The list of dataset URLs in the current page"
+    )
+    collection_stats: CollectionStats = Field(
+        description="Statistics about the collection of dataset URLs, "
+        "not just the URLs in the current page but the entire collection "
+        "returned"
     )
