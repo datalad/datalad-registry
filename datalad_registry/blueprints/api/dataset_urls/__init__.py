@@ -9,7 +9,7 @@ from flask import abort, current_app, url_for
 from flask_openapi3 import APIBlueprint, Tag
 from lark.exceptions import GrammarError, UnexpectedInput
 from psycopg2.errors import UniqueViolation
-from sqlalchemy import ColumnElement, and_
+from sqlalchemy import ColumnElement, and_, select
 from sqlalchemy.exc import IntegrityError
 
 from datalad_registry.models import RepoUrl, db
@@ -92,7 +92,7 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
     url_as_str = str(body.url)
 
     repo_url_row = db.session.execute(
-        db.select(RepoUrl).filter_by(url=url_as_str)
+        select(RepoUrl).filter_by(url=url_as_str)
     ).one_or_none()
     if repo_url_row is None:
         # == The URL requested to be created does not exist in the database ==
@@ -116,7 +116,7 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
                     # of the URL in the database
                     db.session.rollback()
                     repo_url_added_by_another = (
-                        db.session.execute(db.select(RepoUrl).filter_by(url=url_as_str))
+                        db.session.execute(select(RepoUrl).filter_by(url=url_as_str))
                         .scalars()
                         .one_or_none()
                     )
@@ -285,7 +285,7 @@ def dataset_urls(query: QueryParams):
     ep = ".dataset_urls"  # Endpoint of `dataset_urls`
     base_qry = loads(query.json(exclude={"page"}, exclude_none=True))
 
-    base_select = db.select(RepoUrl).filter(and_(True, *constraints))
+    base_select = select(RepoUrl).filter(and_(True, *constraints))
 
     max_per_page = 100  # The overriding limit to `per_page` provided by the requester
     pagination = db.paginate(
