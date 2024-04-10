@@ -286,7 +286,14 @@ class DataladDsCollectionStats(BaseModel):
 
 
 class NonAnnexDsCollectionStats(BaseModel):
-    pass
+    """
+    Model for non-annex dataset collection statistics
+    """
+
+    ds_count: NonNegativeInt = Field(
+        description="The number of datasets, as individual repos, "
+        "without any deduplication"
+    )
 
 
 class StatsSummary(BaseModel):
