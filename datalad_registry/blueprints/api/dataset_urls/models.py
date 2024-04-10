@@ -257,7 +257,7 @@ class DatasetURLRespModel(DatasetURLRespBaseModel):
         by_alias = False
 
 
-class _AnnexDsCollectionStats(BaseModel):
+class AnnexDsCollectionStats(BaseModel):
     """
     Model with the base components of annex dataset collection statistics
     """
@@ -276,10 +276,10 @@ class DataladDsCollectionStats(BaseModel):
     Model for DataLad dataset collection statistics
     """
 
-    unique_ds_stats: _AnnexDsCollectionStats = Field(
+    unique_ds_stats: AnnexDsCollectionStats = Field(
         description="Statistics for unique datasets"
     )
-    stats: _AnnexDsCollectionStats = Field(description="Statistics for all datasets")
+    stats: AnnexDsCollectionStats = Field(description="Statistics for all datasets")
 
 
 class NonAnnexDsStats(BaseModel):
