@@ -279,7 +279,10 @@ class DataladDsCollectionStats(BaseModel):
     unique_ds_stats: AnnexDsCollectionStats = Field(
         description="Statistics for unique datasets"
     )
-    stats: AnnexDsCollectionStats = Field(description="Statistics for all datasets")
+    stats: AnnexDsCollectionStats = Field(
+        description="Statistics for all datasets, as individual repos, "
+        "without any deduplication"
+    )
 
 
 class NonAnnexDsStats(BaseModel):
