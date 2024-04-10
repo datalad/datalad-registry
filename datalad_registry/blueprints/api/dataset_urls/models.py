@@ -313,7 +313,8 @@ class CollectionStats(BaseModel):
         "without any deduplication"
     )
     non_annex_ds_stats: NonAnnexDsCollectionStats = Field(
-        description="Statistics for non-annex datasets"
+        description="Statistics for non-annex datasets, as individual repos, "
+        "without any deduplication"
     )
 
     summary: StatsSummary = Field(description="Summary statistics")
