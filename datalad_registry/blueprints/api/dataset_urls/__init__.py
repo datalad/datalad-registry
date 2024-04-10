@@ -285,11 +285,11 @@ def dataset_urls(query: QueryParams):
     ep = ".dataset_urls"  # Endpoint of `dataset_urls`
     base_qry = loads(query.json(exclude={"page"}, exclude_none=True))
 
-    base_select = select(RepoUrl).filter(and_(True, *constraints))
+    base_select_stmt = select(RepoUrl).filter(and_(True, *constraints))
 
     max_per_page = 100  # The overriding limit to `per_page` provided by the requester
     pagination = db.paginate(
-        base_select.order_by(
+        base_select_stmt.order_by(
             getattr(
                 _ORDER_KEY_TO_SQLA_ATTR[query.order_by], query.order_dir.value
             )().nulls_last()
