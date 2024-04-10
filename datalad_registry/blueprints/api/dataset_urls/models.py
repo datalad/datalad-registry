@@ -298,8 +298,9 @@ class CollectionStats(BaseModel):
     datalad_ds_stats: DataladDsCollectionStats = Field(
         description="Statistics for DataLad datasets"
     )
-    pure_annex_ds_stats: DataladDsCollectionStats = Field(
-        description="Statistics for pure annex datasets"
+    pure_annex_ds_stats: AnnexDsCollectionStats = Field(
+        description="Statistics for pure annex datasets, as individual repos, "
+        "without any deduplication"
     )
     non_annex_ds_stats: NonAnnexDsStats = Field(
         description="Statistics for non-annex datasets"
