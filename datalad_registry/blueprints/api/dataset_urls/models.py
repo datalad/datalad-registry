@@ -285,7 +285,7 @@ class DataladDsCollectionStats(BaseModel):
     )
 
 
-class NonAnnexDsStats(BaseModel):
+class NonAnnexDsCollectionStats(BaseModel):
     pass
 
 
@@ -302,7 +302,7 @@ class CollectionStats(BaseModel):
         description="Statistics for pure annex datasets, as individual repos, "
         "without any deduplication"
     )
-    non_annex_ds_stats: NonAnnexDsStats = Field(
+    non_annex_ds_stats: NonAnnexDsCollectionStats = Field(
         description="Statistics for non-annex datasets"
     )
 
