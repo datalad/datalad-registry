@@ -9,7 +9,7 @@ from flask import abort, current_app, url_for
 from flask_openapi3 import APIBlueprint, Tag
 from lark.exceptions import GrammarError, UnexpectedInput
 from psycopg2.errors import UniqueViolation
-from sqlalchemy import ColumnElement, and_, select
+from sqlalchemy import ColumnElement, Select, and_, select
 from sqlalchemy.exc import IntegrityError
 
 from datalad_registry.models import RepoUrl, db
@@ -23,6 +23,7 @@ from datalad_registry.tasks import (
 from datalad_registry.utils.flask_tools import json_resp_from_str
 
 from .models import (
+    CollectionStats,
     DatasetURLPage,
     DatasetURLRespBaseModel,
     DatasetURLRespModel,
@@ -177,6 +178,17 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
             mark_for_chk.delay(repo_url.id)
 
         return json_resp_from_str(resp_model, status=202)
+
+
+def get_collection_stats(select_stmt: Select) -> CollectionStats:
+    """
+    Get the statistics of the collection of dataset URLs specified by the given select
+    statement
+
+    :param select_stmt: The given select statement
+    :return: The statistics of the collection of dataset URLs
+    """
+    pass
 
 
 @bp.get("", responses={"200": DatasetURLPage, "400": HTTPExceptionResp})
@@ -356,6 +368,7 @@ def dataset_urls(query: QueryParams):
         first_pg=url_for(ep, **base_qry, page=1),
         last_pg=url_for(ep, **base_qry, page=1 if total_pages == 0 else total_pages),
         dataset_urls=ds_urls,
+        collection_stats=get_collection_stats(base_select_stmt),
     )
 
     return json_resp_from_str(page.json(exclude_none=True))
