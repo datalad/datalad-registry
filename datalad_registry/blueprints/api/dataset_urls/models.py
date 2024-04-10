@@ -291,7 +291,10 @@ class NonAnnexDsCollectionStats(BaseModel):
 
 class StatsSummary(BaseModel):
     unique_ds_count: NonNegativeInt = Field(description="The number of unique datasets")
-    ds_count: NonNegativeInt = Field(description="The number of datasets")
+    ds_count: NonNegativeInt = Field(
+        description="The number of datasets, as individual repos, "
+        "without any deduplication"
+    )
 
 
 class CollectionStats(BaseModel):
