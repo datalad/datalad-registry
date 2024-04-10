@@ -271,9 +271,9 @@ class _AnnexDsCollectionStats(BaseModel):
     )
 
 
-class AnnexDsCollectionStats(BaseModel):
+class DataladDsCollectionStats(BaseModel):
     """
-    Model for annex dataset collection statistics
+    Model for DataLad dataset collection statistics
     """
 
     unique_ds_stats: _AnnexDsCollectionStats = Field(
@@ -292,10 +292,10 @@ class StatsSummary(BaseModel):
 
 
 class CollectionStats(BaseModel):
-    datalad_ds_stats: AnnexDsCollectionStats = Field(
+    datalad_ds_stats: DataladDsCollectionStats = Field(
         description="Statistics for DataLad datasets"
     )
-    pure_annex_ds_stats: AnnexDsCollectionStats = Field(
+    pure_annex_ds_stats: DataladDsCollectionStats = Field(
         description="Statistics for pure annex datasets"
     )
     non_annex_ds_stats: NonAnnexDsStats = Field(
