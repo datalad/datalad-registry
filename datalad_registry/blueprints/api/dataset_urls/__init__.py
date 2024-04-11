@@ -187,6 +187,8 @@ def get_collection_stats(select_stmt: Select) -> CollectionStats:
 
     :param select_stmt: The given select statement
     :return: The statistics of the collection of dataset URLs
+
+    Note: The execution of this function requires the Flask app's context
     """
     pass
 
