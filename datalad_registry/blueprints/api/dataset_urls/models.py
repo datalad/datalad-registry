@@ -263,9 +263,7 @@ class AnnexDsCollectionStats(BaseModel):
     """
 
     ds_count: NonNegativeInt = Field(description="The number of datasets")
-    size_of_annexed_files: NonNegativeInt = Field(
-        description="The size of annexed files"
-    )
+    annexed_files_size: NonNegativeInt = Field(description="The size of annexed files")
     annexed_file_count: NonNegativeInt = Field(
         description="The number of annexed files"
     )
