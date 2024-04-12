@@ -9,7 +9,7 @@ from flask import abort, current_app, url_for
 from flask_openapi3 import APIBlueprint, Tag
 from lark.exceptions import GrammarError, UnexpectedInput
 from psycopg2.errors import UniqueViolation
-from sqlalchemy import ColumnElement, Select, and_, select
+from sqlalchemy import ColumnElement, and_, select
 from sqlalchemy.exc import IntegrityError
 
 from datalad_registry.models import RepoUrl, db
@@ -23,7 +23,6 @@ from datalad_registry.tasks import (
 from datalad_registry.utils.flask_tools import json_resp_from_str
 
 from .models import (
-    CollectionStats,
     DatasetURLPage,
     DatasetURLRespBaseModel,
     DatasetURLRespModel,
@@ -33,6 +32,7 @@ from .models import (
     PathParams,
     QueryParams,
 )
+from .tools import get_collection_stats
 from .. import (
     API_URL_PREFIX,
     COMMON_API_RESPONSES,
@@ -178,19 +178,6 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
             mark_for_chk.delay(repo_url.id)
 
         return json_resp_from_str(resp_model, status=202)
-
-
-def get_collection_stats(select_stmt: Select) -> CollectionStats:
-    """
-    Get the statistics of the collection of dataset URLs specified by the given select
-    statement
-
-    :param select_stmt: The given select statement
-    :return: The statistics of the collection of dataset URLs
-
-    Note: The execution of this function requires the Flask app's context
-    """
-    pass
 
 
 @bp.get("", responses={"200": DatasetURLPage, "400": HTTPExceptionResp})
