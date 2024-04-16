@@ -161,15 +161,13 @@ def test_get_origin_branches(ds_name, request, tmp_path):
 
     branch_names = set(ds.repo.get_branches())
 
-    assert set(b["name"] for b in origin_branches) == branch_names
+    assert set(origin_branches) == branch_names
 
-    for b in origin_branches:
-        b_name = b["name"]
-        assert b == {
-            "name": b_name,
-            "hexsha": ds.repo.get_hexsha(b_name),
+    for o_b_name, o_b_data in origin_branches.items():
+        assert o_b_data == {
+            "hexsha": ds.repo.get_hexsha(o_b_name),
             "last_commit_dt": ds.repo.call_git(
-                ["log", "-1", "--format=%aI", b_name]
+                ["log", "-1", "--format=%aI", o_b_name]
             ).strip(),
         }
 
