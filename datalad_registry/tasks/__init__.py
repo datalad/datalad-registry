@@ -115,6 +115,7 @@ def _update_dataset_url_info(dataset_url: RepoUrl, ds: Dataset) -> None:
 # Map of extractors to their respective required files
 #     The required files are specified relative to the root of the dataset
 _EXTRACTOR_REQUIRED_FILES = {
+    "metalad_core": [".datalad/config"],
     "metalad_studyminimeta": [".studyminimeta.yaml"],
     "datacite_gin": ["datacite.yml"],
     "bids_dataset": ["dataset_description.json"],
