@@ -123,17 +123,25 @@ def get_dl_ds_collection_stats(base_q: Subquery) -> DataladDsCollectionStats:
     )
 
 
-def get_pure_annex_ds_collection_stats() -> AnnexDsCollectionStats:
+def get_pure_annex_ds_collection_stats(base_q: Subquery) -> AnnexDsCollectionStats:
     """
     Get the stats of the subset of the collection of datasets that contains only
     of pure annex datasets, the annex datasets that are not Datalad datasets
 
+    :param base_q: The base query that specified the collection of datasets
+                   under consideration
     :return: The object representing the stats
 
     Note: The execution of this function requires the Flask app's context
     """
     # Select statement for getting all the pure annex datasets
-    pass
+    pure_annex_ds_q = (
+        select(base_q)
+        .filter(and_(base_q.c.branches.has_key("git-annex"), base_q.c.ds_id.is_(None)))
+        .subquery("pure_annex_ds_q")
+    )
+
+    return _get_annex_ds_collection_stats(pure_annex_ds_q)
 
 
 def get_non_annex_ds_collection_stats() -> NonAnnexDsCollectionStats:
@@ -162,7 +170,7 @@ def get_collection_stats(select_stmt: Select) -> CollectionStats:
     base_q = select_stmt.subquery("base_q")
 
     datalad_ds_stats = get_dl_ds_collection_stats(base_q)
-    pure_annex_ds_stats = get_pure_annex_ds_collection_stats()
+    pure_annex_ds_stats = get_pure_annex_ds_collection_stats(base_q)
     non_annex_ds_stats = get_non_annex_ds_collection_stats()
 
     # Total number of datasets, as individual repos, without any deduplication
