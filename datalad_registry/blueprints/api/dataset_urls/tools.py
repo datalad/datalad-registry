@@ -1,4 +1,4 @@
-from sqlalchemy import Select, Subquery, and_, func, or_, select
+from sqlalchemy import Select, Subquery, and_, func, not_, or_, select
 
 from datalad_registry.models import RepoUrl, db
 
@@ -144,16 +144,29 @@ def get_pure_annex_ds_collection_stats(base_q: Subquery) -> AnnexDsCollectionSta
     return _get_annex_ds_collection_stats(pure_annex_ds_q)
 
 
-def get_non_annex_ds_collection_stats() -> NonAnnexDsCollectionStats:
+def get_non_annex_ds_collection_stats(base_q: Subquery) -> NonAnnexDsCollectionStats:
     """
     Get the stats of the subset of the collection of datasets that contains only
     of non-annex datasets
 
+    :param base_q: The base query that specified the collection of datasets
+                   under consideration
     :return: The object representing the stats
 
     Note: The execution of this function requires the Flask app's context
     """
-    pass
+    # Select statement for getting all the non-annex datasets
+    non_annex_ds_q = (
+        select(base_q)
+        .filter(not_(base_q.c.branches.has_key("git-annex")))
+        .subquery("non_annex_ds_q")
+    )
+
+    return NonAnnexDsCollectionStats(
+        ds_count=db.session.execute(
+            select(func.count().label("ds_count")).select_from(non_annex_ds_q)
+        ).scalar_one()
+    )
 
 
 def get_collection_stats(select_stmt: Select) -> CollectionStats:
@@ -171,7 +184,7 @@ def get_collection_stats(select_stmt: Select) -> CollectionStats:
 
     datalad_ds_stats = get_dl_ds_collection_stats(base_q)
     pure_annex_ds_stats = get_pure_annex_ds_collection_stats(base_q)
-    non_annex_ds_stats = get_non_annex_ds_collection_stats()
+    non_annex_ds_stats = get_non_annex_ds_collection_stats(base_q)
 
     # Total number of datasets, as individual repos, without any deduplication
     ds_count = db.session.execute(
