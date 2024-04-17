@@ -183,8 +183,6 @@ def get_collection_stats(select_stmt: Select) -> CollectionStats:
     base_q = select_stmt.subquery("base_q")
 
     datalad_ds_stats = get_dl_ds_collection_stats(base_q)
-    pure_annex_ds_stats = get_pure_annex_ds_collection_stats(base_q)
-    non_annex_ds_stats = get_non_annex_ds_collection_stats(base_q)
 
     # Total number of datasets, as individual repos, without any deduplication
     ds_count = db.session.execute(
@@ -193,8 +191,8 @@ def get_collection_stats(select_stmt: Select) -> CollectionStats:
 
     return CollectionStats(
         datalad_ds_stats=datalad_ds_stats,
-        pure_annex_ds_stats=pure_annex_ds_stats,
-        non_annex_ds_stats=non_annex_ds_stats,
+        pure_annex_ds_stats=get_pure_annex_ds_collection_stats(base_q),
+        non_annex_ds_stats=get_non_annex_ds_collection_stats(base_q),
         summary=StatsSummary(
             unique_ds_count=datalad_ds_stats.unique_ds_stats.ds_count, ds_count=ds_count
         ),
