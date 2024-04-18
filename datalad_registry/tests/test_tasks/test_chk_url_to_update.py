@@ -13,7 +13,7 @@ from . import FIXED_DATETIME_NOW_VALUE
 # and the db and the cache are clean
 @pytest.mark.usefixtures("flask_app")
 class TestChkUrlToUpdate:
-    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
     @pytest.mark.parametrize("invalid_url_id", [-1, 0, 5, 10])
     def test_repo_url_not_found(self, invalid_url_id):
         """
@@ -21,7 +21,7 @@ class TestChkUrlToUpdate:
         """
         assert chk_url_to_update(invalid_url_id, None) is ChkUrlStatus.ABORTED
 
-    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
     @pytest.mark.parametrize(
         "url_id, initial_last_chk_dt",
         [
@@ -38,7 +38,7 @@ class TestChkUrlToUpdate:
         """
         assert chk_url_to_update(url_id, initial_last_chk_dt) is ChkUrlStatus.SKIPPED
 
-    @pytest.mark.usefixtures("populate_with_dataset_urls", "fix_datetime_now")
+    @pytest.mark.usefixtures("populate_with_std_ds_urls", "fix_datetime_now")
     @pytest.mark.parametrize(
         "url_id, initial_last_chk_dt, original_n_failed_chks, original_chk_req_dt",
         [

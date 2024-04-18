@@ -119,7 +119,7 @@ class TestDeclareDatasetURL:
                 "/api/v2/dataset-urls", json={"url": "https://www.example.com"}
             )
 
-    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
     @pytest.mark.parametrize(
         "url, expected_mark_for_chk_delay_args",
         [
@@ -255,7 +255,7 @@ class TestDatasetURLs:
         resp = flask_client.get("/api/v2/dataset-urls", query_string=query_params)
         assert resp.status_code == 200
 
-    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
     @pytest.mark.parametrize(
         "query_params, expected_output",
         [
@@ -408,7 +408,7 @@ class TestDatasetURLs:
         # Check the collection of dataset URLs
         assert {i.url for i in ds_url_page.dataset_urls} == expected_output
 
-    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
     @pytest.mark.parametrize(
         "query_params",
         [
@@ -494,7 +494,7 @@ class TestDatasetURLs:
 
                 assert all(type(m) is metadata_ret_type for m in url.metadata)
 
-    def test_pagination(self, populate_with_dataset_urls, flask_client):
+    def test_pagination(self, populate_with_std_ds_urls, flask_client):
         """
         Test the pagination of the results
         """
@@ -578,9 +578,9 @@ class TestDatasetURLs:
         for url in ds_url_pg.dataset_urls:
             ds_urls.add(str(url.url))
 
-        assert ds_urls == set(populate_with_dataset_urls)
+        assert ds_urls == set(populate_with_std_ds_urls)
 
-    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
     @pytest.mark.parametrize(
         "query_params, expected_results_by_id_prefix",
         [

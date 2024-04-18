@@ -275,9 +275,9 @@ def _populate_with_dataset_urls(urls: list[RepoUrl], flask_app):
 
 
 @pytest.fixture
-def populate_with_dataset_urls(flask_app) -> list[str]:
+def populate_with_std_ds_urls(flask_app) -> list[str]:
     """
-    Populate the `repo_url` table with a list of RepoUrl objects
+    Populate the `repo_url` table with a list of standard (typical) RepoUrl objects
 
     Returns: The list of URLs, expressed in `str`, that were added to the database
     """
@@ -340,7 +340,7 @@ def populate_with_dataset_urls(flask_app) -> list[str]:
 
 @pytest.fixture
 def populate_with_url_metadata(
-    populate_with_dataset_urls,  # noqa: U100 (unused argument)
+    populate_with_std_ds_urls,  # noqa: U100 (unused argument)
     flask_app,
 ):
     """

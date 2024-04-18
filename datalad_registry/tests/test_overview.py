@@ -6,7 +6,7 @@ from yarl import URL as YURL
 
 
 class TestOverView:
-    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
     @pytest.mark.parametrize(
         "sort_by, expected_order",
         [
@@ -143,7 +143,7 @@ class TestOverView:
 
         assert url_list == expected_order
 
-    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
     @pytest.mark.parametrize(
         "search_query, expected_results",
         [
@@ -180,7 +180,7 @@ class TestOverView:
 
         assert url_list == expected_results
 
-    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
     @pytest.mark.parametrize(
         "search_query, err_msg_prefix",
         [
@@ -206,7 +206,7 @@ class TestOverView:
         assert (error_span := soup.find("span", class_="error"))
         assert error_span.text.startswith(f"ERROR: {err_msg_prefix}")
 
-    def test_pagination(self, populate_with_dataset_urls, flask_client):
+    def test_pagination(self, populate_with_std_ds_urls, flask_client):
         """
         Test pagination in Web UI
         """
@@ -272,7 +272,7 @@ class TestOverView:
         assert page_1_link.query["per_page"] == "2"
         assert page_1_link.query["sort"] == "update-desc"
 
-        assert ds_urls == set(populate_with_dataset_urls)
+        assert ds_urls == set(populate_with_std_ds_urls)
 
     @pytest.mark.usefixtures("populate_with_url_metadata")
     def test_metadata(self, flask_client):
