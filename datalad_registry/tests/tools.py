@@ -14,8 +14,7 @@ def populate_with_dataset_urls(urls: list[RepoUrl], flask_app):
     """
 
     with flask_app.app_context():
-        for url in urls:
-            db.session.add(url)
+        db.session.add_all(urls)
         db.session.commit()
 
         return [url.url for url in urls]
