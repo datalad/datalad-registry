@@ -258,12 +258,28 @@ def populate_with_2_dataset_urls(flask_app):
         db.session.commit()
 
 
+def _populate_with_dataset_urls(urls: list[RepoUrl], flask_app):
+    """
+    Populate the `repo_url` table with a list of RepoUrl objects
+
+    :param urls: The list of RepoUrl objects to populate
+    :return: The list of URLs, expressed in `str`, that were added to the database
+    """
+
+    with flask_app.app_context():
+        for url in urls:
+            db.session.add(url)
+        db.session.commit()
+
+        return [url.url for url in urls]
+
+
 @pytest.fixture
 def populate_with_dataset_urls(flask_app) -> list[str]:
     """
-    Populate the url table with a list of DatasetURLs.
+    Populate the `repo_url` table with a list of RepoUrl objects
 
-    Returns: The list of DatasetURLs that were added to the database
+    Returns: The list of URLs, expressed in `str`, that were added to the database
     """
 
     urls = [
@@ -319,12 +335,7 @@ def populate_with_dataset_urls(flask_app) -> list[str]:
         ),
     ]
 
-    with flask_app.app_context():
-        for url in urls:
-            db.session.add(url)
-        db.session.commit()
-
-        return [url.url for url in urls]
+    return _populate_with_dataset_urls(urls, flask_app)
 
 
 @pytest.fixture
