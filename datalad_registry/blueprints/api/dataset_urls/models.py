@@ -325,9 +325,6 @@ class DatasetURLPage(BaseModel):
     Model for representing a page of dataset URLs in response communication
     """
 
-    total: StrictInt = Field(
-        description="The total number of dataset URLs across all pages"
-    )
     cur_pg_num: StrictInt = Field(description="The number of the current page")
     prev_pg: Optional[StrictStr] = Field(
         None, description="The link to the previous page"

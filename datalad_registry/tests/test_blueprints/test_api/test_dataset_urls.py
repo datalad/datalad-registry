@@ -398,12 +398,12 @@ class TestDatasetURLs:
 
         ds_url_page = DatasetURLPage.parse_raw(resp.text)
 
-        assert ds_url_page.total == expected_out_count
         assert ds_url_page.cur_pg_num == DEFAULT_PAGE
         assert ds_url_page.prev_pg is None
         assert ds_url_page.next_pg is None
         assert YURL(ds_url_page.first_pg).query["page"] == "1"
         assert YURL(ds_url_page.last_pg).query["page"] == "1"
+        assert ds_url_page.collection_stats.summary.ds_count == expected_out_count
 
         # Check the collection of dataset URLs
         assert {i.url for i in ds_url_page.dataset_urls} == expected_output
@@ -510,11 +510,11 @@ class TestDatasetURLs:
         resp_json = resp.json
         ds_url_pg = DatasetURLPage.parse_obj(resp_json)
 
-        assert ds_url_pg.total == 4
         assert ds_url_pg.cur_pg_num == 1
         assert "prev_pg" not in resp_json
         assert ds_url_pg.prev_pg is None
         assert ds_url_pg.next_pg is not None
+        assert ds_url_pg.collection_stats.summary.ds_count == 4
 
         next_pg_lk, first_pg_lk, last_pg_lk = (
             YURL(pg)
@@ -548,11 +548,11 @@ class TestDatasetURLs:
         resp_json = resp.json
         ds_url_pg = DatasetURLPage.parse_obj(resp_json)
 
-        assert ds_url_pg.total == 4
         assert ds_url_pg.cur_pg_num == 2
         assert ds_url_pg.prev_pg is not None
         assert "next_pg" not in resp_json
         assert ds_url_pg.next_pg is None
+        assert ds_url_pg.collection_stats.summary.ds_count == 4
 
         prev_pg_lk, first_pg_lk, last_pg_lk = (
             YURL(pg)

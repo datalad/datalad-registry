@@ -342,7 +342,6 @@ def dataset_urls(query: QueryParams):
     assert pagination.total is not None
 
     page = DatasetURLPage(
-        total=pagination.total,
         cur_pg_num=cur_pg_num,
         prev_pg=(
             url_for(ep, **base_qry, page=pagination.prev_num)
