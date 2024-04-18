@@ -1,9 +1,11 @@
 # This file contains helper functions for testing purposes
 
+from flask import Flask
+
 from datalad_registry.models import RepoUrl, db
 
 
-def populate_with_dataset_urls(urls: list[RepoUrl], flask_app):
+def populate_with_dataset_urls(urls: list[RepoUrl], flask_app: Flask) -> list[str]:
     """
     Populate the `repo_url` table with a list of RepoUrl objects
 
