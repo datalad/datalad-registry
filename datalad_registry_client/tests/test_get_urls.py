@@ -9,8 +9,13 @@ import requests
 from yarl import URL
 
 from datalad_registry.blueprints.api.dataset_urls.models import (
+    AnnexDsCollectionStats,
+    CollectionStats,
+    DataladDsCollectionStats,
     DatasetURLPage,
     DatasetURLRespModel,
+    NonAnnexDsCollectionStats,
+    StatsSummary,
 )
 from datalad_registry_client import DEFAULT_BASE_ENDPOINT
 
@@ -38,6 +43,20 @@ dataset_url_resp_model_template = dict(
     git_objects_kb=1200,
     processed=True,
     metadata=[],
+)
+
+# A dummy `AnnexDsCollectionStats` object
+annex_ds_collection_stats = AnnexDsCollectionStats(
+    ds_count=101, annexed_files_size=1900, annexed_file_count=42
+)
+# A dummy `CollectionStats` object
+collection_stats = CollectionStats(
+    datalad_ds_stats=DataladDsCollectionStats(
+        unique_ds_stats=annex_ds_collection_stats, stats=annex_ds_collection_stats
+    ),
+    pure_annex_ds_stats=annex_ds_collection_stats,
+    non_annex_ds_stats=NonAnnexDsCollectionStats(ds_count=40),
+    summary=StatsSummary(unique_ds_count=101, ds_count=999),
 )
 
 
@@ -91,6 +110,7 @@ class TestRegistryGetURLs:
                                 url="https://www.example.com"
                             )
                         ],
+                        collection_stats=collection_stats,
                     ).json(exclude_none=True),
                 )
             else:
@@ -142,6 +162,7 @@ class TestRegistryGetURLs:
                                 url="https://www.example.com"
                             )
                         ],
+                        collection_stats=collection_stats,
                     ).json(exclude_none=True),
                 )
             else:
@@ -185,6 +206,7 @@ class TestRegistryGetURLs:
                         DatasetURLRespModel(**dataset_url_resp_model_template, url=url)
                         for url in pg
                     ],
+                    collection_stats=collection_stats,
                 )
 
         ds_url_pgs_iter = ds_url_pgs()
@@ -250,6 +272,7 @@ class TestRegistryGetURLs:
                                 url="https://www.example.com"
                             )
                         ],
+                        collection_stats=collection_stats,
                     ).json(exclude_none=True),
                 )
 
