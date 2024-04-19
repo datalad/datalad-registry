@@ -48,12 +48,14 @@ def overview():  # No type hints due to mypy#7187.
         else:
             select_stmt = select_stmt.filter(criteria)
 
-    # Sort
+    # Decipher sorting scheme
     sort_by = request.args.get("sort", default_sort_scheme, type=str)
     if sort_by not in _SORT_ATTRS:
         lgr.debug("Ignoring unknown sort parameter: %s", sort_by)
         sort_by = default_sort_scheme
     col, sort_method = _SORT_ATTRS[sort_by]
+
+    # Apply sorting
     select_stmt = select_stmt.order_by(
         nullslast(getattr(getattr(RepoUrl, col), sort_method)())
     )
