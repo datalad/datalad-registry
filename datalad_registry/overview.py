@@ -32,7 +32,7 @@ _SORT_ATTRS = {
 def overview():  # No type hints due to mypy#7187.
     default_sort_scheme = "update-desc"
 
-    select_stmt = select(RepoUrl)
+    base_select_stmt = select(RepoUrl)
 
     # Search using query if provided.
     # ATM it is just a 'filter' on URL records, later might be more complex
@@ -46,7 +46,7 @@ def overview():  # No type hints due to mypy#7187.
         except Exception as e:
             search_error = str(e)
         else:
-            select_stmt = select_stmt.filter(criteria)
+            base_select_stmt = base_select_stmt.filter(criteria)
 
     # Decipher sorting scheme
     sort_by = request.args.get("sort", default_sort_scheme, type=str)
@@ -56,7 +56,7 @@ def overview():  # No type hints due to mypy#7187.
     col, sort_method = _SORT_ATTRS[sort_by]
 
     # Apply sorting
-    select_stmt = select_stmt.order_by(
+    select_stmt = base_select_stmt.order_by(
         nullslast(getattr(getattr(RepoUrl, col), sort_method)())
     )
 
