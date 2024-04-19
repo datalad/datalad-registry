@@ -197,41 +197,49 @@
     <button id="statsModalBtn">Show Stats</button>
 
     <!-- Statistics of the returned collection of datasets -->
-    <div id="stats">
-      <h2>Stats</h2>
-      <ul>
-        <li>
-          <h3>Datalad Datasets Stats</h3>
+    <div id="statsModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="close">&times;</span>
+          <h2>Stats</h2>
+        </div>
+        <div id="stats" class="modal-body">
+          <h2>Stats</h2>
           <ul>
             <li>
-              <h4>Unique Datalad Dataset Stats</h4>
-              {{ render_annex_ds_collection_stats(stats.datalad_ds_stats.unique_ds_stats) }}
+              <h3>Datalad Datasets Stats</h3>
+              <ul>
+                <li>
+                  <h4>Unique Datalad Dataset Stats</h4>
+                  {{ render_annex_ds_collection_stats(stats.datalad_ds_stats.unique_ds_stats) }}
+                </li>
+                <li>
+                  <h4>Stats without deduplication</h4>
+                  {{ render_annex_ds_collection_stats(stats.datalad_ds_stats.stats) }}
+                </li>
+              </ul>
             </li>
             <li>
-              <h4>Stats without deduplication</h4>
-              {{ render_annex_ds_collection_stats(stats.datalad_ds_stats.stats) }}
+              <h3>Pure Annex Dataset Stats</h3>
+              {{ render_annex_ds_collection_stats(stats.pure_annex_ds_stats) }}
+            </li>
+            <li>
+              <h3>Non-Annex Dataset Stats</h3>
+              <ul>
+                <li>Count: {{ stats.non_annex_ds_stats.ds_count }}</li>
+              </ul>
+            </li>
+            <li>
+              <h3>Summary</h3>
+              <ul>
+                <li>Unique dataset count: {{ stats.summary.unique_ds_count }}</li>
+                <li>Total dataset count (without
+                  deduplication): {{ stats.summary.ds_count }}</li>
+              </ul>
             </li>
           </ul>
-        </li>
-        <li>
-          <h3>Pure Annex Dataset Stats</h3>
-          {{ render_annex_ds_collection_stats(stats.pure_annex_ds_stats) }}
-        </li>
-        <li>
-          <h3>Non-Annex Dataset Stats</h3>
-          <ul>
-            <li>Count: {{ stats.non_annex_ds_stats.ds_count }}</li>
-          </ul>
-        </li>
-        <li>
-          <h3>Summary</h3>
-          <ul>
-            <li>Unique dataset count: {{ stats.summary.unique_ds_count }}</li>
-            <li>Total dataset count (without
-              deduplication): {{ stats.summary.ds_count }}</li>
-          </ul>
-        </li>
-      </ul>
+        </div>
+      </div>
     </div>
   </div>
 </div>
