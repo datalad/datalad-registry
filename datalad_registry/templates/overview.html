@@ -178,6 +178,74 @@
     <div class="pager">
       {{ render_pagination_widget(pagination, '.overview') }}
     </div>
+
+    <!-- Statistics of the returned collection of datasets -->
+    <div id="stats">
+      <h2>Stats</h2>
+      <ul>
+        <li>
+          <h3>Datalad Datasets Stats</h3>
+          <ul>
+            <li>
+              <h4>Unique Datalad Dataset Stats</h4>
+              <ul>
+                <li>Count: {{ stats.datalad_ds_stats.unique_ds_stats.ds_count }}</li>
+                {% if stats.datalad_ds_stats.unique_ds_stats.annexed_file_count is not none %}
+                  <li>Annexed file
+                    count: {{ stats.datalad_ds_stats.unique_ds_stats.annexed_file_count }}</li>
+                {% endif %}
+                {% if stats.datalad_ds_stats.unique_ds_stats.annexed_files_size is not none %}
+                  <li>Annexed files
+                    size: {{ stats.datalad_ds_stats.unique_ds_stats.annexed_files_size }}</li>
+                {% endif %}
+              </ul>
+            </li>
+            <li>
+              <h4>Stats without deduplication</h4>
+              <ul>
+                <li>Count: {{ stats.datalad_ds_stats.stats.ds_count }}</li>
+                {% if stats.datalad_ds_stats.stats.annexed_file_count is not none %}
+                  <li>Annexed file
+                    count: {{ stats.datalad_ds_stats.stats.annexed_file_count }}</li>
+                {% endif %}
+                {% if stats.datalad_ds_stats.stats.annexed_files_size is not none %}
+                  <li>Annexed files
+                    size: {{ stats.datalad_ds_stats.stats.annexed_files_size }}</li>
+                {% endif %}
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <h3>Pure Annex Dataset Stats</h3>
+          <ul>
+            <li>Count: {{ stats.pure_annex_ds_stats.ds_count }}</li>
+            {% if stats.pure_annex_ds_stats.annexed_file_count is not none %}
+              <li>Annexed file
+                count: {{ stats.pure_annex_ds_stats.annexed_file_count }}</li>
+            {% endif %}
+            {% if stats.pure_annex_ds_stats.annexed_files_size is not none %}
+              <li>Annexed files
+                size: {{ stats.pure_annex_ds_stats.annexed_files_size }}</li>
+            {% endif %}
+          </ul>
+        </li>
+        <li>
+          <h3>Non-Annex Dataset Stats</h3>
+          <ul>
+            <li>Count: {{ stats.non_annex_ds_stats.ds_count }}</li>
+          </ul>
+        </li>
+        <li>
+          <h3>Summary</h3>
+          <ul>
+            <li>Unique dataset count: {{ stats.summary.unique_ds_count }}</li>
+            <li>Total dataset count (without
+              deduplication): {{ stats.summary.ds_count }}</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
   </div>
 </div>
 
