@@ -6,6 +6,7 @@ import logging
 from flask import Blueprint, render_template, request
 from sqlalchemy import nullslast, select
 
+from datalad_registry.blueprints.api.dataset_urls.tools import get_collection_stats
 from datalad_registry.models import RepoUrl, db
 from datalad_registry.search import parse_query
 
@@ -63,9 +64,13 @@ def overview():  # No type hints due to mypy#7187.
     # Paginate
     pagination = db.paginate(select_stmt)
 
+    # Gather stats of the returned collection of datasets
+    stats = get_collection_stats(base_select_stmt)
+
     return render_template(
         "overview.html",
         pagination=pagination,
+        stats=stats,
         sort_by=sort_by,
         search_query=query,
         search_error=search_error,
