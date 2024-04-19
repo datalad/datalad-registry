@@ -49,7 +49,6 @@ def overview():  # No type hints due to mypy#7187.
             select_stmt = select_stmt.filter(criteria)
 
     # Sort
-    select_stmt = select_stmt.group_by(RepoUrl)
     sort_by = request.args.get("sort", default_sort_scheme, type=str)
     if sort_by not in _SORT_ATTRS:
         lgr.debug("Ignoring unknown sort parameter: %s", sort_by)
