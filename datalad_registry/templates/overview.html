@@ -73,7 +73,7 @@
         <input type='submit' value='Clear'/>
         </form>
     {%- endif %}
-    <button id="showQuerySyntax">Show search query syntax</button>
+    <button id="ShowQuerySyntax">Show search query syntax</button>
 
     <!-- Syntax modal -->
     <div id="QuerySyntaxModal" class="modal">
@@ -193,10 +193,10 @@
     </div>
 
     <!-- Stats Trigger Button -->
-    <button id="statsModalBtn">Show Stats</button>
+    <button id="ShowStats">Show Stats</button>
 
     <!-- Statistics modal -->
-    <div id="statsModal" class="modal">
+    <div id="StatsModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
           <span id="CloseStats" class="close">&times;</span>
@@ -248,7 +248,7 @@
 const syntax_modal = document.getElementById("QuerySyntaxModal");
 
 // Get the button that opens the syntax modal
-const show_syntax_btn = document.getElementById("showQuerySyntax");
+const show_syntax_btn = document.getElementById("ShowQuerySyntax");
 
 // Get the <span> element that closes the syntax modal
 const close_syntax_span = document.getElementById("CloseSyntax");
