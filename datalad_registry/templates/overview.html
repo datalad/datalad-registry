@@ -243,53 +243,37 @@
 </div>
 
 <script>
-// Get the syntax modal
-const syntax_modal = document.getElementById("QuerySyntaxModal");
+    function setupModal(modalId, btnShowId, btnCloseId) {
+        const modal = document.getElementById(modalId);
+        const btnShow = document.getElementById(btnShowId);
+        const btnClose = document.getElementById(btnCloseId);
 
-// Get the button that opens the syntax modal
-const show_syntax_btn = document.getElementById("ShowQuerySyntax");
+        // When the user clicks the button, open the modal
+        btnShow.onclick = function () {
+            modal.style.display = "block";
+        }
 
-// Get the <span> element that closes the syntax modal
-const close_syntax_span = document.getElementById("CloseSyntax");
+        // When the user clicks on <span> (x), close the modal
+        btnClose.onclick = function () {
+            modal.style.display = "none";
+        }
 
-// When the user clicks the show syntax button, open the syntax modal
-show_syntax_btn.onclick = function() {
-  syntax_modal.style.display = "block";
-}
+        return modal;
+    }
 
-// When the user clicks on <span> (x), close the syntax modal
-close_syntax_span.onclick = function() {
-  syntax_modal.style.display = "none";
-}
+    // Setup modals
+    const modals = [];
+    modals.push(setupModal('QuerySyntaxModal', 'ShowQuerySyntax', 'CloseSyntax'));
+    modals.push(setupModal('StatsModal', 'ShowStats', 'CloseStats'));
 
-// Get the stats modal
-const stats_modal = document.getElementById("StatsModal");
-
-// Get the button that opens the stats modal
-const show_stats_btn = document.getElementById("ShowStats");
-
-// Get the <span> element that closes the stats modal
-const close_stats_span = document.getElementById("CloseStats");
-
-// When the user clicks the show stats button, open the syntax modal
-show_stats_btn.onclick = function() {
-  stats_modal.style.display = "block";
-}
-
-// When the user clicks on <span> (x), close the stats modal
-close_stats_span.onclick = function() {
-  stats_modal.style.display = "none";
-}
-
-// When the user clicks anywhere outside the modal, close it
-window.onclick = function(event) {
-  if (event.target === syntax_modal) {
-    syntax_modal.style.display = "none";
-  }
-  if (event.target === stats_modal) {
-    stats_modal.style.display = "none";
-  }
-}
+    // When the user clicks anywhere outside the modal, close it
+    window.onclick = function (event) {
+        modals.forEach(function (modal) {
+            if (event.target === modal) {
+                modal.style.display = "none";
+            }
+        });
+    }
 
 function span_copy() {
   // Find all span elements with the class 'query'
