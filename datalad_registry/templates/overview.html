@@ -263,10 +263,32 @@ close_syntax_span.onclick = function() {
   syntax_modal.style.display = "none";
 }
 
+// Get the stats modal
+const stats_modal = document.getElementById("StatsModal");
+
+// Get the button that opens the stats modal
+const show_stats_btn = document.getElementById("ShowStats");
+
+// Get the <span> element that closes the stats modal
+const close_stats_span = document.getElementById("CloseStats");
+
+// When the user clicks the show stats button, open the syntax modal
+show_stats_btn.onclick = function() {
+  stats_modal.style.display = "block";
+}
+
+// When the user clicks on <span> (x), close the stats modal
+close_stats_span.onclick = function() {
+  stats_modal.style.display = "none";
+}
+
 // When the user clicks anywhere outside the modal, close it
 window.onclick = function(event) {
   if (event.target === syntax_modal) {
     syntax_modal.style.display = "none";
+  }
+  if (event.target === stats_modal) {
+    stats_modal.style.display = "none";
   }
 }
 
