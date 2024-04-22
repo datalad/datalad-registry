@@ -9,6 +9,7 @@ const routes = [
     name: "home",
     beforeEnter: (to, from, next) => {
       const superfile = metadata_dir + "/super.json";
+      console.log(`Loading superfile: ${superfile}`);
       // https://www.dummies.com/programming/php/using-xmlhttprequest-class-properties/
       var rawFile = new XMLHttpRequest();
       rawFile.onreadystatechange = function () {
@@ -42,7 +43,11 @@ const routes = [
   },
   { path: "/about", component: aboutPage, name: "about" },
   { 
-    path: '/:catchAll(.*)', 
+    path: '/:catchAll(.*)',
+    beforeEnter: (to, from, next) => {
+       console.log(`I am here with ${to.path} and ${from.path}`);
+       next();
+    },
     component: notFound,
     name: '404'
   },

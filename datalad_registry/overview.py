@@ -91,7 +91,36 @@ def catalog_index(path):
     Serve vue main page.
     """
     path = path or "index.html"  # just to trick bloody flake
+    # from flask import redirect
+    # return redirect("/static/catalog/index.html")
     return send_from_directory("/app-catalog", "index.html")
+
+
+@bp.route("/catalog/dataset/assets/", defaults={"path": ""})
+@bp.route("/catalog/dataset/assets/<string:path>")
+def datalad_assets(path):
+    from flask import redirect
+
+    url = f"/static/catalog/assets/{path}"
+    lgr.warning(f"Redirecting to {url}")
+    return redirect(url)
+
+
+@bp.route("/catalog/dataset/artwork/", defaults={"path": ""})
+@bp.route("/catalog/dataset/artwork/<string:path>")
+def datalad_artwork(path):
+    from flask import redirect
+
+    url = f"/static/catalog/artwork/{path}"
+    lgr.warning(f"Redirecting to {url}")
+    return redirect(url)
+
+
+@bp.route("/config.json")
+def datalad_config():
+    from flask import redirect
+
+    return redirect("static/catalog/config.json")
 
 
 # @bp.route('/catalog/', defaults={'path': ''})
