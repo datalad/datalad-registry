@@ -192,8 +192,18 @@
       {{ render_pagination_widget(pagination, '.overview') }}
     </div>
 
-    <!-- Stats Trigger Button -->
-    <button id="ShowStats">Show Stats</button>
+
+    <div>
+      Combined Nr of Annexed
+      files: {{ (stats.datalad_ds_stats.stats.annexed_file_count if stats.datalad_ds_stats.stats.annexed_file_count else 0) +
+        (stats.pure_annex_ds_stats.annexed_file_count if stats.pure_annex_ds_stats.annexed_file_count else 0) }}
+      Combined Annexed file
+      size: {{ (stats.datalad_ds_stats.stats.annexed_files_size if stats.datalad_ds_stats.stats.annexed_files_size else 0) + (stats.pure_annex_ds_stats.annexed_files_size if stats.pure_annex_ds_stats.annexed_files_size else 0) }}
+
+      <!-- Stats Trigger Button -->
+      <button id="ShowStats">Show Stats</button>
+    </div>
+
 
     <!-- Statistics modal -->
     <div id="StatsModal" class="modal">
