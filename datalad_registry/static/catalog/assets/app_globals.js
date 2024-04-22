@@ -3,7 +3,7 @@
 /********/
 
 const template_dir = "/templates";
-const config_file = "/config.json";
+const config_file = "config.json";
 const metadata_dir = "/metadata";
 const superdatasets_file = metadata_dir + "/super.json";
 const SPLIT_INDEX = 3;
@@ -12,7 +12,7 @@ const default_config = {
   catalog_name: "DataCat",
   link_color: "#fba304",
   link_hover_color: "#af7714",
-  logo_path: "/artwork/catalog_logo.svg",
+  logo_path: "artwork/catalog_logo.svg",
   social_links: {
     about: null,
     documentation: "https://docs.datalad.org/projects/catalog/en/latest/",
