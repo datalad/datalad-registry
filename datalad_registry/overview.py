@@ -18,7 +18,6 @@ from sqlalchemy import (
 from datalad_registry.blueprints.api.url_metadata import URLMetadataModel
 from datalad_registry.models import (
     RepoUrl,
-    URLMetadata,
     db,
 )
 from datalad_registry.search import parse_query
@@ -85,6 +84,16 @@ def overview():  # No type hints due to mypy#7187.
     )
 
 
+@bp.route("/catalog/dataset/", defaults={"path": ""})
+@bp.route("/catalog/dataset/<string:path>")
+def catalog_index(path):
+    """
+    Serve vue main page.
+    """
+    path = path or "index.html"  # just to trick bloody flake
+    return send_from_directory("/app-catalog", "index.html")
+
+
 # @bp.route('/catalog/', defaults={'path': ''})
 # TODO: move from placing dataset identifier within path -- place into query
 # TODO: do not use ID may be but use URL, or allow for both -- that would make it
@@ -103,6 +112,7 @@ def send_report(id_, path):
         if repo_url_row:
             repo_url_row = repo_url_row[0]
             metadatas = {}
+            was_default_set = False
             for mr in repo_url_row.metadata_:
                 if mr.extractor_name not in {
                     "metalad_core",
@@ -120,6 +130,15 @@ def send_report(id_, path):
                 lgr.warning(f"Translating record with keys {m.keys()}")
                 m_translated = dl.catalog_translate(m)[0]["translated_metadata"]
                 metadatas[mr.extractor_name] = m_translated
+                if mr.extractor_name == "metalad_core":
+                    was_default_set = True
+                    dl.catalog_set(
+                        catalog="/app-catalog",
+                        property="home",
+                        dataset_id=m["dataset_id"],
+                        dataset_version=m["dataset_version"],
+                        reckless="overwrite",
+                    )
 
             if "metalad_studyminimeta" not in metadatas:
                 metadatas["metalad_core"]["name"] = repo_url_row.url
@@ -128,7 +147,10 @@ def send_report(id_, path):
                 m["name"] = repo_url_row.url
                 lgr.warning(f"URL: {repo_url_row.url!r} {type(repo_url_row.url)}")
                 dl.catalog_add("/app-catalog", metadata=m)
+            if not was_default_set:
+                raise ValueError("Cannot do it since no default page was set")
     # TODO: figure out how to pass all the metadata goodness to the catalog
     # f'/app-catalog/dataset/{repo_url_row.ds_id}/'
     #                     f'{metadatas['metalad_core']['dataset_version']}'
+
     return send_from_directory("/app-catalog", path)
