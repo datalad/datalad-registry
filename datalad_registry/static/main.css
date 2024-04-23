@@ -120,7 +120,7 @@ div#datalad-registry div.pagination {
 /* Modal Content */
 .modal-content {
     position: fixed;
-    bottom: 50%;
+    top: 10%;
     background-color: #fefefe;
     width: 100%;
     -webkit-animation-name: slideIn;
@@ -131,13 +131,25 @@ div#datalad-registry div.pagination {
 
 /* Add Animation */
 @-webkit-keyframes slideIn {
-    from {bottom: -300px; opacity: 0}
-    to {bottom: 50%; opacity: 1}
+    from {
+        top: 50%;
+        opacity: 0
+    }
+    to {
+        top: 10%;
+        opacity: 1
+    }
 }
 
 @keyframes slideIn {
-    from {bottom: -300px; opacity: 0}
-    to {bottom: 50%; opacity: 1}
+    from {
+        top: 50%;
+        opacity: 0
+    }
+    to {
+        top: 10%;
+        opacity: 1
+    }
 }
 
 @-webkit-keyframes fadeIn {
