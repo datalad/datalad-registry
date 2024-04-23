@@ -36,7 +36,7 @@
     {% endif %}
     {% if annex_ds_col_stats.annexed_files_size is not none %}
       <li>Annexed files
-        size: {{ annex_ds_col_stats.annexed_files_size }} bytes</li>
+        size: {{ annex_ds_col_stats.annexed_files_size|filesizeformat }} </li>
     {% endif %}
   </ul>
 {% endmacro %}
@@ -198,7 +198,7 @@
       files: {{ (stats.datalad_ds_stats.stats.annexed_file_count if stats.datalad_ds_stats.stats.annexed_file_count else 0) +
         (stats.pure_annex_ds_stats.annexed_file_count if stats.pure_annex_ds_stats.annexed_file_count else 0) }}
       Combined Annexed file
-      size: {{ (stats.datalad_ds_stats.stats.annexed_files_size if stats.datalad_ds_stats.stats.annexed_files_size else 0) + (stats.pure_annex_ds_stats.annexed_files_size if stats.pure_annex_ds_stats.annexed_files_size else 0) }}
+      size: {{ ((stats.datalad_ds_stats.stats.annexed_files_size if stats.datalad_ds_stats.stats.annexed_files_size else 0) + (stats.pure_annex_ds_stats.annexed_files_size if stats.pure_annex_ds_stats.annexed_files_size else 0))|filesizeformat }}
 
       <!-- Stats Trigger Button -->
       <button id="ShowStats">Show Details</button>
