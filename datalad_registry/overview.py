@@ -4,6 +4,7 @@
 import logging
 
 from flask import Blueprint, render_template, request
+from humanize import intcomma as h_intcomma
 from sqlalchemy import nullslast, select
 
 from datalad_registry.blueprints.api.dataset_urls.tools import get_collection_stats
@@ -27,6 +28,14 @@ _SORT_ATTRS = {
     "git_objects_kb-asc": ("git_objects_kb", "asc"),
     "git_objects_kb-desc": ("git_objects_kb", "desc"),
 }
+
+
+@bp.app_template_filter("intcomma")
+def intcomma(value, n_digits=None):
+    """
+    Wrapper around humanize.intcomma to be used in templates
+    """
+    return h_intcomma(value, n_digits)
 
 
 @bp.get("/")

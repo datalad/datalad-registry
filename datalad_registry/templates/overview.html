@@ -29,10 +29,10 @@
 
 {% macro render_annex_ds_collection_stats(annex_ds_col_stats) %}
   <ul>
-    <li>Count: {{ annex_ds_col_stats.ds_count }}</li>
+    <li>Count: {{ annex_ds_col_stats.ds_count|intcomma }}</li>
     {% if annex_ds_col_stats.annexed_file_count is not none %}
       <li>Annexed file
-        count: {{ annex_ds_col_stats.annexed_file_count }}</li>
+        count: {{ annex_ds_col_stats.annexed_file_count|intcomma }}</li>
     {% endif %}
     {% if annex_ds_col_stats.annexed_files_size is not none %}
       <li>Annexed files
@@ -195,8 +195,8 @@
 
     <div>
       Combined Nr of Annexed
-      files: {{ (stats.datalad_ds_stats.stats.annexed_file_count if stats.datalad_ds_stats.stats.annexed_file_count else 0) +
-        (stats.pure_annex_ds_stats.annexed_file_count if stats.pure_annex_ds_stats.annexed_file_count else 0) }}
+      files: {{ ((stats.datalad_ds_stats.stats.annexed_file_count if stats.datalad_ds_stats.stats.annexed_file_count else 0) +
+        (stats.pure_annex_ds_stats.annexed_file_count if stats.pure_annex_ds_stats.annexed_file_count else 0))|intcomma }}
       Combined Annexed file
       size: {{ ((stats.datalad_ds_stats.stats.annexed_files_size if stats.datalad_ds_stats.stats.annexed_files_size else 0) + (stats.pure_annex_ds_stats.annexed_files_size if stats.pure_annex_ds_stats.annexed_files_size else 0))|filesizeformat }}
 
@@ -234,15 +234,15 @@
             <li>
               <h3>Non-Annex Dataset Stats</h3>
               <ul>
-                <li>Count: {{ stats.non_annex_ds_stats.ds_count }}</li>
+                <li>Count: {{ stats.non_annex_ds_stats.ds_count|intcomma }}</li>
               </ul>
             </li>
             <li>
               <h3>Summary</h3>
               <ul>
-                <li>Unique dataset count: {{ stats.summary.unique_ds_count }}</li>
+                <li>Unique dataset count: {{ stats.summary.unique_ds_count|intcomma }}</li>
                 <li>Total dataset count (without
-                  deduplication): {{ stats.summary.ds_count }}</li>
+                  deduplication): {{ stats.summary.ds_count|intcomma }}</li>
               </ul>
             </li>
           </ul>
