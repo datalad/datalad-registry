@@ -194,11 +194,11 @@
 
 
     <div>
-      Combined Nr of Annexed
+      <span style="margin-right: 10px">Combined Nr of Annexed
       files: {{ ((stats.datalad_ds_stats.stats.annexed_file_count if stats.datalad_ds_stats.stats.annexed_file_count else 0) +
-        (stats.pure_annex_ds_stats.annexed_file_count if stats.pure_annex_ds_stats.annexed_file_count else 0))|intcomma }}
-      Combined Annexed file
-      size: {{ ((stats.datalad_ds_stats.stats.annexed_files_size if stats.datalad_ds_stats.stats.annexed_files_size else 0) + (stats.pure_annex_ds_stats.annexed_files_size if stats.pure_annex_ds_stats.annexed_files_size else 0))|filesizeformat }}
+        (stats.pure_annex_ds_stats.annexed_file_count if stats.pure_annex_ds_stats.annexed_file_count else 0))|intcomma }}</span>
+      <span style="margin-right: 5px">Combined Annexed file
+        size: {{ ((stats.datalad_ds_stats.stats.annexed_files_size if stats.datalad_ds_stats.stats.annexed_files_size else 0) + (stats.pure_annex_ds_stats.annexed_files_size if stats.pure_annex_ds_stats.annexed_files_size else 0))|filesizeformat }}</span>
 
       <!-- Stats Trigger Button -->
       <button id="ShowStats">Show Details</button>
