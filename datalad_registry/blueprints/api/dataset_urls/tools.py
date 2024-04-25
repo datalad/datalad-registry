@@ -1,4 +1,16 @@
-from sqlalchemy import Select, Subquery, and_, func, not_, or_, select
+from sqlalchemy import (
+    Select,
+    Subquery,
+    TableClause,
+    and_,
+    column,
+    func,
+    not_,
+    or_,
+    select,
+    table,
+    text,
+)
 
 from datalad_registry.models import RepoUrl, db
 
@@ -9,6 +21,29 @@ from .models import (
     NonAnnexDsCollectionStats,
     StatsSummary,
 )
+
+
+def cache_result_to_tmp_tb(select_stmt: Select, tb_name: str) -> TableClause:
+    """
+    Execute the given select statement and cache the result to a temporary table
+    with the given name
+
+    :param select_stmt: The given select statement to execute
+    :param tb_name: The string to use as the name of the temporary table
+    :return: A object representing the temporary table
+
+    Note: The execution of this function requires the Flask app's context
+    """
+    create_tmp_tb_sql = f"""
+        CREATE TEMPORARY TABLE {tb_name} AS
+        {select_stmt.compile(bind=db.engine, compile_kwargs={'literal_binds': True})};
+    """
+    db.session.execute(text(create_tmp_tb_sql))
+
+    return table(
+        tb_name,
+        *(column(name, c.type) for name, c in select_stmt.selected_columns.items()),
+    )
 
 
 def _get_annex_ds_collection_stats(q: Subquery) -> AnnexDsCollectionStats:
