@@ -9,7 +9,7 @@ from flask import abort, current_app, url_for
 from flask_openapi3 import APIBlueprint, Tag
 from lark.exceptions import GrammarError, UnexpectedInput
 from psycopg2.errors import UniqueViolation
-from sqlalchemy import ColumnElement, and_
+from sqlalchemy import ColumnElement, and_, select
 from sqlalchemy.exc import IntegrityError
 
 from datalad_registry.models import RepoUrl, db
@@ -32,6 +32,7 @@ from .models import (
     PathParams,
     QueryParams,
 )
+from .tools import get_collection_stats
 from .. import (
     API_URL_PREFIX,
     COMMON_API_RESPONSES,
@@ -92,7 +93,7 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
     url_as_str = str(body.url)
 
     repo_url_row = db.session.execute(
-        db.select(RepoUrl).filter_by(url=url_as_str)
+        select(RepoUrl).filter_by(url=url_as_str)
     ).one_or_none()
     if repo_url_row is None:
         # == The URL requested to be created does not exist in the database ==
@@ -116,7 +117,7 @@ def declare_dataset_url(body: DatasetURLSubmitModel):
                     # of the URL in the database
                     db.session.rollback()
                     repo_url_added_by_another = (
-                        db.session.execute(db.select(RepoUrl).filter_by(url=url_as_str))
+                        db.session.execute(select(RepoUrl).filter_by(url=url_as_str))
                         .scalars()
                         .one_or_none()
                     )
@@ -285,11 +286,11 @@ def dataset_urls(query: QueryParams):
     ep = ".dataset_urls"  # Endpoint of `dataset_urls`
     base_qry = loads(query.json(exclude={"page"}, exclude_none=True))
 
+    base_select_stmt = select(RepoUrl).filter(and_(True, *constraints))
+
     max_per_page = 100  # The overriding limit to `per_page` provided by the requester
     pagination = db.paginate(
-        db.select(RepoUrl)
-        .filter(and_(True, *constraints))
-        .order_by(
+        base_select_stmt.order_by(
             getattr(
                 _ORDER_KEY_TO_SQLA_ATTR[query.order_by], query.order_dir.value
             )().nulls_last()
@@ -341,7 +342,6 @@ def dataset_urls(query: QueryParams):
     assert pagination.total is not None
 
     page = DatasetURLPage(
-        total=pagination.total,
         cur_pg_num=cur_pg_num,
         prev_pg=(
             url_for(ep, **base_qry, page=pagination.prev_num)
@@ -356,6 +356,7 @@ def dataset_urls(query: QueryParams):
         first_pg=url_for(ep, **base_qry, page=1),
         last_pg=url_for(ep, **base_qry, page=1 if total_pages == 0 else total_pages),
         dataset_urls=ds_urls,
+        collection_stats=get_collection_stats(base_select_stmt),
     )
 
     return json_resp_from_str(page.json(exclude_none=True))

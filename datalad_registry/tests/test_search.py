@@ -12,7 +12,7 @@ from ..search import parse_query
 
 @pytest.fixture
 def populate_with_url_metadata_for_search(
-    populate_with_dataset_urls,  # noqa: U100 (unused argument)
+    populate_with_std_ds_urls,  # noqa: U100 (unused argument)
     flask_app,
 ):
     """

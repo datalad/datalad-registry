@@ -9,6 +9,7 @@ from pydantic import (
     BaseModel,
     Field,
     FileUrl,
+    NonNegativeInt,
     PositiveInt,
     StrictInt,
     StrictStr,
@@ -256,14 +257,74 @@ class DatasetURLRespModel(DatasetURLRespBaseModel):
         by_alias = False
 
 
+class AnnexDsCollectionStats(BaseModel):
+    """
+    Model with the base components of annex dataset collection statistics
+    """
+
+    ds_count: NonNegativeInt = Field(description="The number of datasets")
+    annexed_files_size: Optional[NonNegativeInt] = Field(
+        None, description="The size of annexed files"
+    )
+    annexed_file_count: Optional[NonNegativeInt] = Field(
+        None, description="The number of annexed files"
+    )
+
+
+class DataladDsCollectionStats(BaseModel):
+    """
+    Model for DataLad dataset collection statistics
+    """
+
+    unique_ds_stats: AnnexDsCollectionStats = Field(
+        description="Statistics for unique datasets"
+    )
+    stats: AnnexDsCollectionStats = Field(
+        description="Statistics for all datasets, as individual repos, "
+        "without any deduplication"
+    )
+
+
+class NonAnnexDsCollectionStats(BaseModel):
+    """
+    Model for non-annex dataset collection statistics
+    """
+
+    ds_count: NonNegativeInt = Field(
+        description="The number of datasets, as individual repos, "
+        "without any deduplication"
+    )
+
+
+class StatsSummary(BaseModel):
+    unique_ds_count: NonNegativeInt = Field(description="The number of unique datasets")
+    ds_count: NonNegativeInt = Field(
+        description="The number of datasets, as individual repos, "
+        "without any deduplication"
+    )
+
+
+class CollectionStats(BaseModel):
+    datalad_ds_stats: DataladDsCollectionStats = Field(
+        description="Statistics for DataLad datasets"
+    )
+    pure_annex_ds_stats: AnnexDsCollectionStats = Field(
+        description="Statistics for pure annex datasets, as individual repos, "
+        "without any deduplication"
+    )
+    non_annex_ds_stats: NonAnnexDsCollectionStats = Field(
+        description="Statistics for non-annex datasets, as individual repos, "
+        "without any deduplication"
+    )
+
+    summary: StatsSummary = Field(description="Summary statistics")
+
+
 class DatasetURLPage(BaseModel):
     """
     Model for representing a page of dataset URLs in response communication
     """
 
-    total: StrictInt = Field(
-        description="The total number of dataset URLs across all pages"
-    )
     cur_pg_num: StrictInt = Field(description="The number of the current page")
     prev_pg: Optional[StrictStr] = Field(
         None, description="The link to the previous page"
@@ -274,4 +335,9 @@ class DatasetURLPage(BaseModel):
 
     dataset_urls: list[DatasetURLRespModel] = Field(
         description="The list of dataset URLs in the current page"
+    )
+    collection_stats: CollectionStats = Field(
+        description="Statistics about the collection of dataset URLs, "
+        "not just the URLs in the current page but the entire collection "
+        "returned"
     )

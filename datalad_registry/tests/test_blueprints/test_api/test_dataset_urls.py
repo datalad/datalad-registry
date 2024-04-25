@@ -7,14 +7,21 @@ from yarl import URL as YURL
 from datalad_registry.blueprints.api.dataset_urls import DatasetURLRespModel
 from datalad_registry.blueprints.api.dataset_urls.models import (
     DEFAULT_PAGE,
+    AnnexDsCollectionStats,
+    CollectionStats,
+    DataladDsCollectionStats,
     DatasetURLPage,
     MetadataReturnOption,
+    NonAnnexDsCollectionStats,
+    StatsSummary,
 )
 from datalad_registry.blueprints.api.url_metadata.models import (
     URLMetadataModel,
     URLMetadataRef,
 )
 from datalad_registry.conf import OperationMode
+from datalad_registry.models import RepoUrl
+from datalad_registry.tests.tools import populate_with_dataset_urls
 
 
 class TestDeclareDatasetURL:
@@ -119,7 +126,7 @@ class TestDeclareDatasetURL:
                 "/api/v2/dataset-urls", json={"url": "https://www.example.com"}
             )
 
-    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
     @pytest.mark.parametrize(
         "url, expected_mark_for_chk_delay_args",
         [
@@ -255,7 +262,7 @@ class TestDatasetURLs:
         resp = flask_client.get("/api/v2/dataset-urls", query_string=query_params)
         assert resp.status_code == 200
 
-    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
     @pytest.mark.parametrize(
         "query_params, expected_output",
         [
@@ -398,17 +405,17 @@ class TestDatasetURLs:
 
         ds_url_page = DatasetURLPage.parse_raw(resp.text)
 
-        assert ds_url_page.total == expected_out_count
         assert ds_url_page.cur_pg_num == DEFAULT_PAGE
         assert ds_url_page.prev_pg is None
         assert ds_url_page.next_pg is None
         assert YURL(ds_url_page.first_pg).query["page"] == "1"
         assert YURL(ds_url_page.last_pg).query["page"] == "1"
+        assert ds_url_page.collection_stats.summary.ds_count == expected_out_count
 
         # Check the collection of dataset URLs
         assert {i.url for i in ds_url_page.dataset_urls} == expected_output
 
-    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
     @pytest.mark.parametrize(
         "query_params",
         [
@@ -494,7 +501,7 @@ class TestDatasetURLs:
 
                 assert all(type(m) is metadata_ret_type for m in url.metadata)
 
-    def test_pagination(self, populate_with_dataset_urls, flask_client):
+    def test_pagination(self, populate_with_std_ds_urls, flask_client):
         """
         Test the pagination of the results
         """
@@ -510,11 +517,11 @@ class TestDatasetURLs:
         resp_json = resp.json
         ds_url_pg = DatasetURLPage.parse_obj(resp_json)
 
-        assert ds_url_pg.total == 4
         assert ds_url_pg.cur_pg_num == 1
         assert "prev_pg" not in resp_json
         assert ds_url_pg.prev_pg is None
         assert ds_url_pg.next_pg is not None
+        assert ds_url_pg.collection_stats.summary.ds_count == 4
 
         next_pg_lk, first_pg_lk, last_pg_lk = (
             YURL(pg)
@@ -548,11 +555,11 @@ class TestDatasetURLs:
         resp_json = resp.json
         ds_url_pg = DatasetURLPage.parse_obj(resp_json)
 
-        assert ds_url_pg.total == 4
         assert ds_url_pg.cur_pg_num == 2
         assert ds_url_pg.prev_pg is not None
         assert "next_pg" not in resp_json
         assert ds_url_pg.next_pg is None
+        assert ds_url_pg.collection_stats.summary.ds_count == 4
 
         prev_pg_lk, first_pg_lk, last_pg_lk = (
             YURL(pg)
@@ -578,9 +585,9 @@ class TestDatasetURLs:
         for url in ds_url_pg.dataset_urls:
             ds_urls.add(str(url.url))
 
-        assert ds_urls == set(populate_with_dataset_urls)
+        assert ds_urls == set(populate_with_std_ds_urls)
 
-    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
     @pytest.mark.parametrize(
         "query_params, expected_results_by_id_prefix",
         [
@@ -674,6 +681,242 @@ class TestDatasetURLs:
             results_by_id[: len(expected_results_by_id_prefix)]
             == expected_results_by_id_prefix
         )
+
+    @pytest.mark.parametrize(
+        "query_params, expected_stats",
+        [
+            (
+                {},
+                CollectionStats(
+                    datalad_ds_stats=DataladDsCollectionStats(
+                        unique_ds_stats=AnnexDsCollectionStats(
+                            ds_count=3,
+                            annexed_files_size=400 + 1001,
+                            annexed_file_count=50 + 100 + 150,
+                        ),
+                        stats=AnnexDsCollectionStats(
+                            ds_count=6,
+                            annexed_files_size=1000 + 1001 + 400,
+                            annexed_file_count=120 + 50 + 100 + 120 + 150 + 130,
+                        ),
+                    ),
+                    pure_annex_ds_stats=AnnexDsCollectionStats(
+                        ds_count=1, annexed_files_size=600, annexed_file_count=100
+                    ),
+                    non_annex_ds_stats=NonAnnexDsCollectionStats(ds_count=1),
+                    summary=StatsSummary(unique_ds_count=3, ds_count=9),
+                ),
+            ),
+            (
+                {"search": "url:datalad"},
+                CollectionStats(
+                    datalad_ds_stats=DataladDsCollectionStats(
+                        unique_ds_stats=AnnexDsCollectionStats(
+                            ds_count=2,
+                            annexed_files_size=1000 + 400,
+                            annexed_file_count=120 + 50,
+                        ),
+                        stats=AnnexDsCollectionStats(
+                            ds_count=2,
+                            annexed_files_size=1000 + 400,
+                            annexed_file_count=120 + 50,
+                        ),
+                    ),
+                    pure_annex_ds_stats=AnnexDsCollectionStats(
+                        ds_count=0, annexed_files_size=None, annexed_file_count=None
+                    ),
+                    non_annex_ds_stats=NonAnnexDsCollectionStats(ds_count=0),
+                    summary=StatsSummary(unique_ds_count=2, ds_count=2),
+                ),
+            ),
+            (
+                {"search": "url:.org"},
+                CollectionStats(
+                    datalad_ds_stats=DataladDsCollectionStats(
+                        unique_ds_stats=AnnexDsCollectionStats(
+                            ds_count=2,
+                            annexed_files_size=1000 + 400,
+                            annexed_file_count=120 + 50,
+                        ),
+                        stats=AnnexDsCollectionStats(
+                            ds_count=2,
+                            annexed_files_size=1000 + 400,
+                            annexed_file_count=120 + 50,
+                        ),
+                    ),
+                    pure_annex_ds_stats=AnnexDsCollectionStats(
+                        ds_count=0, annexed_files_size=None, annexed_file_count=None
+                    ),
+                    non_annex_ds_stats=NonAnnexDsCollectionStats(ds_count=1),
+                    summary=StatsSummary(unique_ds_count=2, ds_count=4),
+                ),
+            ),
+            (
+                # === The case of an empty set of dataset URLs returned ===
+                {"search": "url:.tv"},
+                CollectionStats(
+                    datalad_ds_stats=DataladDsCollectionStats(
+                        unique_ds_stats=AnnexDsCollectionStats(
+                            ds_count=0,
+                            annexed_files_size=None,
+                            annexed_file_count=None,
+                        ),
+                        stats=AnnexDsCollectionStats(
+                            ds_count=0,
+                            annexed_files_size=None,
+                            annexed_file_count=None,
+                        ),
+                    ),
+                    pure_annex_ds_stats=AnnexDsCollectionStats(
+                        ds_count=0, annexed_files_size=None, annexed_file_count=None
+                    ),
+                    non_annex_ds_stats=NonAnnexDsCollectionStats(ds_count=0),
+                    summary=StatsSummary(unique_ds_count=0, ds_count=0),
+                ),
+            ),
+            (
+                {"search": "url:distribits.live"},
+                CollectionStats(
+                    datalad_ds_stats=DataladDsCollectionStats(
+                        unique_ds_stats=AnnexDsCollectionStats(
+                            ds_count=2,
+                            annexed_files_size=1001,
+                            annexed_file_count=100 + 150,
+                        ),
+                        stats=AnnexDsCollectionStats(
+                            ds_count=4,
+                            annexed_files_size=1001,
+                            annexed_file_count=100 + 120 + 150 + 130,
+                        ),
+                    ),
+                    pure_annex_ds_stats=AnnexDsCollectionStats(
+                        ds_count=0, annexed_files_size=None, annexed_file_count=None
+                    ),
+                    non_annex_ds_stats=NonAnnexDsCollectionStats(ds_count=0),
+                    summary=StatsSummary(unique_ds_count=2, ds_count=4),
+                ),
+            ),
+        ],
+    )
+    def test_stats(self, query_params, expected_stats, flask_app, flask_client):
+        """
+        Test the compilation of stats regarding the returned dataset URLs
+        """
+
+        # Populate the DB with dataset URLs suitable for testing the stats
+        urls = [
+            RepoUrl(
+                url="https://www.example.com",
+                ds_id=None,
+                annexed_files_in_wt_count=100,
+                annexed_files_in_wt_size=600,
+                branches={
+                    "git-annex": {
+                        "hexsha": "f21cff198ce84438bd60d459577401d7168fd6db",
+                        "last_commit_dt": "2022-11-18T19:18:23+00:00",
+                    }
+                },
+            ),
+            RepoUrl(
+                url="http://www.datalad.org",
+                ds_id="2a0b7b7b-a984-4c4a-844c-be3132291a7c",
+                annexed_files_in_wt_count=120,
+                annexed_files_in_wt_size=1000,
+                branches={
+                    "git-annex": {
+                        "hexsha": "f21cff198ce84438bd60d459577401d7168fd6ta",
+                        "last_commit_dt": "2022-11-18T19:18:23+00:00",
+                    }
+                },
+            ),
+            RepoUrl(
+                url="https://handbook.datalad.org",
+                ds_id="2b73b99e-59cc-4f35-833a-69c75ca5b0c5",
+                annexed_files_in_wt_count=50,
+                annexed_files_in_wt_size=400,
+                branches={
+                    "git-annex": {
+                        "hexsha": "f21cff198ce84438bd60d459577401d7168fd6cc",
+                        "last_commit_dt": "2022-11-18T19:18:23+00:00",
+                    }
+                },
+            ),
+            RepoUrl(
+                url="https://www.dandiarchive.org",
+                ds_id=None,
+                annexed_files_in_wt_count=100,
+                annexed_files_in_wt_size=300,
+            ),
+            RepoUrl(
+                url="https://distribits.live",
+                ds_id="2a0b7b7b-a984-4c4a-844c-be3132291a7c",
+                annexed_files_in_wt_count=100,
+                annexed_files_in_wt_size=1001,
+                branches={
+                    "git-annex": {
+                        "hexsha": "f21cff198ce84438bd60d459577401d7168fdaba",
+                        "last_commit_dt": "2022-11-18T19:18:23+00:00",
+                    }
+                },
+            ),
+            RepoUrl(
+                url="https://distribits.live/1",
+                ds_id="48185fb3-aa80-47b4-8ab1-1d7d9fc8b192",
+                annexed_files_in_wt_count=120,
+                annexed_files_in_wt_size=None,
+                branches={
+                    "git-annex": {
+                        "hexsha": "f21cff198ce84438bd60d459577401d7168fdaba",
+                        "last_commit_dt": "2022-11-18T19:18:23+00:00",
+                    }
+                },
+            ),
+            RepoUrl(
+                url="https://distribits.live/2",
+                ds_id="48185fb3-aa80-47b4-8ab1-1d7d9fc8b192",
+                annexed_files_in_wt_count=150,
+                annexed_files_in_wt_size=None,
+                branches={
+                    "git-annex": {
+                        "hexsha": "f21cff198ce84438bd60d459577401d7168fdaba",
+                        "last_commit_dt": "2022-11-18T19:18:23+00:00",
+                    }
+                },
+            ),
+            RepoUrl(
+                url="https://distribits.live/3",
+                ds_id="48185fb3-aa80-47b4-8ab1-1d7d9fc8b192",
+                annexed_files_in_wt_count=130,
+                annexed_files_in_wt_size=None,
+                branches={
+                    "git-annex": {
+                        "hexsha": "f21cff198ce84438bd60d459577401d7168fdaba",
+                        "last_commit_dt": "2022-11-18T19:18:23+00:00",
+                    }
+                },
+            ),
+            RepoUrl(
+                url="https://centerforopenneuroscience.org",
+                ds_id=None,
+                annexed_files_in_wt_count=None,
+                annexed_files_in_wt_size=None,
+                branches={
+                    "main": {
+                        "hexsha": "f21cff198ce84438bd60d459577401d7168fdaba",
+                        "last_commit_dt": "2022-11-18T19:18:23+00:00",
+                    },
+                    "dev": {
+                        "hexsha": "f21cff198ce84438bd60d459577401d7175fdaba",
+                        "last_commit_dt": "2022-11-18T19:18:23+00:00",
+                    },
+                },
+            ),
+        ]
+        populate_with_dataset_urls(urls, flask_app)
+
+        resp = flask_client.get("/api/v2/dataset-urls", query_string=query_params)
+
+        assert DatasetURLPage.parse_raw(resp.text).collection_stats == expected_stats
 
 
 @pytest.mark.usefixtures("populate_with_2_dataset_urls")

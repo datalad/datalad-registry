@@ -11,7 +11,7 @@ from datalad_registry.tasks import mark_for_chk
 # and the db and the cache are clean
 @pytest.mark.usefixtures("flask_app")
 class TestMarkForChk:
-    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
     @pytest.mark.parametrize("url_id", [5, 42])
     def test_non_existing_url(self, url_id, mocker: MockerFixture):
         """
@@ -32,7 +32,7 @@ class TestMarkForChk:
 
         datetime_mock.now.assert_not_called()
 
-    @pytest.mark.usefixtures("populate_with_dataset_urls")
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
     @pytest.mark.parametrize(
         "url_id, original_chk_req_dt, expecting_chk_req_dt_changed",
         [

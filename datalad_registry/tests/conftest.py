@@ -16,6 +16,8 @@ from datalad_registry import create_app
 from datalad_registry.models import RepoUrl, URLMetadata, db
 from datalad_registry.utils.datalad_tls import clone
 
+from .tools import populate_with_dataset_urls
+
 
 @pytest.fixture(scope="session")
 def set_test_env(tmp_path_factory):
@@ -259,11 +261,11 @@ def populate_with_2_dataset_urls(flask_app):
 
 
 @pytest.fixture
-def populate_with_dataset_urls(flask_app) -> list[str]:
+def populate_with_std_ds_urls(flask_app) -> list[str]:
     """
-    Populate the url table with a list of DatasetURLs.
+    Populate the `repo_url` table with a list of standard (typical) RepoUrl objects
 
-    Returns: The list of DatasetURLs that were added to the database
+    Returns: The list of URLs, expressed in `str`, that were added to the database
     """
 
     urls = [
@@ -319,17 +321,12 @@ def populate_with_dataset_urls(flask_app) -> list[str]:
         ),
     ]
 
-    with flask_app.app_context():
-        for url in urls:
-            db.session.add(url)
-        db.session.commit()
-
-        return [url.url for url in urls]
+    return populate_with_dataset_urls(urls, flask_app)
 
 
 @pytest.fixture
 def populate_with_url_metadata(
-    populate_with_dataset_urls,  # noqa: U100 (unused argument)
+    populate_with_std_ds_urls,  # noqa: U100 (unused argument)
     flask_app,
 ):
     """

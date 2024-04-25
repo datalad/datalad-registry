@@ -9,8 +9,13 @@ import requests
 from yarl import URL
 
 from datalad_registry.blueprints.api.dataset_urls.models import (
+    AnnexDsCollectionStats,
+    CollectionStats,
+    DataladDsCollectionStats,
     DatasetURLPage,
     DatasetURLRespModel,
+    NonAnnexDsCollectionStats,
+    StatsSummary,
 )
 from datalad_registry_client import DEFAULT_BASE_ENDPOINT
 
@@ -38,6 +43,22 @@ dataset_url_resp_model_template = dict(
     git_objects_kb=1200,
     processed=True,
     metadata=[],
+)
+
+# Dummy stats objects
+annex_ds_collection_stats = AnnexDsCollectionStats(
+    ds_count=101, annexed_files_size=1900, annexed_file_count=42
+)
+dl_ds_collection_stats = DataladDsCollectionStats(
+    unique_ds_stats=annex_ds_collection_stats, stats=annex_ds_collection_stats
+)
+non_annex_ds_collection_stats = NonAnnexDsCollectionStats(ds_count=40)
+stats_summary = StatsSummary(unique_ds_count=101, ds_count=999)
+collection_stats = CollectionStats(
+    datalad_ds_stats=dl_ds_collection_stats,
+    pure_annex_ds_stats=annex_ds_collection_stats,
+    non_annex_ds_stats=non_annex_ds_collection_stats,
+    summary=stats_summary,
 )
 
 
@@ -79,7 +100,6 @@ class TestRegistryGetURLs:
                 return MockResponse(
                     200,
                     DatasetURLPage(
-                        total=200,
                         cur_pg_num=1,
                         prev_pg="dummy",
                         next_pg=None,
@@ -91,6 +111,7 @@ class TestRegistryGetURLs:
                                 url="https://www.example.com"
                             )
                         ],
+                        collection_stats=collection_stats,
                     ).json(exclude_none=True),
                 )
             else:
@@ -130,7 +151,6 @@ class TestRegistryGetURLs:
                 return MockResponse(
                     200,
                     DatasetURLPage(
-                        total=100,
                         cur_pg_num=1,
                         prev_pg="dummy",
                         next_pg=None,
@@ -142,6 +162,7 @@ class TestRegistryGetURLs:
                                 url="https://www.example.com"
                             )
                         ],
+                        collection_stats=collection_stats,
                     ).json(exclude_none=True),
                 )
             else:
@@ -170,12 +191,11 @@ class TestRegistryGetURLs:
         """
 
         def ds_url_pgs():
-            total = sum(len(pg) for pg in resp_pgs)
+            ds_count = sum(len(pg) for pg in resp_pgs)
 
             for i, pg in enumerate(resp_pgs):
                 # noinspection PyTypeChecker
                 yield DatasetURLPage(
-                    total=total,
                     cur_pg_num=i + 1,
                     prev_pg=None if i == 0 else "foo",
                     next_pg=None if i == len(resp_pgs) - 1 else "foo",
@@ -185,6 +205,12 @@ class TestRegistryGetURLs:
                         DatasetURLRespModel(**dataset_url_resp_model_template, url=url)
                         for url in pg
                     ],
+                    collection_stats=CollectionStats(
+                        datalad_ds_stats=dl_ds_collection_stats,
+                        pure_annex_ds_stats=annex_ds_collection_stats,
+                        non_annex_ds_stats=non_annex_ds_collection_stats,
+                        summary=StatsSummary(unique_ds_count=101, ds_count=ds_count),
+                    ),
                 )
 
         ds_url_pgs_iter = ds_url_pgs()
@@ -238,7 +264,6 @@ class TestRegistryGetURLs:
                 yield MockResponse(
                     200,
                     DatasetURLPage(
-                        total=200,
                         cur_pg_num=i + 1,
                         prev_pg=None if i == 0 else "foo",
                         next_pg="bar",
@@ -250,6 +275,7 @@ class TestRegistryGetURLs:
                                 url="https://www.example.com"
                             )
                         ],
+                        collection_stats=collection_stats,
                     ).json(exclude_none=True),
                 )
 

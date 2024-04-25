@@ -4,8 +4,10 @@
 import logging
 
 from flask import Blueprint, render_template, request
+from humanize import intcomma
 from sqlalchemy import nullslast, select
 
+from datalad_registry.blueprints.api.dataset_urls.tools import get_collection_stats
 from datalad_registry.models import RepoUrl, db
 from datalad_registry.search import parse_query
 
@@ -28,11 +30,15 @@ _SORT_ATTRS = {
 }
 
 
+# Register humanize.intcomma as a Jinja2 filter
+bp.add_app_template_filter(intcomma, "intcomma")
+
+
 @bp.get("/")
 def overview():  # No type hints due to mypy#7187.
     default_sort_scheme = "update-desc"
 
-    select_stmt = select(RepoUrl)
+    base_select_stmt = select(RepoUrl)
 
     # Search using query if provided.
     # ATM it is just a 'filter' on URL records, later might be more complex
@@ -46,25 +52,30 @@ def overview():  # No type hints due to mypy#7187.
         except Exception as e:
             search_error = str(e)
         else:
-            select_stmt = select_stmt.filter(criteria)
+            base_select_stmt = base_select_stmt.filter(criteria)
 
-    # Sort
-    select_stmt = select_stmt.group_by(RepoUrl)
+    # Decipher sorting scheme
     sort_by = request.args.get("sort", default_sort_scheme, type=str)
     if sort_by not in _SORT_ATTRS:
         lgr.debug("Ignoring unknown sort parameter: %s", sort_by)
         sort_by = default_sort_scheme
     col, sort_method = _SORT_ATTRS[sort_by]
-    select_stmt = select_stmt.order_by(
+
+    # Apply sorting
+    select_stmt = base_select_stmt.order_by(
         nullslast(getattr(getattr(RepoUrl, col), sort_method)())
     )
 
     # Paginate
     pagination = db.paginate(select_stmt)
 
+    # Gather stats of the returned collection of datasets
+    stats = get_collection_stats(base_select_stmt)
+
     return render_template(
         "overview.html",
         pagination=pagination,
+        stats=stats,
         sort_by=sort_by,
         search_query=query,
         search_error=search_error,

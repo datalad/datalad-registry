@@ -3,7 +3,7 @@ from http import HTTPStatus
 
 from flask import current_app, request
 
-from datalad_registry import OperationMode
+from datalad_registry.conf import OperationMode
 from datalad_registry.utils.flask_tools import json_resp_from_str
 
 from . import HTTPExceptionResp

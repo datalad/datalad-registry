@@ -27,6 +27,20 @@
   </div>
 {% endmacro %}
 
+{% macro render_annex_ds_collection_stats(annex_ds_col_stats) %}
+  <ul>
+    <li>Count: {{ annex_ds_col_stats.ds_count|intcomma }}</li>
+    {% if annex_ds_col_stats.annexed_file_count is not none %}
+      <li>Annexed file
+        count: {{ annex_ds_col_stats.annexed_file_count|intcomma }}</li>
+    {% endif %}
+    {% if annex_ds_col_stats.annexed_files_size is not none %}
+      <li>Annexed files
+        size: {{ annex_ds_col_stats.annexed_files_size|filesizeformat }} </li>
+    {% endif %}
+  </ul>
+{% endmacro %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -59,14 +73,13 @@
         <input type='submit' value='Clear'/>
         </form>
     {%- endif %}
-    <button id="showQuerySyntax">Show search query syntax</button>
+    <button id="ShowQuerySyntax">Show search query syntax</button>
 
+    <!-- Syntax modal -->
     <div id="QuerySyntaxModal" class="modal">
-
-    <!-- Modal content -->
       <div class="modal-content">
         <div class="modal-header">
-          <span class="close">&times;</span>
+          <span id="CloseSyntax" class="close">&times;</span>
           <h2>Search query syntax</h2>
         </div>
         <div class="modal-body">
@@ -178,35 +191,99 @@
     <div class="pager">
       {{ render_pagination_widget(pagination, '.overview') }}
     </div>
+
+
+    <div>
+      <span style="margin-right: 10px"># of annexed
+      files: {{ ((stats.datalad_ds_stats.stats.annexed_file_count if stats.datalad_ds_stats.stats.annexed_file_count else 0) +
+        (stats.pure_annex_ds_stats.annexed_file_count if stats.pure_annex_ds_stats.annexed_file_count else 0))|intcomma }}</span>
+      <span style="margin-right: 5px">Combined size of annexed
+        files: {{ ((stats.datalad_ds_stats.stats.annexed_files_size if stats.datalad_ds_stats.stats.annexed_files_size else 0) + (stats.pure_annex_ds_stats.annexed_files_size if stats.pure_annex_ds_stats.annexed_files_size else 0))|filesizeformat }}</span>
+
+      <!-- Stats Trigger Button -->
+      <button id="ShowStats">Show details</button>
+    </div>
+
+
+    <!-- Statistics modal -->
+    <div id="StatsModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span id="CloseStats" class="close">&times;</span>
+          <h2>Stats</h2>
+        </div>
+        <div id="stats" class="modal-body">
+          <ul>
+            <li>
+              <h3>DataLad datasets stats</h3>
+              <ul>
+                <li>
+                  <h4>Unique DataLad dataset stats</h4>
+                  {{ render_annex_ds_collection_stats(stats.datalad_ds_stats.unique_ds_stats) }}
+                </li>
+                <li>
+                  <h4>Stats without deduplication</h4>
+                  {{ render_annex_ds_collection_stats(stats.datalad_ds_stats.stats) }}
+                </li>
+              </ul>
+            </li>
+            <li>
+              <h3>Pure annex repositories stats</h3>
+              {{ render_annex_ds_collection_stats(stats.pure_annex_ds_stats) }}
+            </li>
+            <li>
+              <h3>Non-annex repositories stats</h3>
+              <ul>
+                <li>Count: {{ stats.non_annex_ds_stats.ds_count|intcomma }}</li>
+              </ul>
+            </li>
+            <li>
+              <h3>Summary</h3>
+              <ul>
+                <li>Unique dataset count: {{ stats.summary.unique_ds_count|intcomma }}</li>
+                <li>Total dataset count (without
+                  deduplication): {{ stats.summary.ds_count|intcomma }}</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
-// Get the modal
-const modal = document.getElementById("QuerySyntaxModal");
+    function setupModal(modalId, btnShowId, btnCloseId) {
+        const modal = document.getElementById(modalId);
+        const btnShow = document.getElementById(btnShowId);
+        const btnClose = document.getElementById(btnCloseId);
 
-// Get the button that opens the modal
-const btn = document.getElementById("showQuerySyntax");
+        // When the user clicks the button, open the modal
+        btnShow.onclick = function () {
+            modal.style.display = "block";
+        }
 
-// Get the <span> element that closes the modal
-const span = document.getElementsByClassName("close")[0];
+        // When the user clicks on <span> (x), close the modal
+        btnClose.onclick = function () {
+            modal.style.display = "none";
+        }
 
-// When the user clicks the button, open the modal
-btn.onclick = function() {
-  modal.style.display = "block";
-}
+        return modal;
+    }
 
-// When the user clicks on <span> (x), close the modal
-span.onclick = function() {
-  modal.style.display = "none";
-}
+    // Setup modals
+    const modals = [];
+    modals.push(setupModal('QuerySyntaxModal', 'ShowQuerySyntax', 'CloseSyntax'));
+    modals.push(setupModal('StatsModal', 'ShowStats', 'CloseStats'));
 
-// When the user clicks anywhere outside the modal, close it
-window.onclick = function(event) {
-  if (event.target === modal) {
-    modal.style.display = "none";
-  }
-}
+    // When the user clicks anywhere outside the modal, close it
+    window.onclick = function (event) {
+        modals.forEach(function (modal) {
+            if (event.target === modal) {
+                modal.style.display = "none";
+            }
+        });
+    }
 
 function span_copy() {
   // Find all span elements with the class 'query'
