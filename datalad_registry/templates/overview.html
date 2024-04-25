@@ -194,14 +194,14 @@
 
 
     <div>
-      <span style="margin-right: 10px">Combined Nr of Annexed
+      <span style="margin-right: 10px"># of annexed
       files: {{ ((stats.datalad_ds_stats.stats.annexed_file_count if stats.datalad_ds_stats.stats.annexed_file_count else 0) +
         (stats.pure_annex_ds_stats.annexed_file_count if stats.pure_annex_ds_stats.annexed_file_count else 0))|intcomma }}</span>
-      <span style="margin-right: 5px">Combined Annexed file
-        size: {{ ((stats.datalad_ds_stats.stats.annexed_files_size if stats.datalad_ds_stats.stats.annexed_files_size else 0) + (stats.pure_annex_ds_stats.annexed_files_size if stats.pure_annex_ds_stats.annexed_files_size else 0))|filesizeformat }}</span>
+      <span style="margin-right: 5px">Combined size of annexed
+        files: {{ ((stats.datalad_ds_stats.stats.annexed_files_size if stats.datalad_ds_stats.stats.annexed_files_size else 0) + (stats.pure_annex_ds_stats.annexed_files_size if stats.pure_annex_ds_stats.annexed_files_size else 0))|filesizeformat }}</span>
 
       <!-- Stats Trigger Button -->
-      <button id="ShowStats">Show Details</button>
+      <button id="ShowStats">Show details</button>
     </div>
 
 
@@ -215,10 +215,10 @@
         <div id="stats" class="modal-body">
           <ul>
             <li>
-              <h3>Datalad Datasets Stats</h3>
+              <h3>DataLad datasets stats</h3>
               <ul>
                 <li>
-                  <h4>Unique Datalad Dataset Stats</h4>
+                  <h4>Unique DataLad dataset stats</h4>
                   {{ render_annex_ds_collection_stats(stats.datalad_ds_stats.unique_ds_stats) }}
                 </li>
                 <li>
@@ -228,11 +228,11 @@
               </ul>
             </li>
             <li>
-              <h3>Pure Annex Dataset Stats</h3>
+              <h3>Pure annex repositories stats</h3>
               {{ render_annex_ds_collection_stats(stats.pure_annex_ds_stats) }}
             </li>
             <li>
-              <h3>Non-Annex Dataset Stats</h3>
+              <h3>Non-annex repositories stats</h3>
               <ul>
                 <li>Count: {{ stats.non_annex_ds_stats.ds_count|intcomma }}</li>
               </ul>
