@@ -146,7 +146,7 @@
           <a {{ sort_href('annexed_files_in_wt_size-desc', 'annexed_files_in_wt_size-asc') }}>
             Size of Annexed files
           </a>
-          <span class="tooltiptext">Size of annexed files in working tree (bytes)</span>
+          <span class="tooltiptext">Size of annexed files in working tree</span>
         </th>
         <th>
           <a {{ sort_href('update-desc', 'update-asc') }}>Last update</a>
@@ -155,7 +155,6 @@
           <a {{ sort_href('git_objects_kb-desc', 'git_objects_kb-asc') }}>
             Size of .git/objects
           </a>
-          <span class="tooltiptext">Size of .git/objects in kilobytes</span>
         </th>
         <th>
           Metadata
@@ -172,11 +171,11 @@
           <td class="mono">
             {{ i.head_describe if i.head_describe is not none }}
           </td>
-          <td>{{ i.annex_key_count if i.annex_key_count is not none }}</td>
-          <td>{{ i.annexed_files_in_wt_count if i.annexed_files_in_wt_count is not none }}</td>
-          <td>{{ i.annexed_files_in_wt_size if i.annexed_files_in_wt_size is not none }}</td>
+          <td>{{ i.annex_key_count|intcomma if i.annex_key_count is not none }}</td>
+          <td>{{ i.annexed_files_in_wt_count|intcomma if i.annexed_files_in_wt_count is not none }}</td>
+          <td>{{ i.annexed_files_in_wt_size|filesizeformat if i.annexed_files_in_wt_size is not none }}</td>
           <td>{{ i.last_update_dt.strftime("%Y-%m-%dT%H:%M:%S%z") if i.last_update_dt is not none }}</td>
-          <td>{{ i.git_objects_kb if i.git_objects_kb is not none }}</td>
+          <td>{{ (i.git_objects_kb * 1024)|filesizeformat if i.git_objects_kb is not none }}</td>
           <td>
             {%- for data in i.metadata_ -%}
               <a href="{{ url_for('url_metadata_api.url_metadata', url_metadata_id=data.id) }}">
