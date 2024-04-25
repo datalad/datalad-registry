@@ -215,7 +215,11 @@ def get_collection_stats(select_stmt: Select) -> CollectionStats:
     Note: The execution of this function requires the Flask app's context
     """
 
-    base_q = select_stmt.subquery("base_q")
+    # Cache the result of the select statement to a temporary table
+    tmp_tb = cache_result_to_tmp_tb(select_stmt, "tmp_tb")
+
+    # base_q = select_stmt.subquery("base_q")
+    base_q = select(tmp_tb).subquery("base_q")
 
     datalad_ds_stats = get_dl_ds_collection_stats(base_q)
 
