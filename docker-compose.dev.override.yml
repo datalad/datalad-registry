@@ -11,10 +11,12 @@ services:
     command: [
       "/sbin/my_init", "--",
       "bash", "-c",
-      "git config --global --add safe.directory /app && pip3 install -U -e . && flask init-db && exec flask run --host=0.0.0.0 --debug"
+      "git config --global --add safe.directory /app && pip3 install -U -e . && pip install -e /metalad && pip install -e /catalog && flask init-db && datalad catalog-create -c /app-catalog -F /app/datalad_registry/resources/catalog-config.json && exec flask run --host=0.0.0.0 --debug"
     ]
     volumes:
       - ./:/app
+      - ../datalad-catalog:/catalog
+      - ../datalad-metalad:/metalad
       - ./instance:/app/instance
 
   worker:

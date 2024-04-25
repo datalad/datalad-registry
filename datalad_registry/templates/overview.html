@@ -150,7 +150,10 @@
       </tr>
       {%- for i in pagination -%}
         <tr>
-          <td><a href="{{ i.url }}">{{ i.url }}</a></td>
+          <td>
+            <a href="{{ i.url }}">{{ i.url }}</a>
+            <a href="/overview/catalog/{{ i.id }}/index.html">C</a>
+          </td>
           <td class="mono">
 			{% if i.ds_id is not none %}
 			<a href="{{ url_for('.overview', query='ds_id:' + i.ds_id) }}">{{ i.ds_id }}</a>

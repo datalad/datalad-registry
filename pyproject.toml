@@ -2,6 +2,12 @@
 requires = ["setuptools >= 46.4.0", "versioningit ~= 3.0", "wheel ~= 0.32"]
 build-backend = "setuptools.build_meta"
 
+[tool.isort]
+force_grid_wrap = 2
+include_trailing_comma = true
+multi_line_output = 3
+combine_as_imports = true
+
 [tool.versioningit]
 
 [tool.pytest.ini_options]
