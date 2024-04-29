@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, Field, StrictStr
 
 
@@ -27,7 +29,7 @@ class URLMetadataModel(_URLMetadataRep):
     dataset_version: StrictStr
     extractor_version: StrictStr
     extraction_parameter: dict
-    extracted_metadata: dict
+    extracted_metadata: Any
 
     class Config:
         orm_mode = True
