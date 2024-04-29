@@ -12,7 +12,7 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "5000:5000"
+      - "${WEB_PORT_AT_HOST}:5000"
     environment: &env
       FLASK_APP: "datalad_registry:create_app"
 
@@ -89,7 +89,7 @@ services:
       FLOWER_NATURAL_TIME: "True"
       FLOWER_BASIC_AUTH: "$FLOWER_BASIC_AUTH"
     ports:
-      - "127.0.0.1:5555:5555"
+      - "127.0.0.1:${MONITOR_PORT_AT_HOST}:5555"
     command: [ "/sbin/my_init", "--", "celery", "-A", "datalad_registry.make_celery:celery_app", "flower" ]
     volumes:
       - ${MONITOR_PATH_AT_HOST}/data:/data
@@ -108,8 +108,8 @@ services:
       RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS}"
       RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbit consumer_timeout 43200000"  # 12 hours in milliseconds
     ports:
-      - "127.0.0.1:5672:5672"
-      - "127.0.0.1:15672:15672"
+      - "127.0.0.1:${BROKER_PORT_AT_HOST}:5672"
+      - "127.0.0.1:${BROKER_MANAGEMENT_PORT_AT_HOST}:15672"
     userns_mode: "keep-id"  # This has an effect only after podman-compose 1.0.3 possibly
       # See https://github.com/containers/podman-compose/issues/166
       # for details.
@@ -128,7 +128,7 @@ services:
   backend:
     image: docker.io/redis:7
     ports:
-      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:${BACKEND_PORT_AT_HOST}:6379"
 
   db:
     image: docker.io/postgres:15
@@ -138,7 +138,7 @@ services:
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
       POSTGRES_INITDB_ARGS: --encoding utf8 --locale C
     ports:
-      - "5432:5432"
+      - "${DB_PORT_AT_HOST}:5432"
     userns_mode: "keep-id"  # This has an effect only after podman-compose 1.0.3 possibly
       # See https://github.com/containers/podman-compose/issues/166
       # for details.
