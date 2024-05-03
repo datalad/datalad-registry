@@ -17,7 +17,7 @@ jobs:
       - name: Install git-annex
         shell: bash
         run: |
-          bash <(wget -q -O- http://neuro.debian.net/_files/neurodebian-travis.sh)
+          bash <(wget -q -O- https://neuro.debian.net/_files/neurodebian-travis.sh)
           sudo apt-get update -qq
           sudo apt-get install eatmydata
           sudo eatmydata apt-get install git-annex-standalone
