@@ -1,0 +1,21 @@
+name: Type checks
+
+on: [ push, pull_request ]
+
+jobs:
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Tags are needed to install DL-Registry
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: Install dependencies and project
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.dev.txt
+          pip install .[dev]
+      - name: Run mypy
+        run: mypy datalad_registry datalad_registry_client
