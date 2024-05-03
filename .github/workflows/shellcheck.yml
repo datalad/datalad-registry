@@ -3,7 +3,7 @@ name: Shellcheck on scripts
 on: [ push, pull_request ]
 
 jobs:
-  test:
+  shellcheck:
 
     runs-on: ubuntu-latest
 
