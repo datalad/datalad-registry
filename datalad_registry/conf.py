@@ -53,7 +53,7 @@ class BaseConfig(OperationConfig):
         "bids_dataset",
         # === DANDI related extractors ===
         "dandi",
-        "dandi:files",
+        # "dandi:files",  # Not enabled for usual setups because of performance impact
     ]
 
     # === worker, Celery, related configuration  ===
