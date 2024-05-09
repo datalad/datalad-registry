@@ -141,21 +141,21 @@ def get_dl_ds_collection_stats_with_dups(base_cte: CTE) -> AnnexDsCollectionStat
     return _get_annex_ds_collection_stats(dl_ds_q)
 
 
-def get_dl_ds_collection_stats(base_q: Subquery) -> DataladDsCollectionStats:
+def get_dl_ds_collection_stats(base_cte: CTE) -> DataladDsCollectionStats:
     """
     Get the stats of the subset of the collection of datasets that contains only
     of Datalad datasets
 
-    :param base_q: The base query that specified the collection of datasets
-                   under consideration
+    :param base_cte: The base CTE that specified the collection of datasets
+        under consideration
     :return: The object representing the stats
 
     Note: The execution of this function requires the Flask app's context
     """
 
     return DataladDsCollectionStats(
-        unique_ds_stats=get_unique_dl_ds_collection_stats(base_q),
-        stats=get_dl_ds_collection_stats_with_dups(base_q),
+        unique_ds_stats=get_unique_dl_ds_collection_stats(base_cte),
+        stats=get_dl_ds_collection_stats_with_dups(base_cte),
     )
 
 
