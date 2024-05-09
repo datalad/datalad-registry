@@ -182,21 +182,21 @@ def get_pure_annex_ds_collection_stats(base_cte: CTE) -> AnnexDsCollectionStats:
     return _get_annex_ds_collection_stats(pure_annex_ds_q)
 
 
-def get_non_annex_ds_collection_stats(base_q: Subquery) -> NonAnnexDsCollectionStats:
+def get_non_annex_ds_collection_stats(base_cte: CTE) -> NonAnnexDsCollectionStats:
     """
     Get the stats of the subset of the collection of datasets that contains only
     of non-annex datasets
 
-    :param base_q: The base query that specified the collection of datasets
-                   under consideration
+    :param base_cte: The base CTE that specified the collection of datasets
+        under consideration
     :return: The object representing the stats
 
     Note: The execution of this function requires the Flask app's context
     """
     # Select statement for getting all the non-annex datasets
     non_annex_ds_q = (
-        select(base_q)
-        .filter(not_(base_q.c.branches.has_key("git-annex")))
+        select(base_cte)
+        .filter(not_(base_cte.c.branches.has_key("git-annex")))
         .subquery("non_annex_ds_q")
     )
 
