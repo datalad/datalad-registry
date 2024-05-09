@@ -16,13 +16,7 @@ from sqlalchemy import (
 
 from datalad_registry.models import RepoUrl, db
 
-from .models import (
-    AnnexDsCollectionStats,
-    CollectionStats,
-    DataladDsCollectionStats,
-    NonAnnexDsCollectionStats,
-    StatsSummary,
-)
+from .models import CollectionStats
 
 
 def cache_result_to_tmp_tb(select_stmt: Select, tb_name: str) -> TableClause:
@@ -143,32 +137,36 @@ def get_dl_ds_collection_stats_with_dups(base_cte: CTE) -> ScalarSelect:
     return _get_annex_ds_collection_stats(dl_ds_q)
 
 
-def get_dl_ds_collection_stats(base_cte: CTE) -> DataladDsCollectionStats:
+def get_dl_ds_collection_stats(base_cte: CTE) -> ScalarSelect:
     """
     Get the stats of the subset of the collection of datasets that contains only
     of Datalad datasets
 
     :param base_cte: The base CTE that specified the collection of datasets
         under consideration
-    :return: The object representing the stats
+    :return: The scalar selectable for obtaining the stats
 
     Note: The execution of this function requires the Flask app's context
     """
 
-    return DataladDsCollectionStats(
-        unique_ds_stats=get_unique_dl_ds_collection_stats(base_cte),
-        stats=get_dl_ds_collection_stats_with_dups(base_cte),
-    )
+    return select(
+        func.jsonb_build_object(
+            "unique_ds_stats",
+            get_unique_dl_ds_collection_stats(base_cte),
+            "stats",
+            get_dl_ds_collection_stats_with_dups(base_cte),
+        ).label("datalad_ds_collection_stats")
+    ).scalar_subquery()
 
 
-def get_pure_annex_ds_collection_stats(base_cte: CTE) -> AnnexDsCollectionStats:
+def get_pure_annex_ds_collection_stats(base_cte: CTE) -> ScalarSelect:
     """
     Get the stats of the subset of the collection of datasets that contains only
     of pure annex datasets, the annex datasets that are not Datalad datasets
 
     :param base_cte: The base CTE that specified the collection of datasets
                      under consideration
-    :return: The object representing the stats
+    :return: The scalar selectable for obtaining the stats
 
     Note: The execution of this function requires the Flask app's context
     """
@@ -184,14 +182,14 @@ def get_pure_annex_ds_collection_stats(base_cte: CTE) -> AnnexDsCollectionStats:
     return _get_annex_ds_collection_stats(pure_annex_ds_q)
 
 
-def get_non_annex_ds_collection_stats(base_cte: CTE) -> NonAnnexDsCollectionStats:
+def get_non_annex_ds_collection_stats(base_cte: CTE) -> ScalarSelect:
     """
     Get the stats of the subset of the collection of datasets that contains only
     of non-annex datasets
 
     :param base_cte: The base CTE that specified the collection of datasets
         under consideration
-    :return: The object representing the stats
+    :return: The scalar selectable for obtaining the stats
 
     Note: The execution of this function requires the Flask app's context
     """
@@ -202,10 +200,14 @@ def get_non_annex_ds_collection_stats(base_cte: CTE) -> NonAnnexDsCollectionStat
         .subquery("non_annex_ds_q")
     )
 
-    return NonAnnexDsCollectionStats(
-        ds_count=db.session.execute(
-            select(func.count().label("ds_count")).select_from(non_annex_ds_q)
-        ).scalar_one()
+    return (
+        select(
+            func.jsonb_build_object("ds_count", func.count()).label(
+                "non_annex_ds_collection_stats"
+            )
+        )
+        .select_from(non_annex_ds_q)
+        .scalar_subquery()
     )
 
 
@@ -222,18 +224,31 @@ def get_collection_stats(select_stmt: Select) -> CollectionStats:
 
     base_cte = select_stmt.cte("base_cte")
 
-    datalad_ds_stats = get_dl_ds_collection_stats(base_cte)
+    datalad_ds_stats_scalar_subq = get_dl_ds_collection_stats(base_cte)
 
     # Total number of datasets, as individual repos, without any deduplication
-    ds_count = db.session.execute(
-        select(func.count().label("ds_count")).select_from(base_cte)
-    ).scalar_one()
+    ds_count_scalar_subq = select(func.count()).select_from(base_cte).scalar_subquery()
 
-    return CollectionStats(
-        datalad_ds_stats=datalad_ds_stats,
-        pure_annex_ds_stats=get_pure_annex_ds_collection_stats(base_cte),
-        non_annex_ds_stats=get_non_annex_ds_collection_stats(base_cte),
-        summary=StatsSummary(
-            unique_ds_count=datalad_ds_stats.unique_ds_stats.ds_count, ds_count=ds_count
-        ),
+    return CollectionStats.parse_obj(
+        db.session.execute(
+            select(
+                func.jsonb_build_object(
+                    "datalad_ds_stats",
+                    datalad_ds_stats_scalar_subq,
+                    "pure_annex_ds_stats",
+                    get_pure_annex_ds_collection_stats(base_cte),
+                    "non_annex_ds_stats",
+                    get_non_annex_ds_collection_stats(base_cte),
+                    "summary",
+                    func.jsonb_build_object(
+                        "unique_ds_count",
+                        func.jsonb_extract_path(
+                            datalad_ds_stats_scalar_subq, "unique_ds_stats", "ds_count"
+                        ),
+                        "ds_count",
+                        ds_count_scalar_subq,
+                    ),
+                ).label("collection_stats")
+            )
+        ).scalar_one()
     )
