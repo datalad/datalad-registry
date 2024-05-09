@@ -1,4 +1,5 @@
 from sqlalchemy import (
+    CTE,
     Select,
     Subquery,
     TableClause,
@@ -71,14 +72,14 @@ def _get_annex_ds_collection_stats(q: Subquery) -> AnnexDsCollectionStats:
     )
 
 
-def get_unique_dl_ds_collection_stats(base_q: Subquery) -> AnnexDsCollectionStats:
+def get_unique_dl_ds_collection_stats(base_cte: CTE) -> AnnexDsCollectionStats:
     """
     Get the stats of the subset of the collection of datasets that contains only
     of Datalad datasets, considering datasets with the same `ds_id` as the same
     dataset
 
-    :param base_q: The base query that specified the collection of datasets
-                   under consideration
+    :param base_cte: The base CTE that specified the collection of datasets
+        under consideration
     :return: The object representing the stats
 
     Note: The execution of this function requires the Flask app's context
@@ -86,12 +87,12 @@ def get_unique_dl_ds_collection_stats(base_q: Subquery) -> AnnexDsCollectionStat
 
     grp_by_id_q = (
         select(
-            base_q.c.ds_id,
-            func.max(base_q.c.annexed_files_in_wt_size).label(
+            base_cte.c.ds_id,
+            func.max(base_cte.c.annexed_files_in_wt_size).label(
                 "max_annexed_files_in_wt_size"
             ),
         )
-        .group_by(base_q.c.ds_id)
+        .group_by(base_cte.c.ds_id)
         .subquery("grp_by_id_q")
     )
 
