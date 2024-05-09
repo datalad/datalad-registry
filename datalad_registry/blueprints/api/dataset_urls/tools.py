@@ -1,5 +1,6 @@
 from sqlalchemy import (
     CTE,
+    ScalarSelect,
     Select,
     Subquery,
     TableClause,
@@ -47,32 +48,33 @@ def cache_result_to_tmp_tb(select_stmt: Select, tb_name: str) -> TableClause:
     )
 
 
-def _get_annex_ds_collection_stats(q: Subquery) -> AnnexDsCollectionStats:
+def _get_annex_ds_collection_stats(q: Subquery) -> ScalarSelect:
     """
     Get the stats of a collection of datasets that contains only of annex datasets
 
     :param q: The query that specifies the collection of datasets under consideration
-    :return: The object representing the stats
+    :return: The scalar selectable for obtaining the stats
 
     Note: The execution of this function requires the Flask app's context
     """
 
-    ds_count, annexed_files_size, annexed_file_count = db.session.execute(
+    return (
         select(
-            func.count().label("ds_count"),
-            func.sum(q.c.annexed_files_in_wt_size).label("annexed_files_size"),
-            func.sum(q.c.annexed_files_in_wt_count).label("annexed_file_count"),
-        ).select_from(q)
-    ).one()
-
-    return AnnexDsCollectionStats(
-        ds_count=ds_count,
-        annexed_files_size=annexed_files_size,
-        annexed_file_count=annexed_file_count,
+            func.jsonb_build_object(
+                "ds_count",
+                func.count(),
+                "annexed_files_size",
+                func.sum(q.c.annexed_files_in_wt_size),
+                "annexed_file_count",
+                func.sum(q.c.annexed_files_in_wt_count),
+            ).label("annex_ds_collection_stats")
+        )
+        .select_from(q)
+        .scalar_subquery()
     )
 
 
-def get_unique_dl_ds_collection_stats(base_cte: CTE) -> AnnexDsCollectionStats:
+def get_unique_dl_ds_collection_stats(base_cte: CTE) -> ScalarSelect:
     """
     Get the stats of the subset of the collection of datasets that contains only
     of Datalad datasets, considering datasets with the same `ds_id` as the same
@@ -80,7 +82,7 @@ def get_unique_dl_ds_collection_stats(base_cte: CTE) -> AnnexDsCollectionStats:
 
     :param base_cte: The base CTE that specified the collection of datasets
         under consideration
-    :return: The object representing the stats
+    :return: The scalar selectable for obtaining the stats
 
     Note: The execution of this function requires the Flask app's context
     """
@@ -122,7 +124,7 @@ def get_unique_dl_ds_collection_stats(base_cte: CTE) -> AnnexDsCollectionStats:
     return _get_annex_ds_collection_stats(grp_by_id_and_a_f_size_q)
 
 
-def get_dl_ds_collection_stats_with_dups(base_cte: CTE) -> AnnexDsCollectionStats:
+def get_dl_ds_collection_stats_with_dups(base_cte: CTE) -> ScalarSelect:
     """
     Get the stats of the subset of the collection of datasets that contains only
     of Datalad datasets, considering individual repos as a dataset regardless of
@@ -130,7 +132,7 @@ def get_dl_ds_collection_stats_with_dups(base_cte: CTE) -> AnnexDsCollectionStat
 
     :param base_cte: The base CTE that specified the collection of datasets
                      under consideration
-    :return: The object representing the stats
+    :return: The scalar selectable for obtaining the stats
 
     Note: The execution of this function requires the Flask app's context
     """
