@@ -159,21 +159,23 @@ def get_dl_ds_collection_stats(base_q: Subquery) -> DataladDsCollectionStats:
     )
 
 
-def get_pure_annex_ds_collection_stats(base_q: Subquery) -> AnnexDsCollectionStats:
+def get_pure_annex_ds_collection_stats(base_cte: CTE) -> AnnexDsCollectionStats:
     """
     Get the stats of the subset of the collection of datasets that contains only
     of pure annex datasets, the annex datasets that are not Datalad datasets
 
-    :param base_q: The base query that specified the collection of datasets
-                   under consideration
+    :param base_cte: The base CTE that specified the collection of datasets
+                     under consideration
     :return: The object representing the stats
 
     Note: The execution of this function requires the Flask app's context
     """
     # Select statement for getting all the pure annex datasets
     pure_annex_ds_q = (
-        select(base_q)
-        .filter(and_(base_q.c.branches.has_key("git-annex"), base_q.c.ds_id.is_(None)))
+        select(base_cte)
+        .filter(
+            and_(base_cte.c.branches.has_key("git-annex"), base_cte.c.ds_id.is_(None))
+        )
         .subquery("pure_annex_ds_q")
     )
 
