@@ -6,8 +6,8 @@ services:
       RABBITMQ_DEFAULT_USER: "${RABBITMQ_DEFAULT_USER}"
       RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS}"
     ports:
-      - "127.0.0.1:35672:5672"
-      - "127.0.0.1:45672:15672"
+      - "127.0.0.1:${BROKER_PORT_AT_HOST}:5672"
+      - "127.0.0.1:${BROKER_MANAGEMENT_PORT_AT_HOST}:15672"
     userns_mode: "keep-id"  # This has an effect only after podman-compose 1.0.3 possibly
       # See https://github.com/containers/podman-compose/issues/166
       # for details.
@@ -23,7 +23,7 @@ services:
   backend:
     image: docker.io/redis:7
     ports:
-      - "127.0.0.1:36379:6379"
+      - "127.0.0.1:${BACKEND_PORT_AT_HOST}:6379"
 
   db:
     image: docker.io/postgres:15
@@ -33,7 +33,7 @@ services:
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
       POSTGRES_INITDB_ARGS: --encoding utf8 --locale C
     ports:
-      - "127.0.0.1:35432:5432"
+      - "127.0.0.1:${DB_PORT_AT_HOST}:5432"
     healthcheck:
       test: [ "CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}", "-q" ]
       interval: 30s

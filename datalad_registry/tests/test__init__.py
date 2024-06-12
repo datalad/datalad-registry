@@ -82,13 +82,9 @@ class TestCreateApp:
             },
         }
 
-        default_metadata_extractors = [
-            "metalad_core",
-            "metalad_studyminimeta",
-            "datacite_gin",
-            "bids_dataset",
-            "dandi",
-        ]
+        default_metadata_extractors = BaseConfig.__fields__[
+            "DATALAD_REGISTRY_METADATA_EXTRACTORS"
+        ].default
 
         def mock_compile_config_from_env(*_args, **_kwargs):
             # noinspection PyTypeChecker

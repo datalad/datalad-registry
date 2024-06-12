@@ -1,6 +1,7 @@
 # This file specifies custom metadata extractors, for datalad_registry, and related
 # definitions.
 from collections.abc import Callable
+import json
 
 from datalad.distribution.dataset import require_dataset
 from yaml import load as yaml_load
@@ -81,8 +82,38 @@ def dlreg_dandi_files_meta_extract(url: RepoUrl) -> URLMetadata:
     :return: A `URLMetadata` object containing the extracted metadata ready
     :raises FileNotFoundError: If the `.dandi/assets.json` file is not found
                                at the dataset
+
+    Note: This function is meant to be called inside a Celery task for it requires
+          an active application context of the Flask app
+    Note: This function must be called with a RepoUrl object with a cache path, i.e.,
+          one that must have been processed already.
     """
-    raise NotImplementedError
+    name = "dandi:files"  # Name of this extractor
+    version = "0.0.1"  # Version of this extractor
+
+    assert url.cache_path_abs is not None, (
+        f"Encountered a RepoUrl with no cache path, "
+        f"with a processed flag set to {url.processed}"
+    )
+
+    with open(url.cache_path_abs / ".dandi/assets.json") as f:
+        extracted_metadata = json.load(f)
+
+    ds = require_dataset(
+        url.cache_path_abs,
+        check_installed=True,
+        purpose="dandiset files metadata extraction",
+    )
+
+    return URLMetadata(
+        dataset_describe=get_head_describe(ds),
+        dataset_version=ds.repo.get_hexsha(),
+        extractor_name=name,
+        extractor_version=version,
+        extraction_parameter={},
+        extracted_metadata=extracted_metadata,
+        url=url,
+    )
 
 
 # A mapping from the names of the supported extractors to the functions

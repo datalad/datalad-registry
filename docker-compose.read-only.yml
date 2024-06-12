@@ -10,7 +10,7 @@ services:
       read-only-db:
         condition: service_healthy
     ports:
-      - "${READ_ONLY_WEB_PUBLISH_PORT}:5000"
+      - "${WEB_PORT_AT_HOST}:5000"
     environment:
       FLASK_APP: "datalad_registry:create_app"
 

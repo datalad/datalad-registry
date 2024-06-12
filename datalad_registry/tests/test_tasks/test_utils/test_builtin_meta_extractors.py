@@ -88,6 +88,31 @@ class TestDlregDandiMetaExtract:
                 dlreg_dandi_meta_extract(repo_url)
 
 
+class TestDlregDandiFilesMetaExtract:
+    def test_valid_input(self, dandi_repo_url_with_up_to_date_clone, flask_app):
+        """
+        Test the case that the argument `url` is a valid `RepoUrl` object with a
+        valid corresponding dandi dataset in the local cache
+        """
+        from datalad_registry.tasks.utils.builtin_meta_extractors import (
+            dlreg_dandi_files_meta_extract,
+        )
+
+        repo_url = dandi_repo_url_with_up_to_date_clone[0]
+        ds_clone = dandi_repo_url_with_up_to_date_clone[2]
+
+        with flask_app.app_context():
+            url_metadata = dlreg_dandi_files_meta_extract(repo_url)
+
+        assert url_metadata.dataset_describe == get_head_describe(ds_clone)
+        assert url_metadata.dataset_version == ds_clone.repo.get_hexsha()
+        assert url_metadata.extractor_name == "dandi:files"
+        assert url_metadata.extractor_version == "0.0.1"
+        assert url_metadata.extraction_parameter == {}
+        assert url_metadata.extracted_metadata == [{"asset_id": "123"}]
+        assert url_metadata.url == repo_url
+
+
 class TestDlregMetaExtract:
     def test_unsupported_extractor(
         self, dandi_repo_url_with_up_to_date_clone, flask_app
