@@ -76,26 +76,68 @@ from datalad_registry.tasks.utils.usage_dashboard import DASHBOARD_COLLECTION_UR
                             "stars": 0,
                             "status": "active"
                         }
+                    ],
+                    "hub_datalad_org": [
+                        {
+                            "id": 4689,
+                            "name": "ABCD-J/www",
+                            "url": "https://hub.datalad.org/ABCD-J/www",
+                            "stars": 0,
+                            "status": "gone",
+                            "updated": "2025-02-28T09:34:00Z"
+                        },
+                        {
+                            "id": 4648,
+                            "name": "adina/datalad-blog",
+                            "url": "https://hub.datalad.org/adina/datalad-blog",
+                            "stars": 0,
+                            "status": "active",
+                            "updated": "2024-08-27T15:10:08Z"
+                        }
+                    ],
+                    "atris": [
+                        {
+                            "id": 438,
+                            "name": "MeteoCloud/ERA5",
+                            "url": "https://atris.fz-juelich.de/MeteoCloud/ERA5",
+                            "stars": 0,
+                            "status": "active",
+                            "updated": "2025-02-24T04:33:54Z"
+                        },
+                        {
+                            "id": 455,
+                            "name": "CAIRT/SCIREC-grids",
+                            "url": "https://atris.fz-juelich.de/CAIRT/SCIREC-grids",
+                            "stars": 0,
+                            "status": "active",
+                            "updated": "2024-09-23T09:33:21Z"
+                        }
                     ]
                 }
-                """,
+            """,
             {
                 "https://github.com/1104HARI/s3cmd.git",
                 "https://gin.g-node.org/AIDAqc_datasets/7_m_RT_Bo",
                 "http://db/example.git",
+                "https://atris.fz-juelich.de/CAIRT/SCIREC-grids.git",
             },
             {
                 "https://github.com/1104HARI/fail2ban.git",
                 "https://gin.g-node.org/AIDAqc_datasets/117_m_RT_Vr",
+                "https://hub.datalad.org/adina/datalad-blog.git",
+                "https://atris.fz-juelich.de/MeteoCloud/ERA5.git",
             },
         ),
         (
             """
-                    {
-                        "github": [],
-                        "osf": [],
-                        "gin": []
-                    }""",
+                {
+                    "github": [],
+                    "osf": [],
+                    "gin": [],
+                    "hub_datalad_org": [],
+                    "atris": []
+                }
+            """,
             {
                 "https://github.com/1104HARI/s3cmd.git",
                 "https://gin.g-node.org/AIDAqc_datasets/7_m_RT_Bo",
@@ -167,6 +209,34 @@ from datalad_registry.tasks.utils.usage_dashboard import DASHBOARD_COLLECTION_UR
                             "stars": 0,
                             "status": "active"
                         }
+                    ],
+                    "hub_datalad_org": [
+                        {
+                            "id": 4689,
+                            "name": "ABCD-J/www",
+                            "url": "https://hub.datalad.org/ABCD-J/www",
+                            "stars": 0,
+                            "status": "active",
+                            "updated": "2025-02-28T09:34:00Z"
+                        },
+                        {
+                            "id": 4648,
+                            "name": "adina/datalad-blog",
+                            "url": "https://hub.datalad.org/adina/datalad-blog",
+                            "stars": 0,
+                            "status": "gone",
+                            "updated": "2024-08-27T15:10:08Z"
+                        }
+                    ],
+                    "atris": [
+                        {
+                            "id": 438,
+                            "name": "MeteoCloud/ERA5",
+                            "url": "https://atris.fz-juelich.de/MeteoCloud/ERA5",
+                            "stars": 0,
+                            "status": "gone",
+                            "updated": "2025-02-24T04:33:54Z"
+                        }
                     ]
                 }
                 """,
@@ -176,6 +246,7 @@ from datalad_registry.tasks.utils.usage_dashboard import DASHBOARD_COLLECTION_UR
                 "https://github.com/1104HARI/s3cmd.git",
                 "https://gin.g-node.org/AIDAqc_datasets/117_m_RT_Vr",
                 "https://gin.g-node.org/AIDAqc_datasets/7_m_RT_Bo",
+                "https://hub.datalad.org/ABCD-J/www.git",
             },
         ),
     ],
