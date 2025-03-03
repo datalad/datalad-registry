@@ -87,6 +87,36 @@ class GinRepo(Repo):
         return str(self.url)
 
 
+class DataladHubRepo(GinRepo):
+    """
+    Pydantic model for representing a git repo residing on https://hub.datalad.org/
+    represented in the datalad-usage-dashboard
+    """
+
+    # Note: The relationship of this model to the `GinRepo` is inspired by the
+    # `RepoRecord` class in
+    # https://github.com/datalad/datalad-usage-dashboard/blob/master/src/find_datalad_repos/record.py
+
+    @property
+    def clone_url(self) -> str:
+        return str(self.url) + ".git"
+
+
+class AtrisRepo(GinRepo):
+    """
+    Pydantic model for representing a git repo residing on https://atris.fz-juelich.de/
+    represented in the datalad-usage-dashboard
+    """
+
+    # Note: The relationship of this model to the `GinRepo` is inspired by the
+    # `RepoRecord` class in
+    # https://github.com/datalad/datalad-usage-dashboard/blob/master/src/find_datalad_repos/record.py
+
+    @property
+    def clone_url(self) -> str:
+        return str(self.url) + ".git"
+
+
 class DashboardCollection(BaseModel):
     """
     Pydantic model for representing the collection of git repos represented
@@ -96,3 +126,5 @@ class DashboardCollection(BaseModel):
     github: list[GHRepo]
     osf: list[OSFRepo]
     gin: list[GinRepo]
+    hub_datalad_org: list[DataladHubRepo]
+    atris: list[AtrisRepo]
