@@ -34,7 +34,3 @@ repos:
     - id: codespell
       additional_dependencies:
       - tomli
-
-
-default_language_version:
-    python: python3.11
