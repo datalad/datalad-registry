@@ -4,7 +4,7 @@ import os
 from collections import defaultdict
 
 # TODO: add an option to provide starting date
-# TODO: do clever check that for that  args  there is no succesfull one after that point
+# TODO: do clever check that for that  args  there is no successful one after that point
 
 # Make the GET request
 response = requests.get(f"http://{os.environ['FLOWER_BASIC_AUTH']}@localhost:5555/api/tasks?state=FAILURE")
