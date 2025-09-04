@@ -127,6 +127,25 @@ class TestOverView:
                     "https://www.dandiarchive.org",
                 ],
             ),
+            # Test new head_dt sorting
+            (
+                "head_dt-asc",
+                [
+                    "https://www.example.com",  # null values come first
+                    "http://www.datalad.org",  # null values come first
+                    "https://handbook.datalad.org",  # null values come first
+                    "https://www.dandiarchive.org",  # null values come first
+                ],
+            ),
+            (
+                "head_dt-desc",
+                [
+                    "https://www.example.com",  # null values come first
+                    "http://www.datalad.org",  # null values come first
+                    "https://handbook.datalad.org",  # null values come first
+                    "https://www.dandiarchive.org",  # null values come first
+                ],
+            ),
         ],
     )
     def test_sorting(
@@ -296,3 +315,57 @@ class TestOverView:
             "https://handbook.datalad.org": {"metalad_core"},
             "https://www.dandiarchive.org": set(),
         }
+
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
+    @pytest.mark.parametrize(
+        "columns_param, expected_header_count",
+        [
+            (None, 10),  # Default columns
+            ("url,dataset,commit", 3),
+            ("url,head_dt,update", 3),
+            ("url,keys,metadata", 3),
+            ("invalid_column", 10),  # Invalid columns fall back to default
+            ("url,invalid_column,dataset", 2),  # Valid columns only
+        ],
+    )
+    def test_configurable_columns(
+        self, columns_param: Optional[str], expected_header_count: int, flask_client
+    ):
+        """
+        Test the configurable columns functionality
+        """
+        query_params = {}
+        if columns_param:
+            query_params["columns"] = columns_param
+
+        resp = flask_client.get("/overview/", query_string=query_params)
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        # Count header columns
+        header_row = soup.body.table.tr
+        header_count = len(header_row.find_all("th"))
+
+        assert header_count == expected_header_count
+
+        # Verify data rows have matching column count
+        data_rows = soup.body.table.find_all("tr")[1:]
+        if data_rows:  # Only check if there are data rows
+            for row in data_rows:
+                assert len(row.find_all("td")) == expected_header_count
+
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
+    def test_last_commit_date_column_present(self, flask_client):
+        """
+        Test that the last commit date column is displayed when requested
+        """
+        resp = flask_client.get("/overview/", query_string={"columns": "url,head_dt"})
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        # Check that the header contains "Last commit date"
+        headers = [th.text.strip() for th in soup.body.table.tr.find_all("th")]
+        assert "Last commit date" in headers
+
+        # Verify we have exactly 2 columns
+        assert len(headers) == 2

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 import re
 from typing import Optional
 from uuid import UUID
@@ -102,6 +103,26 @@ def get_head_describe(ds: Dataset) -> str:
     :return: The output of `git describe --tags --always` of the given dataset
     """
     return ds.repo.describe(tags=True, always=True)
+
+
+def get_head_commit_date(ds: Dataset) -> datetime:
+    """
+    Get the commit date of the HEAD commit of the origin remote of a dataset
+
+    :param ds: The given dataset
+    :return: The commit date of the HEAD commit of the origin remote as a
+             datetime object
+    """
+    # Get the commit date of origin/HEAD in ISO8601 format
+    commit_info = ds.repo.for_each_ref_(
+        pattern="refs/remotes/origin/HEAD", fields=["authordate:iso8601-strict"]
+    )
+
+    if not commit_info:
+        raise RuntimeError("Failed to get commit date for origin/HEAD")
+
+    # Parse the ISO8601 date string to datetime object
+    return datetime.fromisoformat(commit_info[0]["authordate:iso8601-strict"])
 
 
 def get_origin_branches(ds: Dataset) -> dict[str, dict[str, str]]:

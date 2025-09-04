@@ -7,6 +7,7 @@ import pytest
 from datalad_registry.utils.datalad_tls import (
     WtAnnexedFileInfo,
     clone,
+    get_head_commit_date,
     get_origin_annex_key_count,
     get_origin_annex_uuid,
     get_origin_branches,
@@ -272,3 +273,36 @@ class TestGetOriginUpstreamBranch:
         l2_clone.repo.call_git(["push", "-u", "origin", branch_name])
 
         assert get_origin_upstream_branch(l2_clone) == branch_name
+
+
+@pytest.mark.parametrize(
+    "ds_name",
+    [
+        "empty_ds_annex",
+        "two_files_ds_annex",
+        "empty_ds_non_annex",
+        "two_files_ds_non_annex",
+    ],
+)
+def test_get_head_commit_date(ds_name, request, tmp_path):
+    """
+    Test the get_head_commit_date function
+    """
+    from datetime import datetime
+
+    ds: Dataset = request.getfixturevalue(ds_name)
+    ds_clone = clone(source=ds.path, path=tmp_path)
+
+    # Get the commit date using our function
+    commit_date = get_head_commit_date(ds_clone)
+
+    # Verify it's a datetime object
+    assert isinstance(commit_date, datetime)
+
+    # Verify it matches what we get from git directly
+    expected_date_str = ds.repo.call_git(
+        ["log", "-1", "--format=%aI", "origin/HEAD"]
+    ).strip()
+    expected_date = datetime.fromisoformat(expected_date_str)
+
+    assert commit_date == expected_date

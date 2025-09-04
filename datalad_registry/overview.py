@@ -19,6 +19,8 @@ _SORT_ATTRS = {
     "keys-desc": ("annex_key_count", "desc"),
     "update-asc": ("last_update_dt", "asc"),
     "update-desc": ("last_update_dt", "desc"),
+    "head_dt-asc": ("head_dt", "asc"),
+    "head_dt-desc": ("head_dt", "desc"),
     "url-asc": ("url", "asc"),
     "url-desc": ("url", "desc"),
     "annexed_files_in_wt_count-asc": ("annexed_files_in_wt_count", "asc"),
@@ -28,6 +30,46 @@ _SORT_ATTRS = {
     "git_objects_kb-asc": ("git_objects_kb", "asc"),
     "git_objects_kb-desc": ("git_objects_kb", "desc"),
 }
+
+# Available columns with their metadata
+_AVAILABLE_COLUMNS = {
+    "url": {"label": "URL", "sortable": True},
+    "dataset": {"label": "Dataset", "sortable": False},
+    "commit": {"label": "Commit", "sortable": False},
+    "head_dt": {"label": "Last commit date", "sortable": True},
+    "keys": {
+        "label": "Annex keys",
+        "sortable": True,
+        "tooltip": "Number of annex keys",
+    },
+    "annexed_files_count": {
+        "label": "Nr of Annexed files",
+        "sortable": True,
+        "tooltip": "Number of annexed files in working tree",
+    },
+    "annexed_files_size": {
+        "label": "Size of Annexed files",
+        "sortable": True,
+        "tooltip": "Size of annexed files in working tree",
+    },
+    "update": {"label": "Last update", "sortable": True},
+    "git_objects": {"label": "Size of .git/objects", "sortable": True},
+    "metadata": {"label": "Metadata", "sortable": False},
+}
+
+# Default columns to display
+_DEFAULT_COLUMNS = [
+    "url",
+    "dataset",
+    "commit",
+    "head_dt",
+    "keys",
+    "annexed_files_count",
+    "annexed_files_size",
+    "update",
+    "git_objects",
+    "metadata",
+]
 
 
 # Register humanize.intcomma as a Jinja2 filter
@@ -54,6 +96,20 @@ def overview():  # No type hints due to mypy#7187.
         else:
             base_select_stmt = base_select_stmt.filter(criteria)
 
+    # Handle configurable columns
+    columns_param = request.args.get("columns", None, type=str)
+    if columns_param:
+        # Parse comma-separated column names
+        requested_columns = [col.strip() for col in columns_param.split(",")]
+        # Filter out invalid column names
+        visible_columns = [
+            col for col in requested_columns if col in _AVAILABLE_COLUMNS
+        ]
+        if not visible_columns:
+            visible_columns = _DEFAULT_COLUMNS
+    else:
+        visible_columns = _DEFAULT_COLUMNS
+
     # Decipher sorting scheme
     sort_by = request.args.get("sort", default_sort_scheme, type=str)
     if sort_by not in _SORT_ATTRS:
@@ -79,4 +135,7 @@ def overview():  # No type hints due to mypy#7187.
         sort_by=sort_by,
         search_query=query,
         search_error=search_error,
+        visible_columns=visible_columns,
+        available_columns=_AVAILABLE_COLUMNS,
+        columns_param=columns_param,
     )

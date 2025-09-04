@@ -23,6 +23,7 @@ from datalad_registry.models import RepoUrl, URLMetadata, db
 from datalad_registry.utils import StrEnum
 from datalad_registry.utils.datalad_tls import (
     clone,
+    get_head_commit_date,
     get_head_describe,
     get_origin_annex_key_count,
     get_origin_annex_uuid,
@@ -100,6 +101,7 @@ def _update_dataset_url_info(dataset_url: RepoUrl, ds: Dataset) -> None:
 
     dataset_url.head = ds.repo.get_hexsha("origin/HEAD")
     dataset_url.head_describe = get_head_describe(ds)
+    dataset_url.head_dt = get_head_commit_date(ds)
 
     dataset_url.branches = get_origin_branches(ds)
 
