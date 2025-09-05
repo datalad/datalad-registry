@@ -14,46 +14,38 @@ from datalad_registry.search import parse_query
 lgr = logging.getLogger(__name__)
 bp = Blueprint("overview", __name__, url_prefix="/overview")
 
-_SORT_ATTRS = {
-    "keys-asc": ("annex_key_count", "asc"),
-    "keys-desc": ("annex_key_count", "desc"),
-    "update-asc": ("last_update_dt", "asc"),
-    "update-desc": ("last_update_dt", "desc"),
-    "head_dt-asc": ("head_dt", "asc"),
-    "head_dt-desc": ("head_dt", "desc"),
-    "url-asc": ("url", "asc"),
-    "url-desc": ("url", "desc"),
-    "annexed_files_in_wt_count-asc": ("annexed_files_in_wt_count", "asc"),
-    "annexed_files_in_wt_count-desc": ("annexed_files_in_wt_count", "desc"),
-    "annexed_files_in_wt_size-asc": ("annexed_files_in_wt_size", "asc"),
-    "annexed_files_in_wt_size-desc": ("annexed_files_in_wt_size", "desc"),
-    "git_objects_kb-asc": ("git_objects_kb", "asc"),
-    "git_objects_kb-desc": ("git_objects_kb", "desc"),
-}
+# _SORT_ATTRS removed - now using _AVAILABLE_COLUMNS with db_field mapping
 
 # Available columns with their metadata
 _AVAILABLE_COLUMNS = {
-    "url": {"label": "URL", "sortable": True},
+    "url": {"label": "URL", "sortable": True, "db_field": "url"},
     "dataset": {"label": "Dataset", "sortable": False},
     "commit": {"label": "Commit", "sortable": False},
-    "head_dt": {"label": "Last commit date", "sortable": True},
+    "head_dt": {"label": "Last commit date", "sortable": True, "db_field": "head_dt"},
     "keys": {
         "label": "Annex keys",
         "sortable": True,
         "tooltip": "Number of annex keys",
+        "db_field": "annex_key_count",
     },
     "annexed_files_count": {
         "label": "Nr of Annexed files",
         "sortable": True,
         "tooltip": "Number of annexed files in working tree",
+        "db_field": "annexed_files_in_wt_count",
     },
     "annexed_files_size": {
         "label": "Size of Annexed files",
         "sortable": True,
         "tooltip": "Size of annexed files in working tree",
+        "db_field": "annexed_files_in_wt_size",
     },
-    "update": {"label": "Last update", "sortable": True},
-    "git_objects": {"label": "Size of .git/objects", "sortable": True},
+    "update": {"label": "Last update", "sortable": True, "db_field": "last_update_dt"},
+    "git_objects": {
+        "label": "Size of .git/objects",
+        "sortable": True,
+        "db_field": "git_objects_kb",
+    },
     "metadata": {"label": "Metadata", "sortable": False},
 }
 
@@ -78,7 +70,8 @@ bp.add_app_template_filter(intcomma, "intcomma")
 
 @bp.get("/")
 def overview():  # No type hints due to mypy#7187.
-    default_sort_scheme = "update-desc"
+    default_sort_column = "update"
+    default_sort_direction = "desc"
 
     base_select_stmt = select(RepoUrl)
 
@@ -110,12 +103,20 @@ def overview():  # No type hints due to mypy#7187.
     else:
         visible_columns = _DEFAULT_COLUMNS
 
-    # Decipher sorting scheme
-    sort_by = request.args.get("sort", default_sort_scheme, type=str)
-    if sort_by not in _SORT_ATTRS:
-        lgr.debug("Ignoring unknown sort parameter: %s", sort_by)
-        sort_by = default_sort_scheme
-    col, sort_method = _SORT_ATTRS[sort_by]
+    # Handle sorting using new system
+    sort_by_param = request.args.get("sort_by", default_sort_column, type=str)
+    sort_direction = request.args.get("sort", default_sort_direction, type=str)
+    # Validate sort_by parameter
+    if sort_by_param in _AVAILABLE_COLUMNS and _AVAILABLE_COLUMNS[sort_by_param].get(
+        "sortable"
+    ):
+        col = _AVAILABLE_COLUMNS[sort_by_param]["db_field"]
+        sort_method = sort_direction if sort_direction in ["asc", "desc"] else "asc"
+    else:
+        lgr.debug("Ignoring unknown sort_by parameter: %s", sort_by_param)
+        sort_by_param = default_sort_column
+        col = _AVAILABLE_COLUMNS[default_sort_column]["db_field"]
+        sort_method = default_sort_direction
 
     # Apply sorting
     select_stmt = base_select_stmt.order_by(
@@ -132,7 +133,8 @@ def overview():  # No type hints due to mypy#7187.
         "overview.html",
         pagination=pagination,
         stats=stats,
-        sort_by=sort_by,
+        sort_by_param=sort_by_param,
+        sort_direction=sort_method,  # Use the validated sort_method
         search_query=query,
         search_error=search_error,
         visible_columns=visible_columns,
