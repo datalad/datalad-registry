@@ -49,20 +49,6 @@ _AVAILABLE_COLUMNS = {
     "metadata": {"label": "Metadata", "sortable": False},
 }
 
-# Default columns to display
-_DEFAULT_COLUMNS = [
-    "url",
-    "dataset",
-    "commit",
-    "head_dt",
-    "keys",
-    "annexed_files_count",
-    "annexed_files_size",
-    "update",
-    "git_objects",
-    "metadata",
-]
-
 
 # Register humanize.intcomma as a Jinja2 filter
 bp.add_app_template_filter(intcomma, "intcomma")
@@ -99,9 +85,9 @@ def overview():  # No type hints due to mypy#7187.
             col for col in requested_columns if col in _AVAILABLE_COLUMNS
         ]
         if not visible_columns:
-            visible_columns = _DEFAULT_COLUMNS
+            visible_columns = list(_AVAILABLE_COLUMNS)
     else:
-        visible_columns = _DEFAULT_COLUMNS
+        visible_columns = list(_AVAILABLE_COLUMNS)
 
     # Handle sorting using new system
     sort_by_param = request.args.get("sort_by", default_sort_column, type=str)

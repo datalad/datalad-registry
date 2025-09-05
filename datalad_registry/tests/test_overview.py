@@ -348,11 +348,11 @@ class TestOverView:
     @pytest.mark.parametrize(
         "columns_param, expected_header_count",
         [
-            (None, 10),  # Default columns
+            (None, 10),  # All available columns
             ("url,dataset,commit", 3),
             ("url,head_dt,update", 3),
             ("url,keys,metadata", 3),
-            ("invalid_column", 10),  # Invalid columns fall back to default
+            ("invalid_column", 10),  # Invalid columns fall back to all columns
             ("url,invalid_column,dataset", 2),  # Valid columns only
         ],
     )
