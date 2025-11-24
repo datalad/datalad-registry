@@ -1,10 +1,10 @@
-{%- macro sort_href(default, other) -%}
-  {%- if sort_by == default -%}
-    {%- set new_sort = other -%}
+{%- macro sort_href(column_name, current_sort_by, current_direction) -%}
+  {%- if current_sort_by == column_name -%}
+    {%- set new_direction = 'asc' if current_direction == 'desc' else 'desc' -%}
   {%- else -%}
-    {%- set new_sort = default -%}
+    {%- set new_direction = 'desc' -%}
   {%- endif -%}
-  href="{{ url_for('.overview', query=search_query, sort='{}'.format(new_sort)) }}"
+  href="{{ url_for('.overview', query=search_query, sort_by=column_name, sort=new_direction, columns=columns_param) }}"
 {%- endmacro -%}
 
 {% macro render_pagination_widget(pagination, endpoint) %}
@@ -16,7 +16,7 @@
     {% for page in pagination.iter_pages() %}
       {% if page %}
         {% if page != pagination.page %}
-          <a href="{{ url_for(endpoint, page=page, per_page=pagination.per_page, sort=sort_by, query=search_query) }}">{{ page }}</a>
+          <a href="{{ url_for(endpoint, page=page, per_page=pagination.per_page, sort_by=sort_by_param, sort=sort_direction, query=search_query, columns=columns_param) }}">{{ page }}</a>
         {% else %}
           <strong>{{ page }}</strong>
         {% endif %}
@@ -60,7 +60,11 @@
           {%- endif -%}
              placeholder='Search query'
       />
-      <input type="hidden" name="sort" value="{{ sort_by }}"/>
+      <input type="hidden" name="sort_by" value="{{ sort_by_param }}"/>
+      <input type="hidden" name="sort" value="{{ sort_direction }}"/>
+      {% if columns_param %}
+      <input type="hidden" name="columns" value="{{ columns_param }}"/>
+      {% endif %}
       <input type='submit' value='Search'/>
       {% if search_error -%}
         <p><span class="error">ERROR: {{ search_error }}</span></p>
@@ -69,7 +73,11 @@
     {% if search_query -%}
         <!-- Clear search query via Button for a unified UI -->
         <form action="{{ url_for('.overview') }}" method="get">
-        <input type="hidden" name="sort" value="{{ sort_by }}"/>
+        <input type="hidden" name="sort_by" value="{{ sort_by_param }}"/>
+        <input type="hidden" name="sort" value="{{ sort_direction }}"/>
+        {% if columns_param %}
+        <input type="hidden" name="columns" value="{{ columns_param }}"/>
+        {% endif %}
         <input type='submit' value='Clear'/>
         </form>
     {%- endif %}
@@ -132,58 +140,53 @@
 
     <table class="list">
       <tr>
-        <th><a {{ sort_href('url-desc', 'url-asc') }}>URL</a></th>
-        <th>Dataset</th>
-        <th>Commit</th>
-        <th><a {{ sort_href('keys-desc', 'keys-asc') }}>Annex keys</a></th>
-        <th class="tooltip">
-          <a {{ sort_href('annexed_files_in_wt_count-desc', 'annexed_files_in_wt_count-asc') }}>
-            Nr of Annexed files
-          </a>
-          <span class="tooltiptext">Number of annexed files in working tree</span>
-        </th>
-        <th class="tooltip">
-          <a {{ sort_href('annexed_files_in_wt_size-desc', 'annexed_files_in_wt_size-asc') }}>
-            Size of Annexed files
-          </a>
-          <span class="tooltiptext">Size of annexed files in working tree</span>
-        </th>
-        <th>
-          <a {{ sort_href('update-desc', 'update-asc') }}>Last update</a>
-        </th>
-        <th class="tooltip">
-          <a {{ sort_href('git_objects_kb-desc', 'git_objects_kb-asc') }}>
-            Size of .git/objects
-          </a>
-        </th>
-        <th>
-          Metadata
-        </th>
+        {%- for column in visible_columns -%}
+          <th{%- if available_columns[column].get('tooltip') %} class="tooltip"{%- endif %}>
+            {%- if available_columns[column]['sortable'] -%}
+              <a {{ sort_href(column, sort_by_param, sort_direction) }}>{{ available_columns[column]['label'] }}</a>
+            {%- else -%}
+              {{ available_columns[column]['label'] }}
+            {%- endif -%}
+            {%- if available_columns[column].get('tooltip') -%}
+              <span class="tooltiptext">{{ available_columns[column]['tooltip'] }}</span>
+            {%- endif -%}
+          </th>
+        {%- endfor -%}
       </tr>
       {%- for i in pagination -%}
         <tr>
-          <td><a href="{{ i.url }}">{{ i.url }}</a></td>
-          <td class="mono">
-			{% if i.ds_id is not none %}
-			<a href="{{ url_for('.overview', query='ds_id:' + i.ds_id) }}">{{ i.ds_id }}</a>
-			{% endif %}
-		  </td>
-          <td class="mono">
-            {{ i.head_describe if i.head_describe is not none }}
-          </td>
-          <td>{{ i.annex_key_count|intcomma if i.annex_key_count is not none }}</td>
-          <td>{{ i.annexed_files_in_wt_count|intcomma if i.annexed_files_in_wt_count is not none }}</td>
-          <td>{{ i.annexed_files_in_wt_size|filesizeformat if i.annexed_files_in_wt_size is not none }}</td>
-          <td>{{ i.last_update_dt.strftime("%Y-%m-%dT%H:%M:%S%z") if i.last_update_dt is not none }}</td>
-          <td>{{ (i.git_objects_kb * 1024)|filesizeformat if i.git_objects_kb is not none }}</td>
-          <td>
-            {%- for data in i.metadata_ -%}
-              <a href="{{ url_for('url_metadata_api.url_metadata', url_metadata_id=data.id) }}">
-                {{ data.extractor_name }}
-              </a>
-              {{ ", " if not loop.last else "" }}
-            {%- endfor -%}
-          </td>
+          {%- for column in visible_columns -%}
+            <td{%- if column in ['dataset', 'commit'] %} class="mono"{%- endif %}>
+              {%- if column == 'url' -%}
+                <a href="{{ i.url }}">{{ i.url }}</a>
+              {%- elif column == 'dataset' -%}
+                {% if i.ds_id is not none %}
+                <a href="{{ url_for('.overview', query='ds_id:' + i.ds_id, columns=columns_param) }}">{{ i.ds_id }}</a>
+                {% endif %}
+              {%- elif column == 'commit' -%}
+                {{ i.head_describe if i.head_describe is not none }}
+              {%- elif column == 'head_dt' -%}
+                {{ i.head_dt.strftime("%Y-%m-%dT%H:%M:%S%z") if i.head_dt is not none }}
+              {%- elif column == 'keys' -%}
+                {{ i.annex_key_count|intcomma if i.annex_key_count is not none }}
+              {%- elif column == 'annexed_files_count' -%}
+                {{ i.annexed_files_in_wt_count|intcomma if i.annexed_files_in_wt_count is not none }}
+              {%- elif column == 'annexed_files_size' -%}
+                {{ i.annexed_files_in_wt_size|filesizeformat if i.annexed_files_in_wt_size is not none }}
+              {%- elif column == 'update' -%}
+                {{ i.last_update_dt.strftime("%Y-%m-%dT%H:%M:%S%z") if i.last_update_dt is not none }}
+              {%- elif column == 'git_objects' -%}
+                {{ (i.git_objects_kb * 1024)|filesizeformat if i.git_objects_kb is not none }}
+              {%- elif column == 'metadata' -%}
+                {%- for data in i.metadata_ -%}
+                  <a href="{{ url_for('url_metadata_api.url_metadata', url_metadata_id=data.id) }}">
+                    {{ data.extractor_name }}
+                  </a>
+                  {{ ", " if not loop.last else "" }}
+                {%- endfor -%}
+              {%- endif -%}
+            </td>
+          {%- endfor -%}
         </tr>
       {%- endfor -%}
     </table>

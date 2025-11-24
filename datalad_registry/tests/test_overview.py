@@ -127,6 +127,25 @@ class TestOverView:
                     "https://www.dandiarchive.org",
                 ],
             ),
+            # Test new head_dt sorting
+            (
+                "head_dt-asc",
+                [
+                    "https://www.example.com",  # null values come first
+                    "http://www.datalad.org",  # null values come first
+                    "https://handbook.datalad.org",  # null values come first
+                    "https://www.dandiarchive.org",  # null values come first
+                ],
+            ),
+            (
+                "head_dt-desc",
+                [
+                    "https://www.example.com",  # null values come first
+                    "http://www.datalad.org",  # null values come first
+                    "https://handbook.datalad.org",  # null values come first
+                    "https://www.dandiarchive.org",  # null values come first
+                ],
+            ),
         ],
     )
     def test_sorting(
@@ -135,7 +154,35 @@ class TestOverView:
         """
         Test for the sorting of dataset URLs in the overview page
         """
-        resp = flask_client.get("/overview/", query_string={"sort": sort_by})
+        query_string = {}
+        if sort_by:
+            # Convert old format to new format
+            if sort_by.endswith("-asc"):
+                column = sort_by[:-4]
+                direction = "asc"
+            elif sort_by.endswith("-desc"):
+                column = sort_by[:-5]
+                direction = "desc"
+            else:
+                column, direction = sort_by, "asc"
+
+            # Map old column names to new ones
+            column_mapping = {
+                "keys": "keys",
+                "update": "update",
+                "head_dt": "head_dt",
+                "url": "url",
+                "annexed_files_in_wt_count": "annexed_files_count",
+                "annexed_files_in_wt_size": "annexed_files_size",
+                "git_objects_kb": "git_objects",
+            }
+
+            if column in column_mapping:
+                query_string = {"sort_by": column_mapping[column], "sort": direction}
+            else:
+                query_string = {"sort_by": column, "sort": direction}
+
+        resp = flask_client.get("/overview/", query_string=query_string)
 
         soup = BeautifulSoup(resp.text, "html.parser")
 
@@ -296,3 +343,151 @@ class TestOverView:
             "https://handbook.datalad.org": {"metalad_core"},
             "https://www.dandiarchive.org": set(),
         }
+
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
+    @pytest.mark.parametrize(
+        "columns_param, expected_header_count",
+        [
+            (None, 10),  # All available columns
+            ("url,dataset,commit", 3),
+            ("url,head_dt,update", 3),
+            ("url,keys,metadata", 3),
+            ("invalid_column", 10),  # Invalid columns fall back to all columns
+            ("url,invalid_column,dataset", 2),  # Valid columns only
+        ],
+    )
+    def test_configurable_columns(
+        self, columns_param: Optional[str], expected_header_count: int, flask_client
+    ):
+        """
+        Test the configurable columns functionality
+        """
+        query_params = {}
+        if columns_param:
+            query_params["columns"] = columns_param
+
+        resp = flask_client.get("/overview/", query_string=query_params)
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        # Count header columns
+        header_row = soup.body.table.tr
+        header_count = len(header_row.find_all("th"))
+
+        assert header_count == expected_header_count
+
+        # Verify data rows have matching column count
+        data_rows = soup.body.table.find_all("tr")[1:]
+        if data_rows:  # Only check if there are data rows
+            for row in data_rows:
+                assert len(row.find_all("td")) == expected_header_count
+
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
+    def test_last_commit_date_column_present(self, flask_client):
+        """
+        Test that the last commit date column is displayed when requested
+        """
+        resp = flask_client.get("/overview/", query_string={"columns": "url,head_dt"})
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        # Check that the header contains "Last commit date"
+        headers = [th.text.strip() for th in soup.body.table.tr.find_all("th")]
+        assert "Last commit date" in headers
+
+        # Verify we have exactly 2 columns
+        assert len(headers) == 2
+
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
+    @pytest.mark.parametrize(
+        "sort_by_param, sort_direction, expected_order",
+        [
+            # Test new sorting system
+            (
+                "keys",
+                "asc",
+                [
+                    "https://www.example.com",
+                    "http://www.datalad.org",
+                    "https://handbook.datalad.org",
+                    "https://www.dandiarchive.org",
+                ],
+            ),
+            (
+                "keys",
+                "desc",
+                [
+                    "https://handbook.datalad.org",
+                    "http://www.datalad.org",
+                    "https://www.example.com",
+                    "https://www.dandiarchive.org",
+                ],
+            ),
+            (
+                "url",
+                "asc",
+                [
+                    "http://www.datalad.org",
+                    "https://handbook.datalad.org",
+                    "https://www.dandiarchive.org",
+                    "https://www.example.com",
+                ],
+            ),
+            (
+                "head_dt",
+                "asc",
+                [
+                    "https://www.example.com",  # null values come first
+                    "http://www.datalad.org",  # null values come first
+                    "https://handbook.datalad.org",  # null values come first
+                    "https://www.dandiarchive.org",  # null values come first
+                ],
+            ),
+        ],
+    )
+    def test_new_sorting_system(
+        self,
+        sort_by_param: str,
+        sort_direction: str,
+        expected_order: list[str],
+        flask_client,
+    ):
+        """
+        Test the new sorting system with sort_by and sort parameters
+        """
+        resp = flask_client.get(
+            "/overview/",
+            query_string={"sort_by": sort_by_param, "sort": sort_direction},
+        )
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        url_list = [row.td.a.string for row in soup.body.table.find_all("tr")[1:]]
+
+        assert url_list == expected_order
+
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
+    def test_new_sorting_with_columns(self, flask_client):
+        """
+        Test that new sorting system works with column configuration
+        """
+        resp = flask_client.get(
+            "/overview/",
+            query_string={"sort_by": "keys", "sort": "desc", "columns": "url,keys"},
+        )
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        # Check we have the right number of columns
+        headers = soup.body.table.tr.find_all("th")
+        assert len(headers) == 2
+
+        # Check ordering is still correct
+        url_list = [row.td.a.string for row in soup.body.table.find_all("tr")[1:]]
+        expected_order = [
+            "https://handbook.datalad.org",
+            "http://www.datalad.org",
+            "https://www.example.com",
+            "https://www.dandiarchive.org",
+        ]
+        assert url_list == expected_order
