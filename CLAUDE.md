@@ -4,15 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-DataLad Registry is a web service for registering and tracking DataLad datasets. It provides:
-- REST API for dataset URL submission and retrieval
-- Automated metadata extraction from DataLad datasets
-- Integration with DataLad catalog and usage dashboard
-- Support for read-only replica deployment
+DataLad Registry is a web service for registering, tracking and locating datasets.
+(For convenience, we will use the term “dataset”, for the rest of this document,
+to refer to a DataLad dataset or a Git repo that has been “touched” by the datalad run
+command, i.e. one that has “DATALAD RUNCMD” in a commit message.) It provides:
+- REST API for registering datasets by URL, searching for datasets, and retrieving metadata
+- Automated metadata extraction of datasets
+- Automated update of dataset metadata
+- Integration with [datalad-usage-dashboard](https://github.com/datalad/datalad-usage-dashboard)
+  to track datasets found on various platforms, such as GitHub, OSF, GIN, hub.datalad.org,
+  and ATRIS.
+- A web UI that allows users to search and browse registered datasets and their metadata.
 
 ## Development Commands
 
 ### Testing
+Assuming the test environment described in `README.md` is set up, the following commands
+can be used for testing:
+
 ```bash
 # Run tests with environment variables from env.test
 (set -a && . ./env.test && set +a && python -m pytest -s -v)
@@ -82,16 +91,19 @@ flask db downgrade
 ### Core Components
 
 1. **Flask Application** (`datalad_registry/__init__.py`): Main web service using Flask-OpenAPI3 for automatic API documentation
-2. **Celery Worker** (`datalad_registry/make_celery.py`): Background task processing for dataset metadata extraction
-3. **Database Models** (`datalad_registry/models.py`): SQLAlchemy models for RepoUrl, UrlMetadata, and ExtractedMetadata
-4. **API Blueprints** (`datalad_registry/blueprints/api/`): RESTful API endpoints for dataset operations
+2. **API Definition** (`datalad_registry/blueprints/api/`): RESTful API implementation
+3. **Celery Application** (`datalad_registry/make_celery.py`): Celery app for asynchronous task processing
+4. **Celery Tasks** (`datalad_registry/tasks/`): Celery tasks definitions
+5. **Database Models** (`datalad_registry/models.py`): SQLAlchemy models: RepoUrl, URLMetadata
+6. **DataLad-Registry Client** (`datalad_registry_client/`): DataLad extension for interacting with the registry
+
 
 ### Key Services
 
 - **Web Service**: Flask application serving the API (port 5000)
 - **Worker Service**: Celery worker for async task processing
 - **Database**: PostgreSQL for persistent storage
-- **Message Broker**: Redis for Celery task queue
+- **Message Broker**: RabbitMQ for Celery task queue
 - **Flower**: Celery monitoring dashboard (optional)
 
 ### Environment Configuration
@@ -105,15 +117,8 @@ The application uses environment variables for configuration, managed through:
 Key environment variables:
 - `DATALAD_REGISTRY_OPERATION_MODE`: PRODUCTION, DEVELOPMENT, or READ_ONLY
 - `SQLALCHEMY_DATABASE_URI`: PostgreSQL connection string
-- `CELERY_BROKER_URL`: Redis broker URL
+- `CELERY_BROKER_URL`: RabbitMQ URL
 - `DATALAD_REGISTRY_DATASET_CACHE`: Path for caching cloned datasets
-
-### Task Processing Flow
-
-1. URL submission triggers `url_chk_dispatcher` task
-2. Dispatcher validates URL and creates `process_dataset_url` task
-3. Dataset is cloned and metadata extracted via `extract_ds_meta`
-4. Extracted metadata stored in database with relationships to RepoUrl
 
 ### DataLad Client Extension
 
@@ -125,7 +130,6 @@ The `datalad_registry_client` package provides a DataLad extension for interacti
 
 - Tests use `env.test` configuration with separate containers
 - Database is ephemeral for test runs
-- Use `@pytest.mark.devserver` for tests requiring Flask dev server
 - Use `@pytest.mark.slow` for long-running tests
 - Test fixtures available in `conftest.py` files
 
@@ -133,5 +137,5 @@ The `datalad_registry_client` package provides a DataLad extension for interacti
 
 - Always use absolute paths in Docker volume mounts
 - The `./instance` directory is the Flask instance folder for configuration
-- Worker service doesn't auto-reload on code changes (requires restart)
+- Celery worker service doesn't auto-reload on code changes (requires restart)
 - Pre-commit hooks automatically fix formatting issues - commit again if they modify files
