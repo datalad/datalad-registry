@@ -191,11 +191,13 @@ def has_datalad_run_records(ds: Dataset) -> bool:
              in the commit message, False otherwise
 
     Note: This function searches the git history for the marker string that DataLad
-          uses to mark commits made by `datalad run` command.
+          uses to mark commits made by `datalad run` command. It searches all branches
+          to ensure run records are detected even if they're not on the default branch.
     """
     try:
         # Search git log for "DATALAD RUNCMD" marker in commit messages
-        # Using --all to search all branches and --grep for pattern matching
+        # Using --all to search all branches (run records might exist on any branch)
+        # and --grep for pattern matching
         result = ds.repo.call_git(
             [
                 "log",

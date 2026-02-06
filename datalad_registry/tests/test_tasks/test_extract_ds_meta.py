@@ -346,4 +346,7 @@ class TestExtractDsMeta:
                     url_id=url_id, extractor_name="runprov"
                 )
             ).scalar_one()
-            assert metadata.extractor_name == "runprov"
+            # Verify the metadata contains runprov-specific fields
+            assert "extracted_metadata" in vars(metadata)
+            assert metadata.extractor_version is not None
+            assert metadata.dataset_version is not None
