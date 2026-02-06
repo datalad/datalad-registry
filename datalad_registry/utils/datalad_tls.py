@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import logging
 import re
 from typing import Optional
 from uuid import UUID
@@ -6,7 +7,6 @@ from uuid import UUID
 from datalad import api as dl
 from datalad.api import Dataset
 
-import logging
 lgr = logging.getLogger(__name__)
 
 
@@ -196,19 +196,20 @@ def has_datalad_run_records(ds: Dataset) -> bool:
     try:
         # Search git log for "DATALAD RUNCMD" marker in commit messages
         # Using --all to search all branches and --grep for pattern matching
-        result = ds.repo.call_git([
-            "log",
-            "--all",
-            "--grep=DATALAD RUNCMD",
-            "--format=%H",
-            "-n", "1"  # Only need to find one to know they exist
-        ])
+        result = ds.repo.call_git(
+            [
+                "log",
+                "--all",
+                "--grep=DATALAD RUNCMD",
+                "--format=%H",
+                "-n",
+                "1",  # Only need to find one to know they exist
+            ]
+        )
         # If result is non-empty, we found at least one run record
         return bool(result.strip())
     except Exception as e:
         lgr.warning(
-            "Failed to check for DataLad run records in dataset at %s: %s",
-            ds.path, e
+            "Failed to check for DataLad run records in dataset at %s: %s", ds.path, e
         )
         return False
-

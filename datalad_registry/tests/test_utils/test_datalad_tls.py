@@ -288,20 +288,17 @@ class TestHasDataladRunRecords:
         """
         # Create a new dataset
         from datalad import api as dl
-        
+
         ds = dl.create(path=tmp_path / "ds_with_run", annex=False)
-        
+
         # Create a file for the run command to process
         test_file = ds.pathobj / "input.txt"
         test_file.write_text("test content")
         ds.save(message="Add input file")
-        
+
         # Use datalad run to create a commit with DATALAD RUNCMD marker
-        ds.run(
-            cmd="echo 'processed' > output.txt",
-            message="Process input file"
-        )
-        
+        ds.run(cmd="echo 'processed' > output.txt", message="Process input file")
+
         # Verify the dataset now has run records
         assert has_datalad_run_records(ds) is True
 
@@ -310,21 +307,17 @@ class TestHasDataladRunRecords:
         Test that a cloned dataset with run records in history returns True
         """
         from datalad import api as dl
-        
+
         # Create a dataset with run records
         ds_orig = dl.create(path=tmp_path / "ds_orig", annex=False)
         test_file = ds_orig.pathobj / "input.txt"
         test_file.write_text("test content")
         ds_orig.save(message="Add input file")
-        
-        ds_orig.run(
-            cmd="echo 'processed' > output.txt",
-            message="Process input file"
-        )
-        
+
+        ds_orig.run(cmd="echo 'processed' > output.txt", message="Process input file")
+
         # Clone the dataset
         ds_clone = clone(source=ds_orig.path, path=tmp_path / "ds_clone")
-        
+
         # Verify the cloned dataset has run records
         assert has_datalad_run_records(ds_clone) is True
-

@@ -1,5 +1,6 @@
 """Blueprint for /
 """
+
 import logging
 
 from flask import Blueprint, redirect, url_for

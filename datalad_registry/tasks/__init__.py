@@ -51,11 +51,11 @@ def _get_extractors_for_url(url: RepoUrl) -> list[str]:
           has DataLad run records in its history.
     """
     extractors = list(current_app.config["DATALAD_REGISTRY_METADATA_EXTRACTORS"])
-    
+
     # Add runprov extractor if the dataset has run records
     if url.has_run_records:
         extractors.append("runprov")
-    
+
     return extractors
 
 
@@ -209,8 +209,7 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
     # Special handling for runprov extractor: only run if dataset has run records
     if extractor == "runprov" and not url.has_run_records:
         lgr.debug(
-            "Skipping runprov extractor for %s: dataset has no run records",
-            url.url
+            "Skipping runprov extractor for %s: dataset has no run records", url.url
         )
         return ExtractMetaStatus.ABORTED
 
@@ -264,7 +263,9 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
         )
 
         # Map shorthand extractor names to their metalad equivalents
-        metalad_extractor = f"metalad_{extractor}" if extractor == "runprov" else extractor
+        metalad_extractor = (
+            f"metalad_{extractor}" if extractor == "runprov" else extractor
+        )
 
         results = parse_obj_as(
             list[MetaExtractResult],
@@ -288,7 +289,8 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
             metadata_record = res.metadata_record
             # Normalize the extractor name back from metalad equivalents
             normalized_extractor_name = (
-                "runprov" if metadata_record.extractor_name == "metalad_runprov"
+                "runprov"
+                if metadata_record.extractor_name == "metalad_runprov"
                 else metadata_record.extractor_name
             )
             url_metadata = URLMetadata(

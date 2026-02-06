@@ -8,7 +8,7 @@ from datalad_registry.tasks import ExtractMetaStatus, extract_ds_meta
 from datalad_registry.tasks.utils.builtin_meta_extractors import (
     InvalidRequiredFileError,
 )
-from datalad_registry.utils.datalad_tls import get_head_describe, clone
+from datalad_registry.utils.datalad_tls import clone, get_head_describe
 
 from . import TEST_MIN_REPO_COMMIT_HEXSHA, TEST_MIN_REPO_TAG
 
@@ -280,9 +280,7 @@ class TestExtractDsMeta:
 
         assert extract_ds_meta(repo_url.id, "dandi") is ExtractMetaStatus.ABORTED
 
-    def test_runprov_skipped_without_run_records(
-        self, processed_ds_urls, flask_app
-    ):
+    def test_runprov_skipped_without_run_records(self, processed_ds_urls, flask_app):
         """
         Test that runprov extractor is skipped for datasets without run records
         """
@@ -299,31 +297,27 @@ class TestExtractDsMeta:
         # Try to extract runprov metadata
         assert extract_ds_meta(url_id, "runprov") is ExtractMetaStatus.ABORTED
 
-    def test_runprov_runs_with_run_records(
-        self, flask_app, base_cache_path, tmp_path
-    ):
+    def test_runprov_runs_with_run_records(self, flask_app, base_cache_path, tmp_path):
         """
         Test that runprov extractor runs for datasets with run records
         """
         from datalad import api as dl
-        
+
         # Create a dataset with run records
         ds = dl.create(path=tmp_path / "ds_with_run", annex=False)
         test_file = ds.pathobj / "input.txt"
         test_file.write_text("test content")
         ds.save(message="Add input file")
-        
-        ds.run(
-            cmd="echo 'processed' > output.txt",
-            message="Process input file"
-        )
+
+        ds.run(cmd="echo 'processed' > output.txt", message="Process input file")
 
         # Clone to cache within app context
         with flask_app.app_context():
             from datalad_registry.tasks.utils import allocate_ds_path
+
             ds_path_relative = allocate_ds_path()
             ds_path_absolute = base_cache_path / ds_path_relative
-            ds_clone = clone(
+            clone(
                 source=ds.path,
                 path=ds_path_absolute,
                 on_failure="stop",
@@ -348,6 +342,8 @@ class TestExtractDsMeta:
         # Verify metadata was saved
         with flask_app.app_context():
             metadata = db.session.execute(
-                db.select(URLMetadata).filter_by(url_id=url_id, extractor_name="runprov")
+                db.select(URLMetadata).filter_by(
+                    url_id=url_id, extractor_name="runprov"
+                )
             ).scalar_one()
             assert metadata.extractor_name == "runprov"
