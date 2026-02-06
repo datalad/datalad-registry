@@ -28,6 +28,7 @@ class RepoUrl(db.Model):  # type: ignore
     branches = db.Column(JSONB)
     tags = db.Column(db.Text)
     git_objects_kb = db.Column(db.BigInteger)
+    has_run_records = db.Column(db.Boolean)
 
     # ==== Fields mainly for operations ====
 

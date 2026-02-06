@@ -28,6 +28,7 @@ from datalad_registry.utils.datalad_tls import (
     get_origin_annex_uuid,
     get_origin_branches,
     get_wt_annexed_file_info,
+    has_datalad_run_records,
 )
 
 from .utils import allocate_ds_path, update_ds_clone, validate_url_is_processed
@@ -37,6 +38,25 @@ from .utils.usage_dashboard import DASHBOARD_COLLECTION_URL, DashboardCollection
 from ..blueprints.api import DATASET_URLS_PATH
 
 lgr = get_task_logger(__name__)
+
+
+def _get_extractors_for_url(url: RepoUrl) -> list[str]:
+    """
+    Get the list of metadata extractors to run for a given RepoUrl
+
+    :param url: The RepoUrl object
+    :return: List of extractor names to run for this URL
+
+    Note: This function conditionally includes the runprov extractor if the dataset
+          has DataLad run records in its history.
+    """
+    extractors = list(current_app.config["DATALAD_REGISTRY_METADATA_EXTRACTORS"])
+    
+    # Add runprov extractor if the dataset has run records
+    if url.has_run_records:
+        extractors.append("runprov")
+    
+    return extractors
 
 
 class ExtractMetaStatus(StrEnum):
@@ -109,6 +129,8 @@ def _update_dataset_url_info(dataset_url: RepoUrl, ds: Dataset) -> None:
         ds.repo.count_objects["size"] + ds.repo.count_objects["size-pack"]
     )
 
+    dataset_url.has_run_records = has_datalad_run_records(ds)
+
     dataset_url.last_update_dt = datetime.now(timezone.utc)
 
 
@@ -122,6 +144,8 @@ _EXTRACTOR_REQUIRED_FILES = {
     # === DANDI related extractors ===
     "dandi": ["dandiset.yaml"],
     "dandi:files": [".dandi/assets.json"],
+    # === Runprov extractor has no required files ===
+    # The runprov extractor only needs git history with DATALAD RUNCMD markers
 }
 
 
@@ -181,6 +205,14 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
 
     # Validate that the RepoUrl has been processed
     validate_url_is_processed(url)
+
+    # Special handling for runprov extractor: only run if dataset has run records
+    if extractor == "runprov" and not url.has_run_records:
+        lgr.debug(
+            "Skipping runprov extractor for %s: dataset has no run records",
+            url.url
+        )
+        return ExtractMetaStatus.ABORTED
 
     # Absolute path of the dataset clone in cache
     cache_path_abs = url.cache_path_abs
@@ -612,9 +644,7 @@ def chk_url_to_update(
                 is_record_updated = True
 
                 # Initiate extraction of metadata of the up-to-date dataset
-                for extractor in current_app.config[
-                    "DATALAD_REGISTRY_METADATA_EXTRACTORS"
-                ]:
+                for extractor in _get_extractors_for_url(url):
                     extract_ds_meta.apply_async(
                         (url.id, extractor), link_error=log_error.s()
                     )
