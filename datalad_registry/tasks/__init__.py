@@ -263,10 +263,13 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
             purpose=f"{extractor} metadata extraction",
         )
 
+        # Map shorthand extractor names to their metalad equivalents
+        metalad_extractor = f"metalad_{extractor}" if extractor == "runprov" else extractor
+
         results = parse_obj_as(
             list[MetaExtractResult],
             dl.meta_extract(
-                extractor,
+                metalad_extractor,
                 dataset=ds,
                 result_renderer="disabled",
                 on_failure="stop",
@@ -283,10 +286,15 @@ def extract_ds_meta(ds_url_id: StrictInt, extractor: StrictStr) -> ExtractMetaSt
         if res.status == "ok":
             # Record the metadata to the database
             metadata_record = res.metadata_record
+            # Normalize the extractor name back from metalad equivalents
+            normalized_extractor_name = (
+                "runprov" if metadata_record.extractor_name == "metalad_runprov"
+                else metadata_record.extractor_name
+            )
             url_metadata = URLMetadata(
                 dataset_describe=get_head_describe(ds),
                 dataset_version=metadata_record.dataset_version,
-                extractor_name=metadata_record.extractor_name,
+                extractor_name=normalized_extractor_name,
                 extractor_version=metadata_record.extractor_version,
                 extraction_parameter=metadata_record.extraction_parameter,
                 extracted_metadata=metadata_record.extracted_metadata,
