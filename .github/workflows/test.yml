@@ -61,6 +61,6 @@ jobs:
       - name: Stop services provided by Docker Compose
         run: docker compose -f docker-compose.test.yml down
       - name: Upload coverage to codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
