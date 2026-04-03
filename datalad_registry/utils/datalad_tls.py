@@ -1,10 +1,13 @@
 from dataclasses import dataclass
+import logging
 import re
 from typing import Optional
 from uuid import UUID
 
 from datalad import api as dl
 from datalad.api import Dataset
+
+lgr = logging.getLogger(__name__)
 
 
 @dataclass
@@ -177,3 +180,38 @@ def get_origin_upstream_branch(ds: Dataset) -> str:
         )
 
     return match.group(1)
+
+
+def has_datalad_run_records(ds: Dataset) -> bool:
+    """
+    Check if a dataset has any DataLad run command records in its git history
+
+    :param ds: The given dataset
+    :return: True if the dataset has at least one commit with "DATALAD RUNCMD"
+             in the commit message, False otherwise
+
+    Note: This function searches the git history for the marker string that DataLad
+          uses to mark commits made by `datalad run` command. It searches all branches
+          to ensure run records are detected even if they're not on the default branch.
+    """
+    try:
+        # Search git log for "DATALAD RUNCMD" marker in commit messages
+        # Using --all to search all branches (run records might exist on any branch)
+        # and --grep for pattern matching
+        result = ds.repo.call_git(
+            [
+                "log",
+                "--all",
+                "--grep=DATALAD RUNCMD",
+                "--format=%H",
+                "-n",
+                "1",  # Only need to find one to know they exist
+            ]
+        )
+        # If result is non-empty, we found at least one run record
+        return bool(result.strip())
+    except Exception as e:
+        lgr.warning(
+            "Failed to check for DataLad run records in dataset at %s: %s", ds.path, e
+        )
+        return False

@@ -13,6 +13,7 @@ from datalad_registry.utils.datalad_tls import (
     get_origin_default_branch,
     get_origin_upstream_branch,
     get_wt_annexed_file_info,
+    has_datalad_run_records,
 )
 
 _TEST_MIN_DATASET_URL = "https://github.com/datalad/testrepo--minimalds.git"
@@ -272,3 +273,51 @@ class TestGetOriginUpstreamBranch:
         l2_clone.repo.call_git(["push", "-u", "origin", branch_name])
 
         assert get_origin_upstream_branch(l2_clone) == branch_name
+
+
+class TestHasDataladRunRecords:
+    def test_dataset_without_run_records(self, two_files_ds_non_annex):
+        """
+        Test that a dataset without run records returns False
+        """
+        assert has_datalad_run_records(two_files_ds_non_annex) is False
+
+    def test_dataset_with_run_records(self, tmp_path):
+        """
+        Test that a dataset with run records returns True
+        """
+        # Create a new dataset
+        from datalad import api as dl
+
+        ds = dl.create(path=tmp_path / "ds_with_run", annex=False)
+
+        # Create a file for the run command to process
+        test_file = ds.pathobj / "input.txt"
+        test_file.write_text("test content")
+        ds.save(message="Add input file")
+
+        # Use datalad run to create a commit with DATALAD RUNCMD marker
+        ds.run(cmd="echo 'processed' > output.txt", message="Process input file")
+
+        # Verify the dataset now has run records
+        assert has_datalad_run_records(ds) is True
+
+    def test_cloned_dataset_with_run_records(self, tmp_path):
+        """
+        Test that a cloned dataset with run records in history returns True
+        """
+        from datalad import api as dl
+
+        # Create a dataset with run records
+        ds_orig = dl.create(path=tmp_path / "ds_orig", annex=False)
+        test_file = ds_orig.pathobj / "input.txt"
+        test_file.write_text("test content")
+        ds_orig.save(message="Add input file")
+
+        ds_orig.run(cmd="echo 'processed' > output.txt", message="Process input file")
+
+        # Clone the dataset
+        ds_clone = clone(source=ds_orig.path, path=tmp_path / "ds_clone")
+
+        # Verify the cloned dataset has run records
+        assert has_datalad_run_records(ds_clone) is True
