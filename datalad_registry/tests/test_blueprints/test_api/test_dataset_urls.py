@@ -919,6 +919,105 @@ class TestDatasetURLs:
         assert DatasetURLPage.parse_raw(resp.text).collection_stats == expected_stats
 
 
+class TestAllDatasetURLs:
+    @staticmethod
+    def _parse_jsonl(resp) -> list[DatasetURLRespModel]:
+        """
+        Parse the body of a response from the `all-dataset-urls` endpoint as a list of
+        `DatasetURLRespModel` objects, one per non-empty line
+        """
+        return [
+            DatasetURLRespModel.parse_raw(line)
+            for line in resp.text.splitlines()
+            if line
+        ]
+
+    def test_empty_db(self, flask_client):
+        """
+        Test the endpoint when the database contains no dataset URL
+        """
+        resp = flask_client.get("/api/v2/dataset-urls/all")
+
+        assert resp.status_code == 200
+        assert resp.mimetype == "application/x-ndjson"
+        assert resp.text == ""
+
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
+    @pytest.mark.parametrize("query_params", [{}, {"return_metadata": "false"}])
+    def test_content_disposition(self, flask_client, query_params):
+        """
+        Test that the endpoint offers its response as a downloadable `.jsonl` file
+        """
+        resp = flask_client.get("/api/v2/dataset-urls/all", query_string=query_params)
+
+        assert resp.status_code == 200
+        assert resp.mimetype == "application/x-ndjson"
+        assert (
+            resp.headers["Content-Disposition"]
+            == "attachment; filename=dataset-urls.jsonl"
+        )
+
+    @pytest.mark.usefixtures("populate_with_std_ds_urls")
+    @pytest.mark.parametrize("query_params", [{}, {"return_metadata": "false"}])
+    def test_without_metadata(self, flask_client, query_params):
+        """
+        Test that the endpoint returns all dataset URLs without metadata by default
+        """
+        resp = flask_client.get("/api/v2/dataset-urls/all", query_string=query_params)
+
+        assert resp.status_code == 200
+
+        # Every line is a valid dataset URL object without a `metadata` field
+        assert all("metadata" not in line for line in resp.text.splitlines() if line)
+
+        ds_urls = self._parse_jsonl(resp)
+
+        # All dataset URLs in the database are returned
+        assert {ds_url.url for ds_url in ds_urls} == {
+            "https://www.example.com",
+            "http://www.datalad.org",
+            "https://handbook.datalad.org",
+            "https://www.dandiarchive.org",
+        }
+
+    @pytest.mark.usefixtures("populate_with_url_metadata")
+    def test_with_metadata(self, flask_client):
+        """
+        Test that the endpoint returns all dataset URLs with metadata by content
+        when the `return_metadata` flag is set
+        """
+        resp = flask_client.get(
+            "/api/v2/dataset-urls/all", query_string={"return_metadata": "true"}
+        )
+
+        assert resp.status_code == 200
+
+        ds_urls = self._parse_jsonl(resp)
+
+        for ds_url in ds_urls:
+            assert type(ds_url.metadata) is list
+
+            if ds_url.id == 1:
+                assert len(ds_url.metadata) == 2
+            elif ds_url.id == 3:
+                assert len(ds_url.metadata) == 1
+            else:
+                assert len(ds_url.metadata) == 0
+
+            assert all(type(m) is URLMetadataModel for m in ds_url.metadata)
+
+    @pytest.mark.parametrize("return_metadata", ["abc", "2", "maybe"])
+    def test_invalid_return_metadata(self, flask_client, return_metadata):
+        """
+        Test that the endpoint rejects a non-boolean `return_metadata` flag
+        """
+        resp = flask_client.get(
+            "/api/v2/dataset-urls/all",
+            query_string={"return_metadata": return_metadata},
+        )
+        assert resp.status_code == 422
+
+
 @pytest.mark.usefixtures("populate_with_2_dataset_urls")
 class TestDatasetURL:
     @pytest.mark.parametrize("dataset_url_id", [-100, -1, 0, 2, 60, 71, 100])
