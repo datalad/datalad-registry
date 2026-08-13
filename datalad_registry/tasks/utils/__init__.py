@@ -13,8 +13,10 @@ from flask import current_app
 from datalad_registry.models import RepoUrl
 from datalad_registry.utils.datalad_tls import (
     clone,
+    ensure_preferred_branch_checked_out,
     get_origin_default_branch,
     get_origin_upstream_branch,
+    pick_preferred_branch,
 )
 
 lgr = get_task_logger(__name__)
@@ -112,6 +114,10 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Dataset, bool]:
 
             raise
         else:
+            # Work around origins advertising `git-annex` or an outdated
+            # `master` as default. See
+            # https://github.com/datalad/datalad-registry/issues/414
+            ensure_preferred_branch_checked_out(ds_clone)
             return ds_clone
 
     # Validate that the given RepoUrl has been marked processed
@@ -128,14 +134,17 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Dataset, bool]:
 
     current_ds_clone.repo.call_git(["fetch"])
 
-    # The current default branch of the origin remote, the copy of the dataset
-    # located at the given URL, that the local clone is tracking
-    current_origin_default_branch = get_origin_default_branch(current_ds_clone)
+    # Prefer main/master over origin's advertised default (may be `git-annex`
+    # or an outdated `master`). See
+    # https://github.com/datalad/datalad-registry/issues/414
+    target_branch = pick_preferred_branch(
+        current_ds_clone
+    ) or get_origin_default_branch(current_ds_clone)
 
     # The upstream branch at the origin remote of the current local branch
     origin_upstream_branch = get_origin_upstream_branch(current_ds_clone)
 
-    if origin_upstream_branch == current_origin_default_branch:
+    if origin_upstream_branch == target_branch:
         try:
             current_ds_clone.repo.call_git(
                 ["merge", "--ff-only", f"origin/{origin_upstream_branch}"]

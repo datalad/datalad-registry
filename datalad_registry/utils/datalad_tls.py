@@ -1,10 +1,13 @@
 from dataclasses import dataclass
+from datetime import datetime
 import re
 from typing import Optional
 from uuid import UUID
 
 from datalad import api as dl
 from datalad.api import Dataset
+
+_PREFERRED_BRANCH_CANDIDATES = ("main", "master")
 
 
 @dataclass
@@ -150,6 +153,49 @@ def get_origin_default_branch(ds: Dataset) -> str:
         )
 
     return match.group(1)
+
+
+def pick_preferred_branch(ds: Dataset) -> Optional[str]:
+    """
+    Return the more-recently-committed of `main`/`master` at origin, or the
+    sole one that exists, or `None`.
+    """
+    candidates = {
+        name: info
+        for name, info in get_origin_branches(ds).items()
+        if name in _PREFERRED_BRANCH_CANDIDATES
+    }
+    if not candidates:
+        return None
+    return max(
+        candidates,
+        key=lambda name: datetime.fromisoformat(candidates[name]["last_commit_dt"]),
+    )
+
+
+def ensure_preferred_branch_checked_out(ds: Dataset) -> None:
+    """
+    Check out `pick_preferred_branch(ds)` and repoint local `origin/HEAD` at
+    it, so downstream reads of `origin/HEAD` see the corrected default.
+    No-op if no preferred branch exists at origin.
+    """
+    preferred = pick_preferred_branch(ds)
+    if preferred is None:
+        return
+
+    current_branch = ds.repo.call_git(["symbolic-ref", "--short", "HEAD"]).strip()
+    if current_branch != preferred:
+        # -f: clones landing on `git-annex` leave `uuid.log` dirty in the
+        # working tree, which blocks a plain checkout.
+        ds.repo.call_git(["checkout", "-f", "-B", preferred, f"origin/{preferred}"])
+
+    ds.repo.call_git(
+        [
+            "symbolic-ref",
+            "refs/remotes/origin/HEAD",
+            f"refs/remotes/origin/{preferred}",
+        ]
+    )
 
 
 def get_origin_upstream_branch(ds: Dataset) -> str:
