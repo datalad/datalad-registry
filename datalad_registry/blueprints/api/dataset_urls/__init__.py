@@ -1,16 +1,18 @@
 # This file is for defining the API endpoints related to dataset URls
 
+from collections.abc import Iterator
 from json import loads
 import operator
 from pathlib import Path
 
 from celery import group
-from flask import abort, current_app, url_for
+from flask import abort, current_app, stream_with_context, url_for
 from flask_openapi3 import APIBlueprint, Tag
 from lark.exceptions import GrammarError, UnexpectedInput
 from psycopg2.errors import UniqueViolation
 from sqlalchemy import ColumnElement, and_, select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
 
 from datalad_registry.models import RepoUrl, db
 from datalad_registry.search import parse_query
@@ -27,6 +29,7 @@ from .models import (
     DatasetURLRespBaseModel,
     DatasetURLRespModel,
     DatasetURLSubmitModel,
+    DumpQueryParams,
     MetadataReturnOption,
     OrderKey,
     PathParams,
@@ -360,6 +363,64 @@ def dataset_urls(query: QueryParams):
     )
 
     return json_resp_from_str(page.json(exclude_none=True))
+
+
+@bp.get(
+    "/all",
+    responses={
+        "200": {
+            "description": "A JSON Lines (`.jsonl`) file in which each line is a JSON "
+            "object representing a dataset URL, with the same fields as an element of "
+            "the `dataset_urls` array returned by the `GET /api/v2/dataset-urls` "
+            "endpoint. Each line optionally includes the `metadata` of the dataset at "
+            "the URL, depending on the `return_metadata` flag.",
+            "content": {
+                "application/x-ndjson": {
+                    "schema": {"type": "string", "format": "binary"}
+                }
+            },
+        }
+    },
+)
+def all_dataset_urls(query: DumpQueryParams):
+    """
+    Get all dataset URLs as a single JSON Lines (`.jsonl`) file.
+
+    Each line of the returned file is a JSON object representing a dataset URL, with the
+    same fields as an element of the `dataset_urls` array returned by the
+    `GET /api/v2/dataset-urls` endpoint.
+
+    If the `return_metadata` flag is set, each line additionally includes the
+    `metadata` field populated with the metadata of the dataset at the URL by content.
+    Otherwise, each line omits the `metadata` field.
+    """
+    return_metadata = query.return_metadata
+
+    stmt = select(RepoUrl).order_by(RepoUrl.id)
+    if return_metadata:
+        # Eagerly load the metadata to avoid a separate query per dataset URL
+        stmt = stmt.options(selectinload(RepoUrl.metadata_))  # type: ignore[arg-type]
+
+    def gen_lines() -> Iterator[str]:
+        for repo_url in db.session.execute(
+            stmt.execution_options(yield_per=1000)
+        ).scalars():
+            if return_metadata:
+                line_model = DatasetURLRespModel.from_orm(repo_url)
+            else:
+                # noinspection PyArgumentList
+                line_model = DatasetURLRespModel(
+                    **DatasetURLRespBaseModel.from_orm(repo_url).dict(),
+                    metadata_=None,
+                )
+            yield line_model.json(exclude_none=True) + "\n"
+
+    resp = current_app.response_class(
+        stream_with_context(gen_lines()),
+        mimetype="application/x-ndjson",
+    )
+    resp.headers["Content-Disposition"] = "attachment; filename=dataset-urls.jsonl"
+    return resp
 
 
 @bp.get("/<int:id>", responses={"200": DatasetURLRespModel})
