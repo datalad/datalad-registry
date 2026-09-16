@@ -164,7 +164,9 @@ class TestCreateApp:
             assert "celery" not in flask_app.extensions
 
 
-def test_celery_init_app_suppresses_unclosed_file_resource_warning(flask_app):
+def test_celery_init_app_suppresses_unclosed_file_resource_warning(
+    flask_app,  # noqa: U100 (Unused argument)
+):
     """
     Verify that `celery_init_app()`, invoked by `create_app()` for non-read-only
     operation modes, registers a filter that suppresses the "unclosed file"
