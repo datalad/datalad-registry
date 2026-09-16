@@ -1,4 +1,5 @@
 from pathlib import Path
+import warnings
 
 from celery import Celery
 from flask_migrate import Migrate
@@ -161,3 +162,20 @@ class TestCreateApp:
             assert celery_app.conf["worker_max_memory_per_child"] == 500_000  # 500 MB
         else:
             assert "celery" not in flask_app.extensions
+
+
+def test_celery_init_app_suppresses_unclosed_file_resource_warning(flask_app):
+    """
+    Verify that `celery_init_app()`, invoked by `create_app()` for non-read-only
+    operation modes, registers a filter that suppresses the "unclosed file"
+    `ResourceWarning`s that originate from upstream GitPython/DataLad subprocess
+    handling and aren't actionable in this codebase.
+    See https://github.com/datalad/datalad-registry/issues/416
+    """
+    assert any(
+        action == "ignore"
+        and category is ResourceWarning
+        and message is not None
+        and message.match("unclosed file <_io.FileIO name=5 mode='rb' closefd=True>")
+        for action, message, category, _module, _lineno in warnings.filters
+    )
