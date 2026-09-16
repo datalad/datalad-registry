@@ -168,9 +168,10 @@ def test_celery_init_app_suppresses_unclosed_file_resource_warning(flask_app):
     """
     Verify that `celery_init_app()`, invoked by `create_app()` for non-read-only
     operation modes, registers a filter that suppresses the "unclosed file"
-    `ResourceWarning`s that originate from upstream GitPython/DataLad subprocess
+    `ResourceWarning`s that originate from upstream DataLad subprocess runner
     handling and aren't actionable in this codebase.
-    See https://github.com/datalad/datalad-registry/issues/416
+    See https://github.com/datalad/datalad-registry/issues/416 and
+    https://github.com/datalad/datalad/issues/7932
     """
     assert any(
         action == "ignore"
