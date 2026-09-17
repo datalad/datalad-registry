@@ -1,5 +1,6 @@
 from importlib.metadata import version
 from pathlib import Path
+import warnings
 
 from celery import Celery, Task
 from flask import Flask, request
@@ -108,6 +109,18 @@ def celery_init_app(flask_app: Flask) -> Celery:
 
     celery_app = Celery(flask_app.name, task_cls=FlaskTask)
     celery_app.config_from_object(flask_app.config["CELERY"])
+
+    # DataLad's own threaded subprocess runner (`datalad.runner.nonasyncrunner`)
+    # leaks a subprocess's stdout/stderr file descriptors whenever its result
+    # generator is abandoned before being exhausted (e.g. `GitRepo.is_with_annex()`
+    # short-circuiting via `any()`), which floods worker logs with "unclosed file"
+    # `ResourceWarning`s that aren't actionable here. Silence them as is already
+    # done for the test suite (see `tox.ini`).
+    # https://github.com/datalad/datalad-registry/issues/416
+    # https://github.com/datalad/datalad/issues/7932
+    warnings.filterwarnings(
+        "ignore", message=r"unclosed file <_io\.FileIO", category=ResourceWarning
+    )
 
     # Register JSON encoding and decoding functions with additional support of
     # Pydantic models and other supported types by Pydantic for JSON serialization
