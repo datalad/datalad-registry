@@ -23,6 +23,7 @@ from datalad_registry.models import RepoUrl, URLMetadata, db
 from datalad_registry.utils import StrEnum
 from datalad_registry.utils.datalad_tls import (
     clone,
+    ensure_preferred_branch_checked_out,
     get_head_describe,
     get_origin_annex_key_count,
     get_origin_annex_uuid,
@@ -346,6 +347,11 @@ def process_dataset_url(dataset_url_id: StrictInt) -> ProcessUrlStatus:
             on_failure="stop",
             result_renderer="disabled",
         )
+
+        # Work around origins advertising `git-annex` or an outdated `master`
+        # as default. See
+        # https://github.com/datalad/datalad-registry/issues/414
+        ensure_preferred_branch_checked_out(ds)
 
         # Extract information from the cloned copy of the dataset
         _update_dataset_url_info(dataset_url, ds)

@@ -1,18 +1,22 @@
+import os
 from pathlib import Path
 from uuid import UUID
 
+import datalad.api as dl
 from datalad.api import Dataset
 import pytest
 
 from datalad_registry.utils.datalad_tls import (
     WtAnnexedFileInfo,
     clone,
+    ensure_preferred_branch_checked_out,
     get_origin_annex_key_count,
     get_origin_annex_uuid,
     get_origin_branches,
     get_origin_default_branch,
     get_origin_upstream_branch,
     get_wt_annexed_file_info,
+    pick_preferred_branch,
 )
 
 _TEST_MIN_DATASET_URL = "https://github.com/datalad/testrepo--minimalds.git"
@@ -272,3 +276,132 @@ class TestGetOriginUpstreamBranch:
         l2_clone.repo.call_git(["push", "-u", "origin", branch_name])
 
         assert get_origin_upstream_branch(l2_clone) == branch_name
+
+
+def _commit_at(ds: Dataset, filename: str, iso_date: str) -> str:
+    """Add and commit `filename` with a controlled author/committer date."""
+    (Path(ds.path) / filename).write_text(f"content of {filename}\n")
+    env = {
+        **os.environ,
+        "GIT_AUTHOR_DATE": iso_date,
+        "GIT_COMMITTER_DATE": iso_date,
+    }
+    ds.repo.call_git(["add", filename], env=env)
+    ds.repo.call_git(["commit", "-m", f"Add {filename}", "--date", iso_date], env=env)
+    return ds.repo.get_hexsha()
+
+
+def _make_non_annex_source(tmp_path: Path) -> Dataset:
+    """Fresh non-annex source dataset with one seed commit."""
+    src = dl.create(path=tmp_path / "src", annex=False)
+    _commit_at(src, "seed.txt", "2020-01-01T00:00:00+00:00")
+    return src
+
+
+def _head(ds: Dataset) -> str:
+    return ds.repo.call_git(["symbolic-ref", "--short", "HEAD"]).strip()
+
+
+def _origin_head(ds: Dataset) -> str:
+    return ds.repo.call_git(["symbolic-ref", "refs/remotes/origin/HEAD"]).strip()
+
+
+def _rename_head(src: Dataset, new_name: str) -> None:
+    current = _head(src)
+    if current != new_name:
+        src.repo.call_git(["branch", "-m", current, new_name])
+
+
+class TestPickPreferredBranch:
+    def test_no_main_or_master(self, tmp_path):
+        src = _make_non_annex_source(tmp_path)
+        _rename_head(src, "develop")
+        ds_clone = clone(source=src.path, path=tmp_path / "clone")
+        assert pick_preferred_branch(ds_clone) is None
+
+    def test_only_master(self, tmp_path):
+        src = _make_non_annex_source(tmp_path)
+        _rename_head(src, "master")
+        ds_clone = clone(source=src.path, path=tmp_path / "clone")
+        assert pick_preferred_branch(ds_clone) == "master"
+
+    def test_only_main(self, tmp_path):
+        src = _make_non_annex_source(tmp_path)
+        _rename_head(src, "main")
+        ds_clone = clone(source=src.path, path=tmp_path / "clone")
+        assert pick_preferred_branch(ds_clone) == "main"
+
+    def test_both_main_newer(self, tmp_path):
+        src = _make_non_annex_source(tmp_path)
+        _rename_head(src, "master")
+        src.repo.call_git(["checkout", "-b", "main"])
+        _commit_at(src, "later.txt", "2025-01-01T00:00:00+00:00")
+        ds_clone = clone(source=src.path, path=tmp_path / "clone")
+        assert pick_preferred_branch(ds_clone) == "main"
+
+    def test_both_master_newer(self, tmp_path):
+        # `main` pinned at seed, `master` advanced past it.
+        src = _make_non_annex_source(tmp_path)
+        _rename_head(src, "master")
+        src.repo.call_git(["branch", "main"])
+        _commit_at(src, "later.txt", "2025-01-01T00:00:00+00:00")
+        ds_clone = clone(source=src.path, path=tmp_path / "clone")
+        assert pick_preferred_branch(ds_clone) == "master"
+
+
+class TestEnsurePreferredBranchCheckedOut:
+    def test_git_annex_default_switches_to_main(self, tmp_path):
+        # Mimic the OpenNeuro/nemar failure mode: origin serves `git-annex` as
+        # default, but a real `main` also exists.
+        src = dl.create(path=tmp_path / "src", annex=True)
+        _commit_at(src, "seed.txt", "2020-01-01T00:00:00+00:00")
+        _rename_head(src, "main")
+        src.repo.call_git(["symbolic-ref", "HEAD", "refs/heads/git-annex"])
+
+        ds_clone = clone(source=src.path, path=tmp_path / "clone")
+        assert _head(ds_clone) == "git-annex"
+
+        ensure_preferred_branch_checked_out(ds_clone)
+
+        assert _head(ds_clone) == "main"
+        assert _origin_head(ds_clone) == "refs/remotes/origin/main"
+
+    def test_switch_from_master_to_main_when_main_is_newer(self, tmp_path):
+        src = _make_non_annex_source(tmp_path)
+        _rename_head(src, "master")
+        src.repo.call_git(["checkout", "-b", "main"])
+        _commit_at(src, "later.txt", "2025-01-01T00:00:00+00:00")
+        # Keep master as the served default.
+        src.repo.call_git(["symbolic-ref", "HEAD", "refs/heads/master"])
+
+        ds_clone = clone(source=src.path, path=tmp_path / "clone")
+        assert _head(ds_clone) == "master"
+
+        ensure_preferred_branch_checked_out(ds_clone)
+
+        assert _head(ds_clone) == "main"
+        assert _origin_head(ds_clone) == "refs/remotes/origin/main"
+
+    def test_no_op_when_already_on_preferred(self, tmp_path):
+        src = _make_non_annex_source(tmp_path)
+        _rename_head(src, "main")
+        ds_clone = clone(source=src.path, path=tmp_path / "clone")
+        head_sha_before = ds_clone.repo.get_hexsha()
+
+        ensure_preferred_branch_checked_out(ds_clone)
+
+        assert _head(ds_clone) == "main"
+        assert ds_clone.repo.get_hexsha() == head_sha_before
+        assert _origin_head(ds_clone) == "refs/remotes/origin/main"
+
+    def test_no_op_when_no_candidate(self, tmp_path):
+        src = _make_non_annex_source(tmp_path)
+        _rename_head(src, "develop")
+        ds_clone = clone(source=src.path, path=tmp_path / "clone")
+        head_before = _head(ds_clone)
+        origin_head_before = _origin_head(ds_clone)
+
+        ensure_preferred_branch_checked_out(ds_clone)
+
+        assert _head(ds_clone) == head_before
+        assert _origin_head(ds_clone) == origin_head_before
