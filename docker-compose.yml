@@ -41,10 +41,12 @@ services:
         condition: service_healthy
     command: [
       "/sbin/my_init", "--",
-      "celery", "-A", "datalad_registry.make_celery:celery_app", "worker", "--loglevel", "INFO", "--pool", "prefork"
+      "celery", "-A", "datalad_registry.make_celery:celery_app", "worker", "--loglevel", "INFO", "--pool", "prefork",
+      "--logfile", "/var/log/datalad-registry/worker.log"
     ]
     volumes:
       - ${WORKER_PATH_AT_HOST}/data/cache:/data/cache
+      - ${LOG_PATH_AT_HOST}:/var/log/datalad-registry
     environment:
       <<: *env
     healthcheck:
@@ -61,10 +63,12 @@ services:
         condition: service_healthy
     command: [
       "/sbin/my_init", "--",
-      "celery", "-A", "datalad_registry.make_celery:celery_app", "beat", "-s", "/data/celerybeat-schedule", "-l", "INFO"
+      "celery", "-A", "datalad_registry.make_celery:celery_app", "beat", "-s", "/data/celerybeat-schedule", "-l", "INFO",
+      "--logfile", "/var/log/datalad-registry/scheduler.log"
     ]
     volumes:
       - ${SCHEDULER_PATH_AT_HOST}/data:/data
+      - ${LOG_PATH_AT_HOST}:/var/log/datalad-registry
     environment:
       <<: *env
     healthcheck:
@@ -90,9 +94,14 @@ services:
       FLOWER_BASIC_AUTH: "$FLOWER_BASIC_AUTH"
     ports:
       - "127.0.0.1:${MONITOR_PORT_AT_HOST}:5555"
-    command: [ "/sbin/my_init", "--", "celery", "-A", "datalad_registry.make_celery:celery_app", "flower" ]
+    command: [
+      "/sbin/my_init", "--",
+      "celery", "-A", "datalad_registry.make_celery:celery_app", "flower",
+      "--log_file_prefix=/var/log/datalad-registry/monitor.log"
+    ]
     volumes:
       - ${MONITOR_PATH_AT_HOST}/data:/data
+      - ${LOG_PATH_AT_HOST}:/var/log/datalad-registry
     healthcheck:
       test: RESPONSE=$$(curl -s http://localhost:5555/healthcheck); echo $$RESPONSE; if [ "$$RESPONSE" = "OK" ]; then exit 0; else exit 1; fi
       interval: 30s

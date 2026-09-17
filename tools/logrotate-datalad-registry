@@ -1,0 +1,21 @@
+# Example logrotate(8) configuration for the log files the `worker`, `scheduler`,
+# and `monitor` services write under `LOG_PATH_AT_HOST` (see `template.env` and the
+# "Logs" section of `README.md`).
+#
+# Install by copying (and adjusting the path below) to /etc/logrotate.d/, e.g.:
+#
+#     sudo cp tools/logrotate-datalad-registry /etc/logrotate.d/datalad-registry
+#
+# `copytruncate` is used, rather than the default rotate-then-signal approach,
+# because the log files are held open by long-running processes inside containers
+# that logrotate on the host has no direct way to signal.
+
+/path/to/datalad-registry/services/log/*.log {
+    weekly
+    rotate 8
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+}
