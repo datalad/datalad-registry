@@ -139,6 +139,33 @@ a Datalad-Registry instance using Docker with little to no deviation from this g
 
        `(set -a && . ./.env.dev && set +a && podman-compose -f docker-compose.yml -f docker-compose.dev.override.yml down)`
 
+### Logs
+
+The `worker`, `scheduler`, and `monitor` (Flower) services are the most log-chatty
+components of Datalad-Registry — the `worker` service in particular logs the outcome
+of every Celery task it processes. By default, `docker-compose.yml` has these three
+services write their logs to files under the host directory specified by the
+`LOG_PATH_AT_HOST` environment variable (see `template.env`), bind-mounted to
+`/var/log/datalad-registry` inside each container, rather than to standard
+output/error. This keeps that volume of routine, per-task log output out of the
+container runtime's own logging (e.g. `podman logs`, or the systemd journal when
+Podman is run under `systemd`, as `journald` is Podman's default log driver for
+containers started that way).
+
+Log files (`worker.log`, `scheduler.log`, `monitor.log`) are not rotated by
+Datalad-Registry itself, so set up host-level log rotation for the
+`LOG_PATH_AT_HOST` directory, e.g. with `logrotate` using the `copytruncate` option
+(the log files are held open by long-running processes inside the containers).
+An example `logrotate` configuration is provided in
+`tools/logrotate-datalad-registry`.
+
+Note that this only covers logging done by the Datalad-Registry application code
+itself. Podman may still emit its own operational messages (e.g. container
+`health_status` events) to the systemd journal; suppressing those is a host-level
+Podman configuration matter (see the `events_logger` setting in
+[`containers.conf`](https://docs.podman.io/en/latest/markdown/containers.conf.5.html))
+and is independent of this setting.
+
 ### Read-Only Mode
 
 Datalad-Registry can operate in a read-only mode. In this mode, Datalad-Registry
