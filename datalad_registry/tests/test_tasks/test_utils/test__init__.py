@@ -7,6 +7,7 @@ from flask import current_app
 import pytest
 
 from datalad_registry.tasks.utils import allocate_ds_path, update_ds_clone
+from datalad_registry.utils.datalad_tls import get_origin_branches
 
 _PATH_NAME_CHARS = hexdigits[:-6]
 
@@ -116,6 +117,49 @@ class TestUpdateDsClone:
                 assert is_up_to_date_clone_new
                 assert up_to_date_clone.path != initial_ds_clone.path
 
+        assert up_to_date_clone.repo.get_hexsha() == origin_remote_ds.repo.get_hexsha()
+
+    def test_pruning_of_a_branch_deleted_at_origin_remote(
+        self, repo_url_with_up_to_date_clone, flask_app
+    ):
+        """
+        Test the case that a branch, other than the one tracked, has been deleted
+        at the origin remote of the dataset
+        """
+        url, origin_remote_ds, _ = repo_url_with_up_to_date_clone
+
+        origin_remote_ds.repo.call_git(["branch", "side-branch"])
+
+        with flask_app.app_context():
+            ds_clone, _ = update_ds_clone(url)
+
+        assert "side-branch" in get_origin_branches(ds_clone)
+
+        origin_remote_ds.repo.call_git(["branch", "-D", "side-branch"])
+
+        with flask_app.app_context():
+            ds_clone, _ = update_ds_clone(url)
+
+        assert "side-branch" not in get_origin_branches(ds_clone)
+
+    def test_renamed_default_branch_at_origin_remote(
+        self, repo_url_off_sync_by_renamed_default_branch, flask_app
+    ):
+        """
+        Test the case that the branch tracked by the clone in the local cache is
+        gone from the origin remote, the default branch there having been renamed
+        """
+        (
+            url,
+            origin_remote_ds,
+            initial_ds_clone,
+        ) = repo_url_off_sync_by_renamed_default_branch
+
+        with flask_app.app_context():
+            up_to_date_clone, is_up_to_date_clone_new = update_ds_clone(url)
+
+        assert is_up_to_date_clone_new
+        assert up_to_date_clone.path != initial_ds_clone.path
         assert up_to_date_clone.repo.get_hexsha() == origin_remote_ds.repo.get_hexsha()
 
     @pytest.mark.parametrize("does_cloning_fail", [True, False])

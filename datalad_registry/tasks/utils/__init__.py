@@ -1,6 +1,7 @@
 # This file is for defining any tools, utilities, or helpers that are in support
 # of the Celery tasks
 from pathlib import Path
+from typing import Optional
 from uuid import uuid4
 
 from celery.utils.log import get_task_logger
@@ -114,8 +115,8 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Dataset, bool]:
 
             raise
         else:
-            # Work around origins advertising `git-annex` or an outdated
-            # `master` as default. See
+            # Work around origin remotes advertising `git-annex`, or an
+            # outdated `main`/`master`, as their default branch. See
             # https://github.com/datalad/datalad-registry/issues/414
             ensure_preferred_branch_checked_out(ds_clone)
             return ds_clone
@@ -132,17 +133,40 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Dataset, bool]:
         current_ds_clone_path, check_installed=True, purpose="update"
     )
 
-    current_ds_clone.repo.call_git(["fetch"])
+    # `--prune`, so that the remote-tracking refs, which `pick_preferred_branch()`
+    # below and `get_origin_branches()` downstream both read, do not keep reporting
+    # branches that have been deleted at the origin remote
+    current_ds_clone.repo.call_git(["fetch", "--prune"])
 
-    # Prefer main/master over origin's advertised default (may be `git-annex`
-    # or an outdated `master`). See
+    # The branch at the origin remote that the local clone is to track. This is the
+    # default branch advertised by the origin remote, except when that is
+    # `git-annex` or an outdated `main`/`master`. See
     # https://github.com/datalad/datalad-registry/issues/414
     target_branch = pick_preferred_branch(
-        current_ds_clone
-    ) or get_origin_default_branch(current_ds_clone)
+        current_ds_clone, get_origin_default_branch(current_ds_clone)
+    )
 
     # The upstream branch at the origin remote of the current local branch
-    origin_upstream_branch = get_origin_upstream_branch(current_ds_clone)
+    try:
+        origin_upstream_branch: Optional[str] = get_origin_upstream_branch(
+            current_ds_clone
+        )
+    except CommandError:
+        # `git rev-parse @{u}` fails, most commonly, because the branch that the
+        # local clone tracks has been deleted at the origin remote, e.g. by a rename
+        # of the default branch, and the `--prune` above has just removed its
+        # remote-tracking ref. It also fails for a local branch with no upstream
+        # configured at all. A new clone is the way forward in either case, and
+        # `None` never matches `target_branch`, which `get_origin_default_branch()`
+        # above makes a `str`.
+        lgr.debug(
+            "The upstream branch at the origin remote of the current local branch "
+            "of the clone at %s is gone. A new clone of the dataset at the given "
+            "URL will be made in a new directory",
+            current_ds_clone_path,
+            exc_info=True,
+        )
+        origin_upstream_branch = None
 
     if origin_upstream_branch == target_branch:
         try:

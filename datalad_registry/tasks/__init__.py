@@ -348,8 +348,8 @@ def process_dataset_url(dataset_url_id: StrictInt) -> ProcessUrlStatus:
             result_renderer="disabled",
         )
 
-        # Work around origins advertising `git-annex` or an outdated `master`
-        # as default. See
+        # Work around origin remotes advertising `git-annex`, or an outdated
+        # `main`/`master`, as their default branch. See
         # https://github.com/datalad/datalad-registry/issues/414
         ensure_preferred_branch_checked_out(ds)
 
