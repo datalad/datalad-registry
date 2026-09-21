@@ -188,6 +188,23 @@ class QueryParams(BaseModel):
     )
 
 
+class DumpQueryParams(BaseModel):
+    """
+    Pydantic model for representing the query parameters to query the endpoint that
+    returns all dataset URLs as a single JSON Lines (`.jsonl`) file
+    """
+
+    return_metadata: bool = Field(
+        False,
+        description="Whether to include the metadata of the dataset at each URL. "
+        "If this flag is not set (the default), each returned dataset URL object will "
+        "not contain a `metadata` field. If this flag is set, the `metadata` field of "
+        "each returned dataset URL object will be a list of objects each presenting a "
+        "piece of metadata of the dataset at the URL, i.e. the metadata is returned by "
+        "content.",
+    )
+
+
 class DatasetURLSubmitModel(BaseModel):
     """
     Model for representing the database model RepoUrl for submission communication
