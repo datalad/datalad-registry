@@ -19,6 +19,12 @@ command_suite = (
             "registry-get-urls",
             "registry_get_urls",
         ),
+        (
+            "datalad_registry_client.search",
+            "RegistrySearch",
+            "registry-search",
+            "registry_search",
+        ),
     ],
 )
 
