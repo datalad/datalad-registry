@@ -5,6 +5,7 @@ from uuid import UUID
 
 import datalad.api as dl
 from datalad.api import Dataset
+from datalad.support.exceptions import CommandError
 import pytest
 
 from datalad_registry.utils.datalad_tls import (
@@ -566,9 +567,26 @@ class TestEnsurePreferredBranchCheckedOut:
         src = _make_non_annex_source(tmp_path)
         _rename_head(src, "main")
         ds_clone = clone(source=src.path, path=tmp_path / "clone")
-        ds_clone.repo.call_git(["update-ref", "-d", "refs/remotes/origin/HEAD"])
+        # `--delete`, for `git update-ref -d` would follow the symbolic ref and
+        # delete `refs/remotes/origin/main` instead
+        ds_clone.repo.call_git(["symbolic-ref", "--delete", "refs/remotes/origin/HEAD"])
 
         ensure_preferred_branch_checked_out(ds_clone)
 
         assert _head(ds_clone) == "main"
         assert _origin_head(ds_clone) == "refs/remotes/origin/main"
+
+    def test_no_op_without_origin_head_and_without_candidate(self, tmp_path):
+        # Nothing to go on: no `refs/remotes/origin/HEAD`, no branch checked out,
+        # and no `main`/`master` at the origin remote
+        src = _make_non_annex_source(tmp_path)
+        _rename_head(src, "develop")
+        ds_clone = clone(source=src.path, path=tmp_path / "clone")
+        ds_clone.repo.call_git(["symbolic-ref", "--delete", "refs/remotes/origin/HEAD"])
+        ds_clone.repo.call_git(["checkout", "--detach"])
+
+        ensure_preferred_branch_checked_out(ds_clone)
+
+        assert ds_clone.repo.get_active_branch() is None
+        with pytest.raises(CommandError):
+            _origin_head(ds_clone)
