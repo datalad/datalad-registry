@@ -1,7 +1,6 @@
 # This file is for defining any tools, utilities, or helpers that are in support
 # of the Celery tasks
 from pathlib import Path
-from typing import Optional
 from uuid import uuid4
 
 from celery.utils.log import get_task_logger
@@ -146,27 +145,10 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Dataset, bool]:
         current_ds_clone, get_origin_default_branch(current_ds_clone)
     )
 
-    # The upstream branch at the origin remote of the current local branch
-    try:
-        origin_upstream_branch: Optional[str] = get_origin_upstream_branch(
-            current_ds_clone
-        )
-    except CommandError:
-        # `git rev-parse @{u}` fails, most commonly, because the branch that the
-        # local clone tracks has been deleted at the origin remote, e.g. by a rename
-        # of the default branch, and the `--prune` above has just removed its
-        # remote-tracking ref. It also fails for a local branch with no upstream
-        # configured at all. A new clone is the way forward in either case, and
-        # `None` never matches `target_branch`, which `get_origin_default_branch()`
-        # above makes a `str`.
-        lgr.debug(
-            "The upstream branch at the origin remote of the current local branch "
-            "of the clone at %s is gone. A new clone of the dataset at the given "
-            "URL will be made in a new directory",
-            current_ds_clone_path,
-            exc_info=True,
-        )
-        origin_upstream_branch = None
+    # The upstream branch at the origin remote of the current local branch. `None`
+    # when it cannot be resolved, in which case it never matches `target_branch`,
+    # a `str`, and a new clone is made below
+    origin_upstream_branch = get_origin_upstream_branch(current_ds_clone)
 
     if origin_upstream_branch == target_branch:
         try:

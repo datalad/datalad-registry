@@ -335,20 +335,26 @@ def ensure_preferred_branch_checked_out(ds: Dataset) -> None:
         )
 
 
-def get_origin_upstream_branch(ds: Dataset) -> str:
+def get_origin_upstream_branch(ds: Dataset) -> Optional[str]:
     """
     Get the name of the upstream branch at the origin remote of the current local branch
     of a given dataset
 
     :param ds: The given dataset
     :return: The name of the upstream branch at the origin remote of the current local
-             branch of the given dataset
+             branch of the given dataset, or `None` if `git rev-parse` fails to
+             resolve one, as it does, for example, for a local branch with no
+             upstream branch configured and for one whose remote-tracking ref is gone
 
     Note: The given dataset must be a git repo with a remote named "origin"
     """
-    rev_parse_output = ds.repo.call_git(
-        ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"]
-    )
+    try:
+        rev_parse_output = ds.repo.call_git(
+            ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"],
+            expect_fail=True,
+        )
+    except CommandError:
+        return None
 
     match = re.search(r"origin/(\S+)", rev_parse_output)
 

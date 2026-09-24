@@ -256,6 +256,16 @@ class TestGetOriginUpstreamBranch:
                 m.setattr(re, "search", _mock_no_match_re_search)
                 get_origin_upstream_branch(ds_clone)
 
+    def test_no_upstream_branch(self, two_files_ds_non_annex, tmp_path):
+        """
+        Test the case that the current local branch of a given dataset has no
+        upstream branch at the origin remote
+        """
+        ds_clone = clone(source=two_files_ds_non_annex.path, path=tmp_path)
+        ds_clone.repo.call_git(["checkout", "-b", "branch-with-no-upstream"])
+
+        assert get_origin_upstream_branch(ds_clone) is None
+
     @pytest.mark.parametrize(
         "ds_name",
         [

@@ -127,19 +127,14 @@ class TestUpdateDsClone:
         at the origin remote of the dataset
         """
         url, origin_remote_ds, _ = repo_url_with_up_to_date_clone
-
         origin_remote_ds.repo.call_git(["branch", "side-branch"])
-
         with flask_app.app_context():
             ds_clone, _ = update_ds_clone(url)
-
         assert "side-branch" in get_origin_branches(ds_clone)
 
         origin_remote_ds.repo.call_git(["branch", "-D", "side-branch"])
-
         with flask_app.app_context():
             ds_clone, _ = update_ds_clone(url)
-
         assert "side-branch" not in get_origin_branches(ds_clone)
 
     def test_renamed_default_branch_at_origin_remote(

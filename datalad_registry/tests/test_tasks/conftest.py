@@ -229,19 +229,9 @@ def repo_url_off_sync_by_renamed_default_branch(
     repo_url_with_up_to_date_clone,
 ) -> tuple[RepoUrl, Dataset, Dataset]:
     """
-    This is an extension of the `repo_url_with_up_to_date_clone` fixture with the
-    remote repository's default branch renamed, so that the branch tracked by the
-    clone in the local cache no longer exists at the remote.
-
-    The return of this fixture is the same as the return of
-    the `repo_url_with_up_to_date_clone` fixture. However, because of the rename
-    of the default branch of the remote repository, the clone of the remote
-    at the local cache is out of sync with the remote
-
-    Note: This fixture modifies the remote repository, i.e., the value of the
-          `two_files_ds_annex_func_scoped` fixture
-    Note: The `RepoUrl` object is not considered outdated because the HEAD of the
-          remote is still pointing to the same commit
+    An extension of the `repo_url_with_up_to_date_clone` fixture with the default
+    branch of the remote renamed, so that the branch tracked by the clone in the
+    local cache no longer exists at the remote
     """
     url, remote_ds, local_ds_clone = repo_url_with_up_to_date_clone
     remote_ds.repo.call_git(["branch", "-m", "renamed-branch"])
