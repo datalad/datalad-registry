@@ -225,6 +225,20 @@ def repo_url_off_sync_by_new_default_branch(
 
 
 @pytest.fixture
+def repo_url_off_sync_by_renamed_default_branch(
+    repo_url_with_up_to_date_clone,
+) -> tuple[RepoUrl, Dataset, Dataset]:
+    """
+    An extension of the `repo_url_with_up_to_date_clone` fixture with the default
+    branch of the remote renamed, so that the branch tracked by the clone in the
+    local cache no longer exists at the remote
+    """
+    url, remote_ds, local_ds_clone = repo_url_with_up_to_date_clone
+    remote_ds.repo.call_git(["branch", "-m", "renamed-branch"])
+    return url, remote_ds, local_ds_clone
+
+
+@pytest.fixture
 def repo_url_outdated_by_new_file_at_new_default_branch(
     repo_url_with_up_to_date_clone,
 ) -> tuple[RepoUrl, Dataset, Dataset]:

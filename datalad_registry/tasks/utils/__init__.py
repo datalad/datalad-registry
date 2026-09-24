@@ -13,8 +13,10 @@ from flask import current_app
 from datalad_registry.models import RepoUrl
 from datalad_registry.utils.datalad_tls import (
     clone,
+    ensure_preferred_branch_checked_out,
     get_origin_default_branch,
     get_origin_upstream_branch,
+    pick_preferred_branch,
 )
 
 lgr = get_task_logger(__name__)
@@ -112,6 +114,10 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Dataset, bool]:
 
             raise
         else:
+            # Work around origin remotes advertising `git-annex`, or an
+            # outdated `main`/`master`, as their default branch. See
+            # https://github.com/datalad/datalad-registry/issues/414
+            ensure_preferred_branch_checked_out(ds_clone)
             return ds_clone
 
     # Validate that the given RepoUrl has been marked processed
@@ -126,16 +132,25 @@ def update_ds_clone(repo_url: RepoUrl) -> tuple[Dataset, bool]:
         current_ds_clone_path, check_installed=True, purpose="update"
     )
 
-    current_ds_clone.repo.call_git(["fetch"])
+    # `--prune`, so that the remote-tracking refs, which `pick_preferred_branch()`
+    # below and `get_origin_branches()` downstream both read, do not keep reporting
+    # branches that have been deleted at the origin remote
+    current_ds_clone.repo.call_git(["fetch", "--prune"])
 
-    # The current default branch of the origin remote, the copy of the dataset
-    # located at the given URL, that the local clone is tracking
-    current_origin_default_branch = get_origin_default_branch(current_ds_clone)
+    # The branch at the origin remote that the local clone is to track. This is the
+    # default branch advertised by the origin remote, except when that is
+    # `git-annex` or an outdated `main`/`master`. See
+    # https://github.com/datalad/datalad-registry/issues/414
+    target_branch = pick_preferred_branch(
+        current_ds_clone, get_origin_default_branch(current_ds_clone)
+    )
 
-    # The upstream branch at the origin remote of the current local branch
+    # The upstream branch at the origin remote of the current local branch. `None`
+    # when it cannot be resolved, in which case it never matches `target_branch`,
+    # a `str`, and a new clone is made below
     origin_upstream_branch = get_origin_upstream_branch(current_ds_clone)
 
-    if origin_upstream_branch == current_origin_default_branch:
+    if origin_upstream_branch == target_branch:
         try:
             current_ds_clone.repo.call_git(
                 ["merge", "--ff-only", f"origin/{origin_upstream_branch}"]
