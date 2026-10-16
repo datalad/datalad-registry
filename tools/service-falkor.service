@@ -14,13 +14,21 @@
 # `Restart=on-failure` runs the script again whenever it exits non-zero. It
 # matters most at boot: the unit can run before the host network is ready, and
 # a user unit has no way to wait for it.
+#
+# `ExecStop=` takes the containers down through Podman before `systemd` kills
+# whatever is left in the unit's cgroup. `podman-compose up -d` leaves each
+# container's `conmon` monitor process in that cgroup, and once `conmon` is
+# killed, Podman cannot record the container's exit. The container then stays
+# in the `stopping` state, even after its processes are gone, until it is
+# removed by hand.
 
 [Unit]
 Description=Read-only Datalad-Registry service
 Documentation=https://github.com/datalad/datalad-registry
 
 [Service]
-ExecStart=%h/Developer/datalad-registry/tools/service-falkor.sh
+ExecStart=%h/Developer/datalad-registry/tools/service-falkor.sh up
+ExecStop=%h/Developer/datalad-registry/tools/service-falkor.sh down
 RemainAfterExit=yes
 Restart=on-failure
 RestartSec=30
