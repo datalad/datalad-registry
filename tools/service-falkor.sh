@@ -1,15 +1,18 @@
 #!/bin/bash
 
-# This script starts the read-only Datalad-Registry service on the `falkor`
-# server. It is meant to be invoked by the `service-falkor.service` `systemd`
-# user unit, which retries it on failure. See `tools/service-falkor.service`.
+# This script starts or stops the read-only Datalad-Registry service on the
+# `falkor` server. It is meant to be invoked by the `service-falkor.service`
+# `systemd` user unit, which runs it with `up` to start the service, retrying
+# on failure, and with `down` to stop it. See `tools/service-falkor.service`.
 
 set -eu
 umask 077
 
+action="${1:-}"
+
 # Log everything (very important for debugging unattended runs)
 exec >> "$HOME/service-falkor.debug.log" 2>&1
-echo "=== $(date) starting service-falkor.sh ==="
+echo "=== $(date) starting service-falkor.sh $action ==="
 
 # `systemd` gives a user unit a minimal `PATH` and does not load any shell
 # configuration, so the search path is pinned here. `podman-compose` is
@@ -44,15 +47,36 @@ set +a
 
 echo "Environment loaded"
 
-# Start the service. `--wait`, which requires podman-compose 1.6.0 or later,
-# makes the command exit non-zero when a container fails to start, and
-# otherwise wait until `read-only-db` is healthy and `read-only-web` is
-# running. Too short a timeout is harmless: the unit simply runs this script
-# again.
-#
-# `timeout` bounds the command as a whole, because `podman-compose` waits for a
-# container dependency in an unbounded loop. A run that never exits would leave
-# the unit looking healthy while the service is down.
-timeout 1h podman-compose -f docker-compose.read-only.yml up -d --wait --wait-timeout 180
+case "$action" in
+    up)
+        # Start the service. `--wait`, which requires podman-compose 1.6.0 or
+        # later, makes the command exit non-zero when a container fails to
+        # start, and otherwise wait until `read-only-db` is healthy and
+        # `read-only-web` is running. Too short a timeout is harmless: the unit
+        # simply runs this script again.
+        #
+        # `timeout` bounds the command as a whole, because `podman-compose`
+        # waits for a container dependency in an unbounded loop. A run that
+        # never exits would leave the unit looking healthy while the service
+        # is down.
+        #
+        # When this script exits non-zero, `systemd` kills every process left
+        # in the unit's cgroup without running `ExecStop=`. That includes the
+        # `conmon` of each container that did start, so the containers are
+        # taken down here first, and the retry starts from a clean slate.
+        if ! timeout 1h podman-compose -f docker-compose.read-only.yml up -d --wait --wait-timeout 180; then
+            echo "Failed to start the service; taking the containers down"
+            podman-compose -f docker-compose.read-only.yml down
+            exit 1
+        fi
+        ;;
+    down)
+        podman-compose -f docker-compose.read-only.yml down
+        ;;
+    *)
+        echo "Usage: $0 up|down"
+        exit 2
+        ;;
+esac
 
 echo "=== $(date) finished ==="
